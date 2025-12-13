@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Memoria NotePro — Upgraded</title>
+<style>
+:root{
+  --bg:#060712;
+  --panel:#0f1220;
+  --text:#e6ebff;
+  --muted:rgba(255,255,255,.65);
+  --neon:#8b5cf6;
+  --neon2:#22c55e;
+  --danger:#ef4444;
+  --warn:#f59e0b;
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;color:var(--text);background:
+  radial-gradient(1200px 600px at 20% 10%,#0e1a3a,transparent 60%),
+  radial-gradient(900px 500px at 80% 90%,#101f4a,transparent 55%),
+  linear-gradient(180deg,#050512,#070b1a);
+}
+a{color:inherit}
+
+.shell{padding:16px;display:grid;grid-template-columns:2fr 1fr;gap:14px;max-width:1200px;margin:0 auto}
+@media (max-width: 980px){.shell{grid-template-columns:1fr}}
+.panel{
+  background:rgba(15,18,32,.92);
+  border-radius:16px;
+  padding:14px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.05),0 14px 50px rgba(0,0,0,.65);
+  animation:fadeUp .35s ease both;
+  backdrop-filter: blur(8px);
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
+
+.title{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
+h1,h2{margin:0;font-weight:750;letter-spacing:.2px}
+.mini{font-size:12px;color:var(--muted)}
+.badge{
+  font-size:11px;
+  padding:4px 8px;
+  border-radius:999px;
+  background:rgba(139,92,246,.18);
+  box-shadow:0 0 16px rgba(139,92,246,.35);
+  border:1px solid rgba(255,255,255,.06);
+}
+
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.spacer{flex:1}
+hr{border:none;border-top:1px solid rgba(255,255,255,.06);margin:12px 0}
+
+.input, textarea, select{
+  background:rgba(0,0,0,.35);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;
+  color:var(--text);
+  padding:9px 10px;
+  outline:none;
+}
+textarea{resize:none}
+.input:focus, textarea:focus, select:focus{
+  border-color:rgba(139,92,246,.55);
+  box-shadow:0 0 0 4px rgba(139,92,246,.14);
+}
+
+.btn{
+  background:rgba(139,92,246,.22);
+  border:1px solid rgba(255,255,255,.08);
+  color:var(--text);
+  padding:8px 10px;
+  border-radius:10px;
+  cursor:pointer;
+  transition:.15s transform ease,.15s filter ease,.15s background ease;
+}
+.btn:hover{filter:brightness(1.1)}
+.btn:active{transform:translateY(1px)}
+.btn.green{background:rgba(34,197,94,.20)}
+.btn.warn{background:rgba(245,158,11,.18)}
+.btn.danger{background:rgba(239,68,68,.16)}
+
+.notes{display:flex;flex-direction:column;gap:8px}
+.note{
+  padding:10px;
+  border-radius:12px;
+  background:rgba(255,255,255,.045);
+  border:1px solid rgba(255,255,255,.06);
+  animation:slideIn .22s ease both;
+  position:relative;
+}
+@keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1}}
+.meta{font-size:12px;color:var(--muted);margin-bottom:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pill{
+  font-size:11px;
+  padding:3px 8px;
+  border-radius:999px;
+  background:rgba(139,92,246,.18);
+  border:1px solid rgba(255,255,255,.06);
+}
+.actions{position:absolute;top:8px;right:8px;display:flex;gap:6px}
+.iconBtn{
+  font-size:12px;
+  padding:6px 8px;
+  border-radius:10px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.08);
+  cursor:pointer;
+}
+.iconBtn:hover{filter:brightness(1.15)}
+
+.kpi{display:flex;gap:8px;flex-wrap:wrap}
+.kbox{padding:8px 10px;border-radius:12px;background:rgba(139,92,246,.14);border:1px solid rgba(255,255,255,.06)}
+.kbox b{display:block;font-size:14px}
+.kbox span{font-size:12px;color:var(--muted)}
+
+.cmd{display:flex;flex-direction:column;gap:8px}
+#cmdOut{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  font-size:13px;
+  max-height:220px;
+  overflow:auto;
+  padding:10px;
+  border-radius:12px;
+  background:rgba(0,0,0,.30);
+  border:1px solid rgba(255,255,255,.06);
+}
+#cmdIn{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  font-size:13px;
+  width:100%;
+}
+
+.toast{
+  position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
+  background:rgba(15,18,32,.95);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 10px 40px rgba(0,0,0,.65);
+  padding:10px 12px;border-radius:14px;
+  display:none;gap:10px;align-items:center;
+}
+.toast.show{display:flex;animation:fadeUp .2s ease both}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--neon);box-shadow:0 0 18px rgba(139,92,246,.6)}
+.small{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- Header -->
+  <section class="panel">
+    <div class="title">
+      <div>
+        <h1>Memoria</h1>
+        <div class="mini">NotePro • upgraded build</div>
+      </div>
+      <div class="row">
+        <span class="badge" id="time">--:--</span>
+        <span class="badge">TESTING • BLOOM</span>
+      </div>
+    </div>
+
+    <div class="kpi">
+      <div class="kbox"><b id="kNotes">0</b><span>Study notes</span></div>
+      <div class="kbox"><b id="kExtra">0</b><span>Extra notes</span></div>
+      <div class="kbox"><b id="kToday">—</b><span>Today</span></div>
+    </div>
+
+    <hr>
+
+    <div class="row">
+      <input class="input" id="search" placeholder="Search notes (e.g., algebra, photosynthesis)..." />
+      <select id="subjectFilter">
+        <option value="all">All subjects</option>
+      </select>
+      <button class="btn" id="btnClearSearch">Clear</button>
+      <div class="spacer"></div>
+      <button class="btn warn" id="btnExport">Export</button>
+      <button class="btn green" id="btnImport">Import</button>
+    </div>
+    <div class="mini" style="margin-top:8px">Tip: use commands like <b>add math</b>, <b>search algebra</b>, <b>export</b>, <b>import</b></div>
+  </section>
+
+  <!-- Study Notes -->
+  <section class="panel" id="studynotes">
+    <div class="title">
+      <h2>StudyNotes</h2>
+      <div class="mini">Subjects + search + edit</div>
+    </div>
+
+    <div class="row">
+      <select id="newSubject">
+        <option>Math</option>
+        <option>Science</option>
+        <option>Social</option>
+        <option>English</option>
+        <option>AI</option>
+        <option>Other</option>
+      </select>
+      <input class="input" id="newTopic" placeholder="Topic (optional) e.g., Number Systems" />
+    </div>
+    <div class="row" style="margin-top:8px">
+      <textarea id="newNote" rows="3" placeholder="Write study note here..."></textarea>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn green" id="btnAddNote">Save Study Note</button>
+      <div class="mini">Shortcut: Ctrl/⌘ + Enter in the note box</div>
+    </div>
+
+    <hr>
+
+    <div class="notes" id="notes"></div>
+  </section>
+
+  <!-- Extra Notes -->
+  <section class="panel" id="extraPanel">
+    <div class="title">
+      <h2>Extra Notes</h2>
+      <div class="mini">Permanent + edit</div>
+    </div>
+
+    <div class="row">
+      <textarea id="extraInput" rows="3" placeholder="Write extra note here..."></textarea>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn" id="btnAddExtra">Save Extra Note</button>
+      <button class="btn danger" id="btnClearExtra">Clear All Extra</button>
+    </div>
+
+    <hr>
+
+    <div class="notes" id="extra"></div>
+  </section>
+
+  <!-- Command Panel -->
+  <section class="panel">
+    <div class="title">
+      <h2>Command</h2>
+      <div class="mini">CMD + Help</div>
+    </div>
+    <div class="cmd">
+      <div id="cmdOut"></div>
+      <input id="cmdIn" class="input" placeholder="> type 'help' and hit Enter" />
+      <div class="mini">
+        Commands: <b>help</b>, <b>time</b>, <b>notes</b>, <b>extra</b>, <b>clear</b>, <b>add &lt;subject&gt;</b>, <b>search &lt;text&gt;</b>,
+        <b>subject &lt;name&gt;</b>, <b>export</b>, <b>import</b>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tools / Support -->
+  <section class="panel">
+    <div class="title">
+      <h2>NT Support</h2>
+      <div class="mini">Tools</div>
+    </div>
+    <div class="mini">Boot Fix • Registry Restore • Device Manager</div>
+    <hr>
+    <div class="mini">This panel is static for now — can be upgraded with tool shortcuts later.</div>
+  </section>
+
+</div>
+
+<div class="toast" id="toast"><div class="dot"></div><div><b id="toastTitle">Saved</b><div class="small" id="toastMsg">Done</div></div></div>
+
+<script>
+const $ = (q)=>document.querySelector(q);
+
+// ===== Time =====
+const nowTime = ()=>new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+setInterval(()=>$('#time').textContent = nowTime(), 1000);
+$('#kToday').textContent = new Date().toLocaleDateString();
+
+// ===== Storage =====
+const DB = {notes:'db_notes_v2', extra:'db_extra_v2'};
+const load = (k, fallback)=>{try{return JSON.parse(localStorage.getItem(k)) ?? fallback}catch{return fallback}};
+const save = (k, v)=>localStorage.setItem(k, JSON.stringify(v));
+
+// Seed
+let notes = load(DB.notes, [
+  {id: crypto.randomUUID(), m:'Math', d:'12 May 2025', topic:'Number Systems', t:'Key points: primes, factors, divisibility rules.'}
+]);
+let extra = load(DB.extra, []);
+
+// ===== Toast =====
+let toastTimer = null;
+function toast(title, msg){
+  $('#toastTitle').textContent = title;
+  $('#toastMsg').textContent = msg;
+  const el = $('#toast');
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 1600);
+}
+
+// ===== Helpers =====
+const norm = (s)=>String(s??'').trim();
+const subjectList = ()=>Array.from(new Set(notes.map(n=>n.m))).sort((a,b)=>a.localeCompare(b));
+function refreshSubjectFilter(){
+  const sel = $('#subjectFilter');
+  const current = sel.value;
+  const opts = ['all', ...subjectList()];
+  sel.innerHTML = opts.map(v=>`<option value="${v}">${v==='all'?'All subjects':v}</option>`).join('');
+  if(opts.includes(current)) sel.value = current;
+}
+function setKPIs(){
+  $('#kNotes').textContent = notes.length;
+  $('#kExtra').textContent = extra.length;
+}
+
+// ===== Render =====
+function noteHTML(n, kind){
+  const metaLeft = kind==='study'
+    ? `<span class="pill">${n.m}</span><span class="mini">${n.d}${n.topic?` • ${n.topic}`:''}</span>`
+    : `<span class="pill">EXTRA</span><span class="mini">${n.d}</span>`;
+
+  return `
+  <div class="note" data-id="${n.id}">
+    <div class="actions">
+      <button class="iconBtn" data-act="edit" title="Edit">✎</button>
+      <button class="iconBtn" data-act="del" title="Delete">🗑</button>
+    </div>
+    <div class="meta">${metaLeft}</div>
+    <div class="body">${escapeHTML(n.t)}</div>
+  </div>`;
+}
+
+function escapeHTML(str){
+  return String(str)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'",'&#039;')
+    .replaceAll('\n','<br>');
+}
+
+function render(){
+  // Filters
+  const q = norm($('#search').value).toLowerCase();
+  const subj = $('#subjectFilter').value;
+
+  const filtered = notes.filter(n=>{
+    const matchesQ = !q || (n.t + ' ' + (n.topic||'') + ' ' + n.m).toLowerCase().includes(q);
+    const matchesS = (subj==='all') || (n.m.toLowerCase()===subj.toLowerCase());
+    return matchesQ && matchesS;
+  });
+
+  $('#notes').innerHTML = filtered.length
+    ? filtered.map(n=>noteHTML(n,'study')).join('')
+    : `<div class="mini">No study notes match your filter.</div>`;
+
+  $('#extra').innerHTML = extra.length
+    ? extra.map(n=>noteHTML(n,'extra')).join('')
+    : `<div class="mini">No extra notes</div>`;
+
+  refreshSubjectFilter();
+  setKPIs();
+}
+
+// ===== CRUD: Study Notes =====
+function addStudyNote(){
+  const m = $('#newSubject').value;
+  const topic = norm($('#newTopic').value);
+  const t = norm($('#newNote').value);
+  if(!t){ toast('Missing', 'Write a note first.'); return; }
+
+  notes.unshift({
+    id: crypto.randomUUID(),
+    m, topic,
+    d: new Date().toLocaleDateString(),
+    t
+  });
+
+  save(DB.notes, notes);
+  $('#newTopic').value = '';
+  $('#newNote').value = '';
+  toast('Saved', 'Study note added.');
+  render();
+}
+
+function editItem(kind, id){
+  const arr = (kind==='study') ? notes : extra;
+  const idx = arr.findIndex(x=>x.id===id);
+  if(idx<0) return;
+
+  const old = arr[idx];
+  let promptText = old.t;
+
+  // Inline editor (no browser prompt)
+  // We’ll reuse the input areas for editing:
+  if(kind==='study'){
+    $('#newSubject').value = old.m;
+    $('#newTopic').value = old.topic || '';
+    $('#newNote').value = old.t;
+    $('#newNote').focus();
+    toast('Edit Mode', 'Update fields and click "Save Study Note".');
+    // Replace on next save:
+    $('#btnAddNote').dataset.editId = id;
+  }else{
+    $('#extraInput').value = old.t;
+    $('#extraInput').focus();
+    toast('Edit Mode', 'Update text and click "Save Extra Note".');
+    $('#btnAddExtra').dataset.editId = id;
+  }
+}
+
+function deleteItem(kind, id){
+  if(kind==='study'){
+    notes = notes.filter(n=>n.id!==id);
+    save(DB.notes, notes);
+    toast('Deleted', 'Study note removed.');
+  }else{
+    extra = extra.filter(n=>n.id!==id);
+    save(DB.extra, extra);
+    toast('Deleted', 'Extra note removed.');
+  }
+  render();
+}
+
+// ===== CRUD: Extra =====
+function addExtra(){
+  const t = norm($('#extraInput').value);
+  if(!t){ toast('Missing', 'Write an extra note first.'); return; }
+
+  extra.unshift({id: crypto.randomUUID(), d: new Date().toLocaleDateString(), t});
+  save(DB.extra, extra);
+  $('#extraInput').value = '';
+  toast('Saved', 'Extra note added.');
+  render();
+}
+
+// ===== Save handlers with edit-mode support =====
+$('#btnAddNote').addEventListener('click', ()=>{
+  const editId = $('#btnAddNote').dataset.editId;
+  if(editId){
+    const idx = notes.findIndex(n=>n.id===editId);
+    if(idx>=0){
+      notes[idx].m = $('#newSubject').value;
+      notes[idx].topic = norm($('#newTopic').value);
+      notes[idx].t = norm($('#newNote').value) || notes[idx].t;
+      notes[idx].d = new Date().toLocaleDateString();
+      save(DB.notes, notes);
+      delete $('#btnAddNote').dataset.editId;
+      $('#newTopic').value=''; $('#newNote').value='';
+      toast('Updated', 'Study note updated.');
+      render();
+      return;
+    }
+  }
+  addStudyNote();
+});
+
+$('#btnAddExtra').addEventListener('click', ()=>{
+  const editId = $('#btnAddExtra').dataset.editId;
+  if(editId){
+    const idx = extra.findIndex(n=>n.id===editId);
+    if(idx>=0){
+      extra[idx].t = norm($('#extraInput').value) || extra[idx].t;
+      extra[idx].d = new Date().toLocaleDateString();
+      save(DB.extra, extra);
+      delete $('#btnAddExtra').dataset.editId;
+      $('#extraInput').value='';
+      toast('Updated', 'Extra note updated.');
+      render();
+      return;
+    }
+  }
+  addExtra();
+});
+
+// Ctrl/⌘ + Enter to save study note
+$('#newNote').addEventListener('keydown', (e)=>{
+  if((e.ctrlKey || e.metaKey) && e.key==='Enter') addStudyNote();
+});
+
+// Clear search
+$('#btnClearSearch').addEventListener('click', ()=>{
+  $('#search').value='';
+  $('#subjectFilter').value='all';
+  render();
+});
+
+// Clear all extra
+$('#btnClearExtra').addEventListener('click', ()=>{
+  if(!extra.length){ toast('Nothing', 'No extra notes to clear.'); return; }
+  if(confirm('Clear ALL extra notes?')){
+    extra = [];
+    save(DB.extra, extra);
+    toast('Cleared', 'Extra notes wiped.');
+    render();
+  }
+});
+
+// Search/filter re-render
+$('#search').addEventListener('input', render);
+$('#subjectFilter').addEventListener('change', render);
+
+// ===== Delegated clicks for edit/delete =====
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('[data-act]');
+  if(!btn) return;
+
+  const noteEl = e.target.closest('.note');
+  if(!noteEl) return;
+
+  const id = noteEl.getAttribute('data-id');
+  const isStudy = noteEl.closest('#notes') !== null;
+  const kind = isStudy ? 'study' : 'extra';
+
+  if(btn.dataset.act==='edit') editItem(kind, id);
+  if(btn.dataset.act==='del') deleteItem(kind, id);
+});
+
+// ===== Export / Import =====
+function exportJSON(){
+  const payload = {version:2, exportedAt:new Date().toISOString(), notes, extra};
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `memoria_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Exported', 'Backup downloaded.');
+}
+
+function importJSON(){
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/json';
+  input.onchange = async ()=>{
+    const file = input.files?.[0];
+    if(!file) return;
+    try{
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if(!data || (!Array.isArray(data.notes) && !Array.isArray(data.extra))) throw new Error('Invalid file');
+      if(Array.isArray(data.notes)) notes = data.notes.map(n=>({id:n.id||crypto.randomUUID(), ...n}));
+      if(Array.isArray(data.extra)) extra = data.extra.map(n=>({id:n.id||crypto.randomUUID(), ...n}));
+      save(DB.notes, notes);
+      save(DB.extra, extra);
+      toast('Imported', 'Backup restored.');
+      render();
+    }catch(err){
+      toast('Error', 'Import failed (invalid JSON).');
+    }
+  };
+  input.click();
+}
+
+$('#btnExport').addEventListener('click', exportJSON);
+$('#btnImport').addEventListener('click', importJSON);
+
+// ===== Command Console =====
+function cmdPrint(html){
+  const o = $('#cmdOut');
+  o.innerHTML += `<div>${html}</div>`;
+  o.scrollTop = o.scrollHeight;
+}
+function cmdHelp(){
+  cmdPrint(`<span class="mini">Commands:</span>
+  <br>• <b>help</b>
+  <br>• <b>time</b>
+  <br>• <b>notes</b> (scroll)
+  <br>• <b>extra</b> (scroll)
+  <br>• <b>clear</b> (clear console)
+  <br>• <b>add &lt;subject&gt;</b> (focus add form)
+  <br>• <b>search &lt;text&gt;</b> (sets search)
+  <br>• <b>subject &lt;name|all&gt;</b> (sets filter)
+  <br>• <b>export</b> / <b>import</b>`);
+}
+function runCmd(){
+  const i = $('#cmdIn');
+  const raw = norm(i.value);
+  if(!raw) return;
+  const c = raw.toLowerCase();
+
+  cmdPrint(`&gt; <b>${escapeHTML(raw)}</b>`);
+
+  const parts = c.split(' ');
+  const head = parts[0];
+  const rest = raw.slice(head.length).trim();
+
+  if(head==='help') cmdHelp();
+  else if(head==='time') cmdPrint(`<span class="mini">${nowTime()}</span>`);
+  else if(head==='notes') $('#studynotes').scrollIntoView({behavior:'smooth'});
+  else if(head==='extra') $('#extraPanel').scrollIntoView({behavior:'smooth'});
+  else if(head==='clear') $('#cmdOut').innerHTML = '';
+  else if(head==='add'){
+    const subj = rest || 'Math';
+    $('#newSubject').value = capitalize(subj);
+    $('#newNote').focus();
+    cmdPrint(`<span class="mini">Add mode: subject = ${escapeHTML(capitalize(subj))}</span>`);
+  }
+  else if(head==='search'){
+    $('#search').value = rest;
+    render();
+    cmdPrint(`<span class="mini">Search set.</span>`);
+  }
+  else if(head==='subject'){
+    const v = rest.trim().toLowerCase();
+    const sel = $('#subjectFilter');
+    if(v==='all' || v===''){
+      sel.value = 'all';
+    }else{
+      // Try exact match
+      const opts = Array.from(sel.options).map(o=>o.value);
+      const found = opts.find(x=>x.toLowerCase()===capitalize(v).toLowerCase()) ||
+                    opts.find(x=>x.toLowerCase()===v);
+      sel.value = found || 'all';
+    }
+    render();
+    cmdPrint(`<span class="mini">Subject filter updated.</span>`);
+  }
+  else if(head==='export') exportJSON();
+  else if(head==='import') importJSON();
+  else cmdPrint(`<span class="mini">Unknown command. Type <b>help</b>.</span>`);
+
+  i.value='';
+}
+
+function capitalize(s){
+  s = String(s||'').trim();
+  if(!s) return s;
+  return s[0].toUpperCase() + s.slice(1);
+}
+
+$('#cmdIn').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter') runCmd();
+});
+
+// ===== Boot =====
+(function init(){
+  $('#cmdOut').innerHTML =
+    `<div class="mini">Memoria console ready. Type <b>help</b>.</div>`;
+  render();
+})();
+</script>
+</body>
+</html>
