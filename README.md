@@ -6,13 +6,17 @@ Runs fully in the browser and saves data locally for quick access.
 ## Features
 - Study notes with subjects
 - Extra notes (permanent)
+- Extra notes editor
 - Search + subject filtering
 - Edit / delete notes
 - Command console (help, time, notes, extra, search, subject, export, import)
 - Export / import JSON backup
 
-## How to Run
-1. Download this project
+## Live Website
+https://firefoxway.github.io/HTML-NotePro/
+
+## How to Run Locally
+1. Download this repository
 2. Open `index.html` in any browser
 
 ## Data Storage
