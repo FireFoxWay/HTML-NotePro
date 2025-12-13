@@ -24,5 +24,6 @@ Notes are stored in your browser using **localStorage**.
 They stay on the same device and browser you used.
 
 ## Author
-**Umesh Chandra Karthikeya.K**
+**Umesh Chandra Karthikeya**
+
 **Gowri Shankar**
