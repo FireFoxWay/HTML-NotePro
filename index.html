@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Memoria NotePro — Vault + Background Settings + Matrix Rain</title>
+<title>Memoria NotePro — Vault + Background Settings + Matrix + Multi Chat</title>
 
 <style>
 :root{
@@ -29,20 +29,16 @@ body{
   background-attachment: fixed;
 }
 
-a{color:inherit}
-
-/* Matrix Canvas */
 #matrixCanvas{
   position:fixed;
   inset:0;
   width:100vw;
   height:100vh;
-  z-index:0;            /* behind app, above body background */
+  z-index:0;
   pointer-events:none;
-  display:none;         /* enabled only when Matrix preset is active */
+  display:none;
 }
 
-/* Make app above Matrix */
 .shell{
   position:relative;
   z-index:1;
@@ -194,7 +190,7 @@ textarea{resize:none;width:100%}
     <div class="title">
       <div>
         <h1>Memoria</h1>
-        <div class="mini">NotePro • Vault + Background Settings + Matrix Rain</div>
+        <div class="mini">NotePro • Vault + Background Settings + Matrix + Multi Chat</div>
       </div>
       <div class="row">
         <span class="badge" id="time">--:--</span>
@@ -225,7 +221,7 @@ textarea{resize:none;width:100%}
     </div>
 
     <div class="mini" style="margin-top:8px">
-      Commands: <b>help</b>, <b>vault</b>, <b>bg</b>, <b>search</b>, <b>subject</b>, <b>export</b>, <b>import</b>
+      Commands: <b>help</b>, <b>vault</b>, <b>bg</b>, <b>chat</b>, <b>search</b>, <b>subject</b>, <b>export</b>, <b>import</b>
     </div>
   </section>
 
@@ -304,7 +300,7 @@ textarea{resize:none;width:100%}
     </div>
 
     <div class="mini" style="margin-top:8px">
-      MP3/MP4/PDF can be previewed here. Word/PPT are downloadable to open in apps.
+      MP3/MP4/PDF can be previewed here. Word/PPT are downloadable.
     </div>
 
     <hr>
@@ -315,7 +311,7 @@ textarea{resize:none;width:100%}
   <section class="panel" id="bgPanel">
     <div class="title">
       <h2>Background Settings</h2>
-      <div class="mini">Presets • Gradient • Solid • Image</div>
+      <div class="mini">Presets • Gradient • Solid • Image • Matrix controls</div>
     </div>
 
     <div class="row">
@@ -346,6 +342,44 @@ textarea{resize:none;width:100%}
     </div>
   </section>
 
+  <!-- Live Chat -->
+  <section class="panel" id="chatPanel">
+    <div class="title">
+      <h2>Live Chat</h2>
+      <div class="mini">Multi-people • Rooms (Firebase)</div>
+    </div>
+
+    <div class="row">
+      <input class="input" id="chatName" placeholder="Your name (e.g., Umesh)" />
+      <input class="input" id="chatRoom" placeholder="Room code (e.g., memoria)" />
+      <button class="btn green" id="chatConnect">Connect</button>
+    </div>
+
+    <div class="mini" style="margin-top:8px">
+      Share the same Room code with friends to chat together.
+    </div>
+
+    <hr>
+
+    <div id="chatLog" style="
+      height:260px; overflow:auto; padding:10px; border-radius:12px;
+      background:rgba(0,0,0,.30); border:1px solid rgba(255,255,255,.06);
+      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      font-size:13px;
+    "></div>
+
+    <div class="row" style="margin-top:10px">
+      <input class="input" id="chatMsg" placeholder="Type a message..." style="flex:1" />
+      <button class="btn" id="chatSend">Send</button>
+    </div>
+
+    <div class="mini" style="margin-top:8px" id="chatStatus">Not connected</div>
+
+    <div class="mini" style="margin-top:10px">
+      If chat doesn’t work: you must add Firebase config + enable Firestore.
+    </div>
+  </section>
+
   <!-- Command -->
   <section class="panel">
     <div class="title">
@@ -357,7 +391,7 @@ textarea{resize:none;width:100%}
       <div id="cmdOut"></div>
       <input id="cmdIn" class="input" placeholder="> type 'help' and press Enter" />
       <div class="mini">
-        Try: <b>vault</b>, <b>bg</b>, <b>search algebra</b>, <b>subject math</b>, <b>export</b>
+        Try: <b>vault</b>, <b>bg</b>, <b>chat</b>, <b>search algebra</b>, <b>subject math</b>, <b>export</b>
       </div>
     </div>
   </section>
@@ -424,7 +458,6 @@ function toast(title,msg){
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>el.classList.remove('show'),1600);
 }
-
 function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
 function hexToRgb(hex){
   const h = (hex||"").replace("#","").trim();
@@ -442,7 +475,7 @@ function rgbToHex(r,g,b){
   const to = (x)=>x.toString(16).padStart(2,"0");
   return "#"+to(r)+to(g)+to(b);
 }
-function lighten(hex, amount){ // amount 0..1
+function lighten(hex, amount){
   const {r,g,b} = hexToRgb(hex);
   const nr = Math.round(r + (255-r)*amount);
   const ng = Math.round(g + (255-g)*amount);
@@ -450,7 +483,7 @@ function lighten(hex, amount){ // amount 0..1
   return rgbToHex(nr,ng,nb);
 }
 
-/* ========= Matrix Rain (speed + color) ========= */
+/* ========= Matrix Rain ========= */
 const matrix = (() => {
   const canvas = document.getElementById('matrixCanvas');
   const ctx = canvas.getContext('2d');
@@ -460,12 +493,9 @@ const matrix = (() => {
   let columns = 0;
   let fontSize = 16;
 
-  // options
-  let fps = 30;                 // 5..60
-  let baseColor = "#00ff6a";    // user selected
-  let headColor = "#b7ffcf";    // computed
-
-  // frame limiter
+  let fps = 30;
+  let baseColor = "#00ff6a";
+  let headColor = "#b7ffcf";
   let lastDraw = 0;
 
   const chars =
@@ -495,7 +525,6 @@ const matrix = (() => {
   }
 
   function drawOnce(){
-    // trail fade
     ctx.fillStyle = "rgba(0,0,0,0.08)";
     ctx.fillRect(0,0, window.innerWidth, window.innerHeight);
 
@@ -504,7 +533,6 @@ const matrix = (() => {
       const x = i * fontSize;
       const y = drops[i] * fontSize;
 
-      // occasional bright head
       ctx.fillStyle = (Math.random() > 0.985) ? headColor : baseColor;
       ctx.fillText(text, x, y);
 
@@ -541,7 +569,6 @@ const matrix = (() => {
       cancelAnimationFrame(raf);
       raf = null;
     }
-    // clear visible area (in CSS pixels)
     ctx.setTransform(1,0,0,1,0,0);
     ctx.clearRect(0,0,canvas.width,canvas.height);
   }
@@ -549,23 +576,23 @@ const matrix = (() => {
   return { start, stop, setOptions };
 })();
 
-/* ========= Notes Storage (localStorage) ========= */
+/* ========= localStorage ========= */
 const DB = { notes:'db_notes_v5', extra:'db_extra_v5', settings:'db_settings_v5' };
 const loadLS=(k,f)=>{ try{ return JSON.parse(localStorage.getItem(k)) ?? f }catch{ return f } };
 const saveLS=(k,v)=>localStorage.setItem(k, JSON.stringify(v));
 
-/* ========= Background Settings (includes matrix controls) ========= */
+/* ========= Background Settings ========= */
 const defaultBg = {
   mode:"preset",
   preset:"nebula",
   solid:"#070b1a",
   g1:"#0e1a3a",
   g2:"#101f4a",
-  imageMode:"upload",   // upload | url
+  imageMode:"upload",
   imageUrl:"",
   overlay:true,
-  matrixFps: 30,        // NEW
-  matrixColor: "#00ff6a"// NEW
+  matrixFps: 30,
+  matrixColor: "#00ff6a"
 };
 
 let settings = loadLS(DB.settings, defaultBg);
@@ -593,7 +620,6 @@ function presetCSS(name){
     `;
   }
   if(name==="matrix"){
-    // dark + subtle green glow under the rain
     return `
       radial-gradient(1100px 540px at 30% 20%, ${settings.matrixColor}22, transparent 60%),
       radial-gradient(900px 520px at 70% 85%, ${settings.matrixColor}18, transparent 55%),
@@ -607,7 +633,7 @@ function presetCSS(name){
   `;
 }
 
-/* ========= IndexedDB for Vault + Background Image ========= */
+/* ========= IndexedDB ========= */
 const idb = (() => {
   const DBNAME="memoria_idb_v1";
   const VERSION=1;
@@ -651,7 +677,7 @@ const idb = (() => {
       const tx=d.transaction(store,"readonly");
       const r=tx.objectStore(store).getAll();
       r.onsuccess=()=>res(r.result||[]);
-      r.onerror=()=>rej(r.error);
+      r.onerror=()=>rej(tx.error);
     });
   }
   async function del(store, key){
@@ -679,9 +705,7 @@ const idb = (() => {
 let bgObjectURL = null;
 
 async function applyBackground(){
-  // stop matrix by default; start only if preset=matrix
   matrix.stop();
-
   if(bgObjectURL){ URL.revokeObjectURL(bgObjectURL); bgObjectURL=null; }
 
   const mode = settings.mode;
@@ -689,7 +713,6 @@ async function applyBackground(){
   if(mode==="preset"){
     document.body.style.background = presetCSS(settings.preset);
     document.body.style.backgroundAttachment = "fixed";
-
     if(settings.preset === "matrix"){
       matrix.start({ fps: settings.matrixFps, color: settings.matrixColor });
     }
@@ -769,7 +792,7 @@ function renderBgControls(){
           <input class="input" id="mxColor" type="color" value="${col}">
           <span class="mini" id="mxColorVal">${col}</span>
         </div>
-        <div class="mini" style="margin-top:8px">Tip: After changing, click <b>Apply</b> to refresh the Matrix.</div>
+        <div class="mini" style="margin-top:8px">After changing, click <b>Apply</b>.</div>
       `;
     }
   }
@@ -810,13 +833,13 @@ function renderBgControls(){
       <div style="margin-top:10px">
         <div id="imgUploadWrap" style="display:${urlMode?'none':'block'}">
           <input class="input" id="bgImagePick" type="file" accept="image/*" />
-          <div class="mini" style="margin-top:6px">Uploaded image is stored in your browser (IndexedDB).</div>
+          <div class="mini" style="margin-top:6px">Stored in your browser (IndexedDB).</div>
         </div>
 
         <div id="imgUrlWrap" style="display:${urlMode?'block':'none'}">
           <input class="input" id="bgImageUrl" placeholder="https://example.com/image.jpg"
                  value="${settings.imageUrl || ""}" />
-          <div class="mini" style="margin-top:6px">URL image must allow hotlinking to show.</div>
+          <div class="mini" style="margin-top:6px">URL must allow hotlinking.</div>
         </div>
       </div>
     `;
@@ -824,7 +847,6 @@ function renderBgControls(){
 
   $('#bgControls').innerHTML = html;
 
-  // wire controls
   if(mode==="preset" && preset==="matrix"){
     const mxSpeed = $('#mxSpeed');
     const mxSpeedVal = $('#mxSpeedVal');
@@ -855,12 +877,12 @@ function renderBgControls(){
     $('#g2Pick').addEventListener('input', (e)=>{ settings.g2 = e.target.value; });
   }
   if(mode==="image"){
-    $('#imgMode').addEventListener('change', (e)=>{
+    $('#imgMode')?.addEventListener('change', (e)=>{
       settings.imageMode = e.target.value;
       saveLS(DB.settings, settings);
       renderBgControls();
     });
-    $('#imgOverlay').addEventListener('change', (e)=>{
+    $('#imgOverlay')?.addEventListener('change', (e)=>{
       settings.overlay = e.target.checked;
     });
 
@@ -883,15 +905,13 @@ function renderBgControls(){
   }
 }
 
-/* ========= Notes Storage ========= */
+/* ========= Notes ========= */
 let notes = loadLS(DB.notes, [
   {id: crypto.randomUUID(), m:'Math', d:'12 May 2025', topic:'Number Systems', t:'Key points: primes, factors, divisibility rules.'}
 ]);
 let extra = loadLS(DB.extra, []);
-
 let vaultFiles = [];
 
-/* ========= Notes Render ========= */
 function subjectList(){
   return Array.from(new Set(notes.map(n=>n.m))).sort((a,b)=>a.localeCompare(b));
 }
@@ -922,6 +942,34 @@ function noteHTML(n, kind){
       <div class="body">${escapeHTML(n.t)}</div>
     </div>`;
 }
+function renderVault(){
+  const list = $('#vaultList');
+  if(!vaultFiles.length){
+    list.innerHTML = `<div class="mini">No files in vault.</div>`;
+    return;
+  }
+  list.innerHTML = vaultFiles.map(f=>{
+    const icon = "📁";
+    const when = new Date(f.savedAt||Date.now()).toLocaleString();
+    const size = bytesToSize(f.size||0);
+    const tag = f.tag || "General";
+    const title = f.title || f.name || "Untitled";
+    return `
+      <div class="note" data-kind="file" data-id="${f.id}">
+        <div class="actions">
+          <button class="iconBtn" data-act="preview" title="Preview">▶</button>
+          <button class="iconBtn" data-act="download" title="Download">⬇</button>
+          <button class="iconBtn" data-act="delFile" title="Delete">🗑</button>
+        </div>
+        <div class="meta">
+          <span class="pill">${icon} ${escapeHTML(tag)}</span>
+          <span class="mini">${escapeHTML(when)} • ${escapeHTML(size)}</span>
+        </div>
+        <div class="body"><b>${escapeHTML(title)}</b><div class="mini">${escapeHTML(f.name||"")}</div></div>
+      </div>
+    `;
+  }).join('');
+}
 function render(){
   const q = ($('#search').value||'').trim().toLowerCase();
   const subj = $('#subjectFilter').value;
@@ -951,27 +999,19 @@ function addStudyNote(){
   const topic = ($('#newTopic').value||'').trim();
   const t = ($('#newNote').value||'').trim();
   if(!t){ toast('Missing','Write a note first.'); return; }
-
   notes.unshift({ id: crypto.randomUUID(), m, topic, d: new Date().toLocaleDateString(), t });
   saveLS(DB.notes, notes);
-
   $('#newTopic').value='';
   $('#newNote').value='';
-  delete $('#btnAddNote').dataset.editId;
-
   toast('Saved','Study note added.');
   render();
 }
 function addExtraNote(){
   const t = ($('#extraInput').value||'').trim();
   if(!t){ toast('Missing','Write an extra note first.'); return; }
-
   extra.unshift({ id: crypto.randomUUID(), d: new Date().toLocaleDateString(), t });
   saveLS(DB.extra, extra);
-
   $('#extraInput').value='';
-  delete $('#btnAddExtra').dataset.editId;
-
   toast('Saved','Extra note added.');
   render();
 }
@@ -1007,7 +1047,7 @@ function deleteItem(kind, id){
   render();
 }
 
-/* ========= Export/Import Notes (not Vault files) ========= */
+/* ========= Export/Import ========= */
 function exportNotes(){
   const payload = { version:5, exportedAt:new Date().toISOString(), notes, extra, settings };
   const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
@@ -1031,16 +1071,13 @@ function importNotes(){
       if(Array.isArray(data.notes)) notes=data.notes.map(n=>({id:n.id||crypto.randomUUID(), ...n}));
       if(Array.isArray(data.extra)) extra=data.extra.map(n=>({id:n.id||crypto.randomUUID(), ...n}));
       if(data.settings) settings={...defaultBg, ...data.settings};
-
       saveLS(DB.notes, notes);
       saveLS(DB.extra, extra);
       saveLS(DB.settings, settings);
-
       $('#bgMode').value=settings.mode || "preset";
       $('#bgPreset').value=settings.preset || "nebula";
       renderBgControls();
       await applyBackground();
-
       toast('Imported','Notes restored.');
       render();
     }catch(e){
@@ -1051,60 +1088,16 @@ function importNotes(){
 }
 
 /* ========= Vault ========= */
-function fileIcon(type, name){
-  const n=(name||'').toLowerCase();
-  if(type==="application/pdf" || n.endsWith(".pdf")) return "📄";
-  if(type.startsWith("audio") || n.endsWith(".mp3")) return "🎧";
-  if(type.startsWith("video") || n.endsWith(".mp4")) return "🎬";
-  if(n.endsWith(".ppt") || n.endsWith(".pptx")) return "📽️";
-  if(n.endsWith(".doc") || n.endsWith(".docx")) return "📝";
-  return "📁";
-}
-
 async function loadVault(){
   vaultFiles = await idb.getAll("files");
   vaultFiles.sort((a,b)=> (b.savedAt||0) - (a.savedAt||0));
   render();
 }
-
-function renderVault(){
-  const list = $('#vaultList');
-  if(!vaultFiles.length){
-    list.innerHTML = `<div class="mini">No files in vault.</div>`;
-    return;
-  }
-
-  list.innerHTML = vaultFiles.map(f=>{
-    const icon = fileIcon(f.type||"", f.name||"");
-    const when = new Date(f.savedAt||Date.now()).toLocaleString();
-    const size = bytesToSize(f.size||0);
-    const tag = f.tag || "General";
-    const title = f.title || f.name || "Untitled";
-
-    return `
-      <div class="note" data-kind="file" data-id="${f.id}">
-        <div class="actions">
-          <button class="iconBtn" data-act="preview" title="Preview">▶</button>
-          <button class="iconBtn" data-act="download" title="Download">⬇</button>
-          <button class="iconBtn" data-act="delFile" title="Delete">🗑</button>
-        </div>
-        <div class="meta">
-          <span class="pill">${icon} ${escapeHTML(tag)}</span>
-          <span class="mini">${escapeHTML(when)} • ${escapeHTML(size)}</span>
-        </div>
-        <div class="body"><b>${escapeHTML(title)}</b><div class="mini">${escapeHTML(f.name||"")}</div></div>
-      </div>
-    `;
-  }).join('');
-}
-
 async function saveSelectedFile(){
   const file = $('#filePick').files?.[0];
   if(!file){ toast("Missing","Choose a file first."); return; }
-
   const title = ($('#fileTitle').value||'').trim();
   const tag = $('#fileTag').value || "General";
-
   const rec = {
     id: crypto.randomUUID(),
     name: file.name,
@@ -1115,7 +1108,6 @@ async function saveSelectedFile(){
     savedAt: Date.now(),
     blob: file
   };
-
   try{
     await idb.put("files", rec);
     $('#filePick').value='';
@@ -1126,13 +1118,11 @@ async function saveSelectedFile(){
     toast("Error","Could not save (storage limit?).");
   }
 }
-
 async function deleteVaultFile(id){
   await idb.del("files", id);
   toast("Deleted","File removed.");
   await loadVault();
 }
-
 async function clearVault(){
   if(!vaultFiles.length){ toast("Nothing","Vault is already empty."); return; }
   if(!confirm("Clear ALL vault files?")) return;
@@ -1140,7 +1130,6 @@ async function clearVault(){
   toast("Cleared","Vault wiped.");
   await loadVault();
 }
-
 async function downloadVaultFile(id){
   const rec = await idb.get("files", id);
   if(!rec?.blob){ toast("Error","File not found."); return; }
@@ -1154,7 +1143,6 @@ async function downloadVaultFile(id){
 
 /* ========= Modal Preview ========= */
 let currentPreviewUrl = null;
-
 function showModal(title, bodyHTML){
   $('#modalTitle').textContent = title;
   $('#modalBody').innerHTML = bodyHTML;
@@ -1163,16 +1151,13 @@ function showModal(title, bodyHTML){
 function closeModal(){
   const body = $('#modalBody');
   body.querySelectorAll('video,audio').forEach(el=>{ try{ el.pause?.(); }catch{} });
-
   if(currentPreviewUrl){
     try{ URL.revokeObjectURL(currentPreviewUrl); }catch{}
     currentPreviewUrl = null;
   }
-
   $('#modal').classList.remove('show');
   $('#modalBody').innerHTML = "";
 }
-
 async function previewVaultFile(id){
   const rec = await idb.get("files", id);
   if(!rec?.blob){ toast("Error","File not found."); return; }
@@ -1181,7 +1166,6 @@ async function previewVaultFile(id){
   const type = rec.type || "";
   const url = URL.createObjectURL(rec.blob);
   currentPreviewUrl = url;
-
   const lower = name.toLowerCase();
 
   if(type === "application/pdf" || lower.endsWith(".pdf")){
@@ -1191,34 +1175,27 @@ async function previewVaultFile(id){
     `);
     return;
   }
-
   if(type.startsWith("audio") || lower.endsWith(".mp3")){
     showModal(name, `
       <audio controls style="width:100%">
         <source src="${url}" type="${type || "audio/mpeg"}">
       </audio>
-      <div class="mini" style="margin-top:10px">If audio doesn’t play, download and open in a player.</div>
     `);
     return;
   }
-
   if(type.startsWith("video") || lower.endsWith(".mp4")){
     showModal(name, `
       <video controls style="width:100%;max-height:70vh;border-radius:12px;border:1px solid rgba(255,255,255,.08)">
         <source src="${url}" type="${type || "video/mp4"}">
       </video>
-      <div class="mini" style="margin-top:10px">If video doesn’t play, download and open in a player.</div>
     `);
     return;
   }
-
   showModal(name, `
-    <div class="mini">Preview not available for this file type in a static app.</div>
+    <div class="mini">Preview not available for this file type here.</div>
     <hr>
     <button class="btn green" id="dlFromModal">Download to Open</button>
-    <div class="mini" style="margin-top:10px">Open it using Microsoft Office / Google Docs / PowerPoint.</div>
   `);
-
   setTimeout(()=>{
     const btn = document.getElementById('dlFromModal');
     if(btn){
@@ -1232,7 +1209,7 @@ async function previewVaultFile(id){
   }, 0);
 }
 
-/* ========= Command Console ========= */
+/* ========= Command ========= */
 function cmdPrint(html){
   const o = $('#cmdOut');
   o.innerHTML += `<div>${html}</div>`;
@@ -1246,6 +1223,7 @@ function cmdHelp(){
     <br>• <b>extra</b> (scroll)
     <br>• <b>vault</b> (scroll)
     <br>• <b>bg</b> (scroll)
+    <br>• <b>chat</b> (scroll)
     <br>• <b>clear</b> (clear console)
     <br>• <b>search &lt;text&gt;</b>
     <br>• <b>subject &lt;name|all&gt;</b>
@@ -1257,7 +1235,6 @@ function runCmd(){
   if(!raw) return;
   const lower = raw.toLowerCase();
   cmdPrint(`&gt; <b>${escapeHTML(raw)}</b>`);
-
   const [head] = lower.split(' ');
   const rest = raw.slice(head.length).trim();
 
@@ -1267,13 +1244,13 @@ function runCmd(){
   else if(head==='extra') $('#extraPanel').scrollIntoView({behavior:'smooth'});
   else if(head==='vault') $('#vaultPanel').scrollIntoView({behavior:'smooth'});
   else if(head==='bg') $('#bgPanel').scrollIntoView({behavior:'smooth'});
+  else if(head==='chat') $('#chatPanel').scrollIntoView({behavior:'smooth'});
   else if(head==='clear') $('#cmdOut').innerHTML = '';
   else if(head==='search'){
     $('#search').value = rest;
     render();
     cmdPrint(`<span class="mini">Search set.</span>`);
-  }
-  else if(head==='subject'){
+  } else if(head==='subject'){
     const v = rest.trim().toLowerCase();
     const sel = $('#subjectFilter');
     if(!v || v==='all'){ sel.value='all'; }
@@ -1284,11 +1261,9 @@ function runCmd(){
     }
     render();
     cmdPrint(`<span class="mini">Subject filter updated.</span>`);
-  }
-  else if(head==='export') exportNotes();
+  } else if(head==='export') exportNotes();
   else if(head==='import') importNotes();
   else cmdPrint(`<span class="mini">Unknown command. Type <b>help</b>.</span>`);
-
   i.value='';
 }
 
@@ -1328,18 +1303,16 @@ $('#bgMode').addEventListener('change', (e)=>{
 $('#bgPreset').addEventListener('change', (e)=>{
   settings.preset = e.target.value;
   saveLS(DB.settings, settings);
-  renderBgControls(); // IMPORTANT: show matrix controls immediately
+  renderBgControls();
 });
 
 $('#btnApplyBg').addEventListener('click', async ()=>{
   settings.mode = $('#bgMode').value;
   settings.preset = $('#bgPreset').value;
-
   saveLS(DB.settings, settings);
   await applyBackground();
   toast("Applied","Background updated.");
 });
-
 $('#btnResetBg').addEventListener('click', async ()=>{
   settings = {...defaultBg};
   saveLS(DB.settings, settings);
@@ -1351,6 +1324,12 @@ $('#btnResetBg').addEventListener('click', async ()=>{
 });
 
 $('#cmdIn').addEventListener('keydown', (e)=>{ if(e.key==='Enter') runCmd(); });
+
+document.addEventListener('keydown', (e)=>{
+  if((e.ctrlKey || e.metaKey) && e.key === 'Enter'){
+    if(document.activeElement === $('#newNote')) addStudyNote();
+  }
+});
 
 document.addEventListener('click', async (e)=>{
   const btn = e.target.closest('[data-act]');
@@ -1380,17 +1359,154 @@ $('#modal').addEventListener('click', (e)=>{ if(e.target.id==='modal') closeModa
 /* ========= Init ========= */
 (async function init(){
   $('#cmdOut').innerHTML = `<div class="mini">Memoria console ready. Type <b>help</b>.</div>`;
-
   $('#bgMode').value = settings.mode || "preset";
   $('#bgPreset').value = settings.preset || "nebula";
   renderBgControls();
   await applyBackground();
-
   vaultFiles = await idb.getAll("files");
   vaultFiles.sort((a,b)=> (b.savedAt||0) - (a.savedAt||0));
-
   render();
 })();
 </script>
+
+<!-- ========= Firebase Multi-Chat (Firestore) ========= -->
+<script type="module">
+/*
+  ✅ HOW TO ENABLE CHAT (FREE)
+  1) Go to https://console.firebase.google.com
+  2) Create Project (free)
+  3) Build -> Firestore Database -> Create database (Start in test mode for now)
+  4) Project Settings -> General -> Your apps -> Web app -> Copy firebaseConfig
+  5) Paste it below (replace the object)
+
+  IMPORTANT: After testing, set Firestore rules to prevent abuse.
+*/
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, serverTimestamp,
+  query, orderBy, limit, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+/* 🔥 PASTE YOUR FIREBASE CONFIG HERE */
+const firebaseConfig = {
+  // apiKey: "....",
+  // authDomain: "....",
+  // projectId: "....",
+  // storageBucket: "....",
+  // messagingSenderId: "....",
+  // appId: "...."
+};
+
+const chatStatus = document.getElementById('chatStatus');
+const chatLog = document.getElementById('chatLog');
+const chatName = document.getElementById('chatName');
+const chatRoom = document.getElementById('chatRoom');
+const chatConnect = document.getElementById('chatConnect');
+const chatMsg = document.getElementById('chatMsg');
+const chatSend = document.getElementById('chatSend');
+
+let db = null;
+let unsub = null;
+let connectedRoom = null;
+
+function safeText(s){ return (s ?? "").toString().slice(0, 500); }
+
+function addLine(line){
+  const div = document.createElement('div');
+  div.innerHTML = line;
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function clearChat(){
+  chatLog.innerHTML = "";
+}
+
+function showStatus(t){
+  chatStatus.textContent = t;
+}
+
+function isConfigValid(cfg){
+  return cfg && cfg.apiKey && cfg.projectId && cfg.appId;
+}
+
+chatConnect.addEventListener('click', async ()=>{
+  const name = safeText(chatName.value.trim()) || "Anonymous";
+  const room = safeText(chatRoom.value.trim()).replace(/\s+/g,'-').toLowerCase();
+  if(!room){
+    showStatus("Enter a room code first.");
+    return;
+  }
+  if(!isConfigValid(firebaseConfig)){
+    showStatus("Firebase config missing. Paste firebaseConfig in code.");
+    return;
+  }
+
+  if(!db){
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+  }
+
+  // switch rooms: stop old listener
+  if(unsub){ unsub(); unsub = null; }
+  connectedRoom = room;
+
+  clearChat();
+  showStatus(`Connected to room: ${room}`);
+
+  const msgsRef = collection(db, "rooms", room, "messages");
+  const q = query(msgsRef, orderBy("createdAt","asc"), limit(200));
+
+  unsub = onSnapshot(q, (snap)=>{
+    clearChat();
+    snap.forEach(doc=>{
+      const m = doc.data() || {};
+      const who = safeText(m.name || "Anon");
+      const text = safeText(m.text || "");
+      const time = m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : "";
+      addLine(`<span style="color:rgba(255,255,255,.65)">[${time}]</span> <b>${who}:</b> ${text.replaceAll('<','&lt;').replaceAll('>','&gt;')}`);
+    });
+  }, (err)=>{
+    showStatus("Chat error: " + err.message);
+  });
+
+  // store name locally
+  try{ localStorage.setItem("memoria_chat_name", name); localStorage.setItem("memoria_chat_room", room); }catch{}
+});
+
+chatSend.addEventListener('click', async ()=>{
+  const name = safeText(chatName.value.trim()) || "Anonymous";
+  const room = connectedRoom;
+  const text = safeText(chatMsg.value.trim());
+  if(!db || !room){
+    showStatus("Connect to a room first.");
+    return;
+  }
+  if(!text) return;
+
+  chatMsg.value = "";
+
+  try{
+    const msgsRef = collection(db, "rooms", room, "messages");
+    await addDoc(msgsRef, { name, text, createdAt: serverTimestamp() });
+  }catch(e){
+    showStatus("Send failed: " + e.message);
+  }
+});
+
+chatMsg.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') chatSend.click();
+});
+
+// load saved name/room
+try{
+  const savedN = localStorage.getItem("memoria_chat_name");
+  const savedR = localStorage.getItem("memoria_chat_room");
+  if(savedN) chatName.value = savedN;
+  if(savedR) chatRoom.value = savedR;
+}catch{}
+</script>
+
 </body>
 </html>
