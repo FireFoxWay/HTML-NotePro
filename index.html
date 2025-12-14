@@ -425,7 +425,32 @@ function toast(title,msg){
   toastTimer=setTimeout(()=>el.classList.remove('show'),1600);
 }
 
-/* ========= Matrix Rain ========= */
+function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
+function hexToRgb(hex){
+  const h = (hex||"").replace("#","").trim();
+  if(h.length===3){
+    const r=parseInt(h[0]+h[0],16), g=parseInt(h[1]+h[1],16), b=parseInt(h[2]+h[2],16);
+    return {r,g,b};
+  }
+  if(h.length===6){
+    const r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
+    return {r,g,b};
+  }
+  return {r:0,g:255,b:106};
+}
+function rgbToHex(r,g,b){
+  const to = (x)=>x.toString(16).padStart(2,"0");
+  return "#"+to(r)+to(g)+to(b);
+}
+function lighten(hex, amount){ // amount 0..1
+  const {r,g,b} = hexToRgb(hex);
+  const nr = Math.round(r + (255-r)*amount);
+  const ng = Math.round(g + (255-g)*amount);
+  const nb = Math.round(b + (255-b)*amount);
+  return rgbToHex(nr,ng,nb);
+}
+
+/* ========= Matrix Rain (speed + color) ========= */
 const matrix = (() => {
   const canvas = document.getElementById('matrixCanvas');
   const ctx = canvas.getContext('2d');
@@ -434,6 +459,14 @@ const matrix = (() => {
   let drops = [];
   let columns = 0;
   let fontSize = 16;
+
+  // options
+  let fps = 30;                 // 5..60
+  let baseColor = "#00ff6a";    // user selected
+  let headColor = "#b7ffcf";    // computed
+
+  // frame limiter
+  let lastDraw = 0;
 
   const chars =
     "アイウエオカキクケコサシスセソタチツテトナニヌネノ" +
@@ -449,13 +482,19 @@ const matrix = (() => {
     ctx.setTransform(dpr,0,0,dpr,0,0);
 
     fontSize = Math.max(14, Math.min(22, Math.floor(window.innerWidth / 60)));
-    columns = Math.floor(window.innerWidth / fontSize);
+    columns = Math.max(1, Math.floor(window.innerWidth / fontSize));
     drops = Array(columns).fill(1);
 
     ctx.font = `${fontSize}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`;
   }
 
-  function frame(){
+  function setOptions(opts={}){
+    if(typeof opts.fps === "number") fps = clamp(opts.fps, 5, 60);
+    if(typeof opts.color === "string" && opts.color.trim()) baseColor = opts.color.trim();
+    headColor = lighten(baseColor, 0.72);
+  }
+
+  function drawOnce(){
     // trail fade
     ctx.fillStyle = "rgba(0,0,0,0.08)";
     ctx.fillRect(0,0, window.innerWidth, window.innerHeight);
@@ -466,21 +505,32 @@ const matrix = (() => {
       const y = drops[i] * fontSize;
 
       // occasional bright head
-      ctx.fillStyle = (Math.random() > 0.985) ? "#b7ffcf" : "#00ff6a";
+      ctx.fillStyle = (Math.random() > 0.985) ? headColor : baseColor;
       ctx.fillText(text, x, y);
 
       if(y > window.innerHeight && Math.random() > 0.975) drops[i] = 0;
       drops[i]++;
     }
+  }
 
+  function frame(t){
+    const interval = 1000 / fps;
+    if(!lastDraw) lastDraw = t;
+
+    if(t - lastDraw >= interval){
+      drawOnce();
+      lastDraw = t;
+    }
     raf = requestAnimationFrame(frame);
   }
 
-  function start(){
+  function start(opts={}){
+    setOptions(opts);
     if(raf) return;
     canvas.style.display = "block";
     resize();
-    frame();
+    lastDraw = 0;
+    raf = requestAnimationFrame(frame);
     window.addEventListener('resize', resize);
   }
 
@@ -491,22 +541,71 @@ const matrix = (() => {
       cancelAnimationFrame(raf);
       raf = null;
     }
-    // clear
-    ctx.clearRect(0,0,window.innerWidth,window.innerHeight);
+    // clear visible area (in CSS pixels)
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
   }
 
-  return { start, stop };
+  return { start, stop, setOptions };
 })();
 
 /* ========= Notes Storage (localStorage) ========= */
-const DB = { notes:'db_notes_v4', extra:'db_extra_v4', settings:'db_settings_v4' };
+const DB = { notes:'db_notes_v5', extra:'db_extra_v5', settings:'db_settings_v5' };
 const loadLS=(k,f)=>{ try{ return JSON.parse(localStorage.getItem(k)) ?? f }catch{ return f } };
 const saveLS=(k,v)=>localStorage.setItem(k, JSON.stringify(v));
 
-let notes = loadLS(DB.notes, [
-  {id: crypto.randomUUID(), m:'Math', d:'12 May 2025', topic:'Number Systems', t:'Key points: primes, factors, divisibility rules.'}
-]);
-let extra = loadLS(DB.extra, []);
+/* ========= Background Settings (includes matrix controls) ========= */
+const defaultBg = {
+  mode:"preset",
+  preset:"nebula",
+  solid:"#070b1a",
+  g1:"#0e1a3a",
+  g2:"#101f4a",
+  imageMode:"upload",   // upload | url
+  imageUrl:"",
+  overlay:true,
+  matrixFps: 30,        // NEW
+  matrixColor: "#00ff6a"// NEW
+};
+
+let settings = loadLS(DB.settings, defaultBg);
+
+function presetCSS(name){
+  if(name==="midnight"){
+    return `
+      radial-gradient(1100px 540px at 20% 10%, #1b1f3a, transparent 60%),
+      radial-gradient(900px 520px at 80% 90%, #14162a, transparent 55%),
+      linear-gradient(180deg,#050512,#0b0f2a)
+    `;
+  }
+  if(name==="ocean"){
+    return `
+      radial-gradient(1100px 540px at 20% 10%, #063b52, transparent 60%),
+      radial-gradient(900px 520px at 80% 90%, #0a274e, transparent 55%),
+      linear-gradient(180deg,#021019,#041b2a)
+    `;
+  }
+  if(name==="sunrise"){
+    return `
+      radial-gradient(1100px 540px at 25% 15%, #6b2cff, transparent 55%),
+      radial-gradient(900px 520px at 75% 85%, #ff5c7a, transparent 55%),
+      linear-gradient(180deg,#120018,#150a2a)
+    `;
+  }
+  if(name==="matrix"){
+    // dark + subtle green glow under the rain
+    return `
+      radial-gradient(1100px 540px at 30% 20%, ${settings.matrixColor}22, transparent 60%),
+      radial-gradient(900px 520px at 70% 85%, ${settings.matrixColor}18, transparent 55%),
+      linear-gradient(180deg,#020a04,#021306)
+    `;
+  }
+  return `
+    radial-gradient(1200px 600px at 20% 10%, #0e1a3a, transparent 60%),
+    radial-gradient(900px 500px at 80% 90%, #101f4a, transparent 55%),
+    linear-gradient(180deg,#050512,#070b1a)
+  `;
+}
 
 /* ========= IndexedDB for Vault + Background Image ========= */
 const idb = (() => {
@@ -577,66 +676,12 @@ const idb = (() => {
   return { put,get,getAll,del,clear };
 })();
 
-let vaultFiles = []; // loaded from IndexedDB
-
-/* ========= Background Settings ========= */
-const defaultBg = {
-  mode:"preset",
-  preset:"nebula",
-  solid:"#070b1a",
-  g1:"#0e1a3a",
-  g2:"#101f4a",
-  imageMode:"upload",   // upload | url
-  imageUrl:"",
-  overlay:true
-};
-
-let settings = loadLS(DB.settings, defaultBg);
-
-function presetCSS(name){
-  if(name==="midnight"){
-    return `
-      radial-gradient(1100px 540px at 20% 10%, #1b1f3a, transparent 60%),
-      radial-gradient(900px 520px at 80% 90%, #14162a, transparent 55%),
-      linear-gradient(180deg,#050512,#0b0f2a)
-    `;
-  }
-  if(name==="ocean"){
-    return `
-      radial-gradient(1100px 540px at 20% 10%, #063b52, transparent 60%),
-      radial-gradient(900px 520px at 80% 90%, #0a274e, transparent 55%),
-      linear-gradient(180deg,#021019,#041b2a)
-    `;
-  }
-  if(name==="sunrise"){
-    return `
-      radial-gradient(1100px 540px at 25% 15%, #6b2cff, transparent 55%),
-      radial-gradient(900px 520px at 75% 85%, #ff5c7a, transparent 55%),
-      linear-gradient(180deg,#120018,#150a2a)
-    `;
-  }
-  if(name==="matrix"){
-    // keep it dark + subtle green glow under the rain
-    return `
-      radial-gradient(1100px 540px at 30% 20%, #00ff6a22, transparent 60%),
-      radial-gradient(900px 520px at 70% 85%, #00ff6a18, transparent 55%),
-      linear-gradient(180deg,#020a04,#021306)
-    `;
-  }
-  return `
-    radial-gradient(1200px 600px at 20% 10%, #0e1a3a, transparent 60%),
-    radial-gradient(900px 500px at 80% 90%, #101f4a, transparent 55%),
-    linear-gradient(180deg,#050512,#070b1a)
-  `;
-}
-
 let bgObjectURL = null;
 
 async function applyBackground(){
   // stop matrix by default; start only if preset=matrix
   matrix.stop();
 
-  // cleanup old background image blob URL
   if(bgObjectURL){ URL.revokeObjectURL(bgObjectURL); bgObjectURL=null; }
 
   const mode = settings.mode;
@@ -645,7 +690,9 @@ async function applyBackground(){
     document.body.style.background = presetCSS(settings.preset);
     document.body.style.backgroundAttachment = "fixed";
 
-    if(settings.preset === "matrix") matrix.start();
+    if(settings.preset === "matrix"){
+      matrix.start({ fps: settings.matrixFps, color: settings.matrixColor });
+    }
     return;
   }
 
@@ -701,10 +748,30 @@ async function applyBackground(){
 
 function renderBgControls(){
   const mode = $('#bgMode').value;
+  const preset = $('#bgPreset').value;
   let html = "";
 
   if(mode==="preset"){
     html = `<div class="mini">Choose a preset above and click Apply.</div>`;
+
+    if(preset === "matrix"){
+      const fps = clamp(Number(settings.matrixFps || 30), 5, 60);
+      const col = settings.matrixColor || "#00ff6a";
+      html += `
+        <hr>
+        <div class="row">
+          <label class="mini">Matrix speed</label>
+          <input class="input" id="mxSpeed" type="range" min="5" max="60" value="${fps}" style="flex:1">
+          <span class="mini" id="mxSpeedVal">${fps} FPS</span>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <label class="mini">Matrix color</label>
+          <input class="input" id="mxColor" type="color" value="${col}">
+          <span class="mini" id="mxColorVal">${col}</span>
+        </div>
+        <div class="mini" style="margin-top:8px">Tip: After changing, click <b>Apply</b> to refresh the Matrix.</div>
+      `;
+    }
   }
 
   if(mode==="solid"){
@@ -757,6 +824,29 @@ function renderBgControls(){
 
   $('#bgControls').innerHTML = html;
 
+  // wire controls
+  if(mode==="preset" && preset==="matrix"){
+    const mxSpeed = $('#mxSpeed');
+    const mxSpeedVal = $('#mxSpeedVal');
+    const mxColor = $('#mxColor');
+    const mxColorVal = $('#mxColorVal');
+
+    if(mxSpeed){
+      mxSpeed.addEventListener('input', (e)=>{
+        const v = clamp(Number(e.target.value), 5, 60);
+        settings.matrixFps = v;
+        mxSpeedVal.textContent = `${v} FPS`;
+      });
+    }
+    if(mxColor){
+      mxColor.addEventListener('input', (e)=>{
+        const v = e.target.value;
+        settings.matrixColor = v;
+        mxColorVal.textContent = v;
+      });
+    }
+  }
+
   if(mode==="solid"){
     $('#solidPick').addEventListener('input', (e)=>{ settings.solid = e.target.value; });
   }
@@ -792,6 +882,14 @@ function renderBgControls(){
     }
   }
 }
+
+/* ========= Notes Storage ========= */
+let notes = loadLS(DB.notes, [
+  {id: crypto.randomUUID(), m:'Math', d:'12 May 2025', topic:'Number Systems', t:'Key points: primes, factors, divisibility rules.'}
+]);
+let extra = loadLS(DB.extra, []);
+
+let vaultFiles = [];
 
 /* ========= Notes Render ========= */
 function subjectList(){
@@ -911,7 +1009,7 @@ function deleteItem(kind, id){
 
 /* ========= Export/Import Notes (not Vault files) ========= */
 function exportNotes(){
-  const payload = { version:4, exportedAt:new Date().toISOString(), notes, extra, settings };
+  const payload = { version:5, exportedAt:new Date().toISOString(), notes, extra, settings };
   const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1114,7 +1212,6 @@ async function previewVaultFile(id){
     return;
   }
 
-  // Word/PPT: download only
   showModal(name, `
     <div class="mini">Preview not available for this file type in a static app.</div>
     <hr>
@@ -1196,47 +1293,8 @@ function runCmd(){
 }
 
 /* ========= Events ========= */
-// Notes buttons
-$('#btnAddNote').addEventListener('click', ()=>{
-  const editId = $('#btnAddNote').dataset.editId;
-  if(editId){
-    const idx = notes.findIndex(n=>n.id===editId);
-    if(idx>=0){
-      notes[idx].m = $('#newSubject').value;
-      notes[idx].topic = ($('#newTopic').value||'').trim();
-      notes[idx].t = ($('#newNote').value||'').trim() || notes[idx].t;
-      notes[idx].d = new Date().toLocaleDateString();
-      saveLS(DB.notes, notes);
-      delete $('#btnAddNote').dataset.editId;
-      $('#newTopic').value=''; $('#newNote').value='';
-      toast('Updated','Study note updated.');
-      render();
-      return;
-    }
-  }
-  addStudyNote();
-});
-$('#btnAddExtra').addEventListener('click', ()=>{
-  const editId = $('#btnAddExtra').dataset.editId;
-  if(editId){
-    const idx = extra.findIndex(n=>n.id===editId);
-    if(idx>=0){
-      extra[idx].t = ($('#extraInput').value||'').trim() || extra[idx].t;
-      extra[idx].d = new Date().toLocaleDateString();
-      saveLS(DB.extra, extra);
-      delete $('#btnAddExtra').dataset.editId;
-      $('#extraInput').value='';
-      toast('Updated','Extra note updated.');
-      render();
-      return;
-    }
-  }
-  addExtraNote();
-});
-
-$('#newNote').addEventListener('keydown', (e)=>{
-  if((e.ctrlKey || e.metaKey) && e.key==='Enter') addStudyNote();
-});
+$('#btnAddNote').addEventListener('click', addStudyNote);
+$('#btnAddExtra').addEventListener('click', addExtraNote);
 
 $('#btnClearExtra').addEventListener('click', ()=>{
   if(!extra.length){ toast('Nothing','No extra notes to clear.'); return; }
@@ -1248,7 +1306,6 @@ $('#btnClearExtra').addEventListener('click', ()=>{
   }
 });
 
-// Search/filter
 $('#search').addEventListener('input', render);
 $('#subjectFilter').addEventListener('change', render);
 $('#btnClearSearch').addEventListener('click', ()=>{
@@ -1257,15 +1314,12 @@ $('#btnClearSearch').addEventListener('click', ()=>{
   render();
 });
 
-// Export/import
 $('#btnExport').addEventListener('click', exportNotes);
 $('#btnImport').addEventListener('click', importNotes);
 
-// Vault
 $('#btnSaveFile').addEventListener('click', saveSelectedFile);
 $('#btnClearVault').addEventListener('click', clearVault);
 
-// Background settings
 $('#bgMode').addEventListener('change', (e)=>{
   settings.mode = e.target.value;
   saveLS(DB.settings, settings);
@@ -1274,29 +1328,12 @@ $('#bgMode').addEventListener('change', (e)=>{
 $('#bgPreset').addEventListener('change', (e)=>{
   settings.preset = e.target.value;
   saveLS(DB.settings, settings);
+  renderBgControls(); // IMPORTANT: show matrix controls immediately
 });
+
 $('#btnApplyBg').addEventListener('click', async ()=>{
   settings.mode = $('#bgMode').value;
   settings.preset = $('#bgPreset').value;
-
-  if(settings.mode==="solid"){
-    const solid = $('#solidPick')?.value;
-    if(solid) settings.solid = solid;
-  }
-  if(settings.mode==="gradient"){
-    const g1 = $('#g1Pick')?.value; const g2 = $('#g2Pick')?.value;
-    if(g1) settings.g1 = g1;
-    if(g2) settings.g2 = g2;
-  }
-  if(settings.mode==="image"){
-    const imgMode = $('#imgMode')?.value;
-    if(imgMode) settings.imageMode = imgMode;
-    const overlay = $('#imgOverlay')?.checked;
-    settings.overlay = overlay !== false;
-
-    const url = $('#bgImageUrl')?.value?.trim();
-    if(settings.imageMode==="url" && url) settings.imageUrl = url;
-  }
 
   saveLS(DB.settings, settings);
   await applyBackground();
@@ -1313,10 +1350,8 @@ $('#btnResetBg').addEventListener('click', async ()=>{
   toast("Reset","Background restored.");
 });
 
-// Command
 $('#cmdIn').addEventListener('keydown', (e)=>{ if(e.key==='Enter') runCmd(); });
 
-// Delegated actions (notes + vault)
 document.addEventListener('click', async (e)=>{
   const btn = e.target.closest('[data-act]');
   if(!btn) return;
@@ -1339,7 +1374,6 @@ document.addEventListener('click', async (e)=>{
   }
 });
 
-// Modal
 $('#modalClose').addEventListener('click', closeModal);
 $('#modal').addEventListener('click', (e)=>{ if(e.target.id==='modal') closeModal(); });
 
