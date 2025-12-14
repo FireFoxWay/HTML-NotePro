@@ -2,6 +2,7 @@
 
 A lightweight, futuristic notes app built using **HTML + CSS + JavaScript** (no frameworks).  
 Runs fully in the browser and saves data locally for quick access.
+THIS IS A BUILD IN PROGRESS.
 
 ## Features
 - Study notes with subjects
