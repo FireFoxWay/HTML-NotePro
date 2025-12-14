@@ -1507,6 +1507,130 @@ try{
   if(savedR) chatRoom.value = savedR;
 }catch{}
 </script>
+<!-- ========= Firebase Multi-Chat (Firestore) ========= -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, serverTimestamp,
+  query, orderBy, limit, onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
+/* ✅ Your Firebase config */
+const firebaseConfig = {
+  apiKey: "AIzaSyB7AhWd_9tt33c2mvGBMMaFFzBFjxk8svc",
+  authDomain: "notepro-3194d.firebaseapp.com",
+  projectId: "notepro-3194d",
+  storageBucket: "notepro-3194d.firebasestorage.app",
+  messagingSenderId: "748657045336",
+  appId: "1:748657045336:web:1a10be8e3aec289933ff2d"
+};
+
+/* Initialize Firebase + Firestore */
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+/* Elements (must exist in your HTML) */
+const chatStatus  = document.getElementById("chatStatus");
+const chatLog     = document.getElementById("chatLog");
+const chatName    = document.getElementById("chatName");
+const chatRoom    = document.getElementById("chatRoom");
+const chatConnect = document.getElementById("chatConnect");
+const chatMsg     = document.getElementById("chatMsg");
+const chatSend    = document.getElementById("chatSend");
+
+let unsub = null;
+let connectedRoom = null;
+
+function safeText(s){ return (s ?? "").toString().slice(0, 500); }
+function showStatus(t){ if(chatStatus) chatStatus.textContent = t; }
+function clearChat(){ if(chatLog) chatLog.innerHTML = ""; }
+
+function addLine(line){
+  if(!chatLog) return;
+  const div = document.createElement("div");
+  div.innerHTML = line;
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function esc(s){
+  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+}
+
+/* Connect to a room + listen live */
+chatConnect?.addEventListener("click", async ()=>{
+  const name = safeText(chatName?.value.trim()) || "Anonymous";
+  const room = safeText(chatRoom?.value.trim()).replace(/\s+/g,"-").toLowerCase();
+
+  if(!room){
+    showStatus("Enter a room code first.");
+    return;
+  }
+
+  // stop old room listener
+  if(unsub){ unsub(); unsub = null; }
+
+  connectedRoom = room;
+  clearChat();
+  showStatus(`Connected to room: ${room}`);
+
+  const msgsRef = collection(db, "rooms", room, "messages");
+  const q = query(msgsRef, orderBy("createdAt","asc"), limit(200));
+
+  unsub = onSnapshot(q, (snap)=>{
+    clearChat();
+    snap.forEach(doc=>{
+      const m = doc.data() || {};
+      const who  = safeText(m.name || "Anon");
+      const text = safeText(m.text || "");
+      const time = m.createdAt?.toDate
+        ? m.createdAt.toDate().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+        : "";
+      addLine(`<span style="color:rgba(255,255,255,.65)">[${esc(time)}]</span> <b>${esc(who)}:</b> ${esc(text)}`);
+    });
+  }, (err)=>{
+    showStatus("Chat error: " + err.message);
+  });
+
+  // remember name/room in browser
+  try{
+    localStorage.setItem("memoria_chat_name", name);
+    localStorage.setItem("memoria_chat_room", room);
+  }catch{}
+});
+
+/* Send message */
+chatSend?.addEventListener("click", async ()=>{
+  const name = safeText(chatName?.value.trim()) || "Anonymous";
+  const text = safeText(chatMsg?.value.trim());
+
+  if(!connectedRoom){
+    showStatus("Connect to a room first.");
+    return;
+  }
+  if(!text) return;
+
+  chatMsg.value = "";
+
+  try{
+    const msgsRef = collection(db, "rooms", connectedRoom, "messages");
+    await addDoc(msgsRef, { name, text, createdAt: serverTimestamp() });
+  }catch(e){
+    showStatus("Send failed: " + e.message);
+  }
+});
+
+chatMsg?.addEventListener("keydown", (e)=>{
+  if(e.key === "Enter") chatSend?.click();
+});
+
+/* Load saved values */
+try{
+  const savedN = localStorage.getItem("memoria_chat_name");
+  const savedR = localStorage.getItem("memoria_chat_room");
+  if(savedN && chatName) chatName.value = savedN;
+  if(savedR && chatRoom) chatRoom.value = savedR;
+}catch{}
+</script>
 </body>
 </html>
