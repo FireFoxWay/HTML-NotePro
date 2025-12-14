@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Memoria NotePro — Vault + Background Settings + Matrix + Multi Chat</title>
+<title>Memoria NotePro</title>
 
 <style>
 :root{
@@ -12,9 +12,8 @@
   --panel:rgba(15,18,32,.92);
   --border:rgba(255,255,255,.08);
   --neon:#8b5cf6;
-  --neon2:#22c55e;
+  --good:#22c55e;
   --danger:#ef4444;
-  --warn:#f59e0b;
   --shadow:0 0 0 1px rgba(255,255,255,.05),0 14px 50px rgba(0,0,0,.65);
   font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
 }
@@ -97,12 +96,36 @@ textarea{resize:none;width:100%}
   border-radius:10px;
   cursor:pointer;
   transition:.15s transform ease,.15s filter ease,.15s background ease;
+  user-select:none;
 }
 .btn:hover{filter:brightness(1.1)}
 .btn:active{transform:translateY(1px)}
 .btn.green{background:rgba(34,197,94,.20)}
 .btn.warn{background:rgba(245,158,11,.18)}
 .btn.danger{background:rgba(239,68,68,.16)}
+
+.chatBubbleBtn{
+  position:relative;
+  padding-right:34px; /* space for badge */
+}
+.chatBubble{
+  position:absolute;
+  top:-7px;
+  right:-7px;
+  min-width:20px;
+  height:20px;
+  padding:0 6px;
+  border-radius:999px;
+  background:rgba(239,68,68,.95);
+  border:1px solid rgba(255,255,255,.18);
+  color:white;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  font-size:12px;
+  font-weight:800;
+  box-shadow:0 10px 25px rgba(0,0,0,.55);
+}
 
 .kpi{display:flex;gap:8px;flex-wrap:wrap}
 .kbox{
@@ -190,11 +213,18 @@ textarea{resize:none;width:100%}
     <div class="title">
       <div>
         <h1>Memoria</h1>
-        <div class="mini">NotePro • Vault + Background Settings + Matrix + Multi Chat</div>
+        <div class="mini">NotePro • Vault + Background + Matrix + Multi Chat</div>
       </div>
+
       <div class="row">
         <span class="badge" id="time">--:--</span>
         <span class="badge">BLOOM</span>
+
+        <!-- ✅ CHAT BUBBLE BUTTON (TOP) -->
+        <button class="btn chatBubbleBtn" id="chatBubbleBtn" title="Open chat">
+          💬 Chat
+          <span class="chatBubble" id="chatBubble">0</span>
+        </button>
       </div>
     </div>
 
@@ -374,10 +404,6 @@ textarea{resize:none;width:100%}
     </div>
 
     <div class="mini" style="margin-top:8px" id="chatStatus">Not connected</div>
-
-    <div class="mini" style="margin-top:10px">
-      If chat doesn’t work: you must add Firebase config + enable Firestore.
-    </div>
   </section>
 
   <!-- Command -->
@@ -458,6 +484,8 @@ function toast(title,msg){
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>el.classList.remove('show'),1600);
 }
+window.toast = toast; // ✅ allow Firebase module to call it
+
 function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
 function hexToRgb(hex){
   const h = (hex||"").replace("#","").trim();
@@ -577,7 +605,7 @@ const matrix = (() => {
 })();
 
 /* ========= localStorage ========= */
-const DB = { notes:'db_notes_v5', extra:'db_extra_v5', settings:'db_settings_v5' };
+const DB = { notes:'db_notes_v6', extra:'db_extra_v6', settings:'db_settings_v6' };
 const loadLS=(k,f)=>{ try{ return JSON.parse(localStorage.getItem(k)) ?? f }catch{ return f } };
 const saveLS=(k,v)=>localStorage.setItem(k, JSON.stringify(v));
 
@@ -949,7 +977,6 @@ function renderVault(){
     return;
   }
   list.innerHTML = vaultFiles.map(f=>{
-    const icon = "📁";
     const when = new Date(f.savedAt||Date.now()).toLocaleString();
     const size = bytesToSize(f.size||0);
     const tag = f.tag || "General";
@@ -962,7 +989,7 @@ function renderVault(){
           <button class="iconBtn" data-act="delFile" title="Delete">🗑</button>
         </div>
         <div class="meta">
-          <span class="pill">${icon} ${escapeHTML(tag)}</span>
+          <span class="pill">📁 ${escapeHTML(tag)}</span>
           <span class="mini">${escapeHTML(when)} • ${escapeHTML(size)}</span>
         </div>
         <div class="body"><b>${escapeHTML(title)}</b><div class="mini">${escapeHTML(f.name||"")}</div></div>
@@ -1015,25 +1042,6 @@ function addExtraNote(){
   toast('Saved','Extra note added.');
   render();
 }
-function editItem(kind, id){
-  if(kind==='study'){
-    const idx=notes.findIndex(n=>n.id===id); if(idx<0) return;
-    const n=notes[idx];
-    $('#newSubject').value=n.m;
-    $('#newTopic').value=n.topic||'';
-    $('#newNote').value=n.t;
-    $('#newNote').focus();
-    $('#btnAddNote').dataset.editId=id;
-    toast('Edit Mode','Update and press "Save Study Note".');
-  } else if(kind==='extra'){
-    const idx=extra.findIndex(n=>n.id===id); if(idx<0) return;
-    const n=extra[idx];
-    $('#extraInput').value=n.t;
-    $('#extraInput').focus();
-    $('#btnAddExtra').dataset.editId=id;
-    toast('Edit Mode','Update and press "Save Extra Note".');
-  }
-}
 function deleteItem(kind, id){
   if(kind==='study'){
     notes = notes.filter(n=>n.id!==id);
@@ -1049,7 +1057,7 @@ function deleteItem(kind, id){
 
 /* ========= Export/Import ========= */
 function exportNotes(){
-  const payload = { version:5, exportedAt:new Date().toISOString(), notes, extra, settings };
+  const payload = { version:6, exportedAt:new Date().toISOString(), notes, extra, settings };
   const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1149,8 +1157,6 @@ function showModal(title, bodyHTML){
   $('#modal').classList.add('show');
 }
 function closeModal(){
-  const body = $('#modalBody');
-  body.querySelectorAll('video,audio').forEach(el=>{ try{ el.pause?.(); }catch{} });
   if(currentPreviewUrl){
     try{ URL.revokeObjectURL(currentPreviewUrl); }catch{}
     currentPreviewUrl = null;
@@ -1192,9 +1198,9 @@ async function previewVaultFile(id){
     return;
   }
   showModal(name, `
-    <div class="mini">Preview not available for this file type here.</div>
+    <div class="mini">Preview not available here. Use Download.</div>
     <hr>
-    <button class="btn green" id="dlFromModal">Download to Open</button>
+    <button class="btn green" id="dlFromModal">Download</button>
   `);
   setTimeout(()=>{
     const btn = document.getElementById('dlFromModal');
@@ -1342,7 +1348,6 @@ document.addEventListener('click', async (e)=>{
   const act = btn.getAttribute('data-act');
 
   if(kind==='study' || kind==='extra'){
-    if(act==='edit') editItem(kind, id);
     if(act==='del') deleteItem(kind, id);
   }
 
@@ -1355,6 +1360,14 @@ document.addEventListener('click', async (e)=>{
 
 $('#modalClose').addEventListener('click', closeModal);
 $('#modal').addEventListener('click', (e)=>{ if(e.target.id==='modal') closeModal(); });
+
+/* ✅ Chat bubble button scroll + clear (actual clear done by Firebase module too) */
+$('#chatBubbleBtn').addEventListener('click', ()=>{
+  $('#chatPanel').scrollIntoView({behavior:'smooth'});
+  // Let Firebase module clear unread too, but we also hide quickly here:
+  const b = $('#chatBubble');
+  if(b){ b.style.display="none"; b.textContent="0"; }
+});
 
 /* ========= Init ========= */
 (async function init(){
@@ -1369,145 +1382,7 @@ $('#modal').addEventListener('click', (e)=>{ if(e.target.id==='modal') closeModa
 })();
 </script>
 
-<!-- ========= Firebase Multi-Chat (Firestore) ========= -->
-<script type="module">
-/*
-  ✅ HOW TO ENABLE CHAT (FREE)
-  1) Go to https://console.firebase.google.com
-  2) Create Project (free)
-  3) Build -> Firestore Database -> Create database (Start in test mode for now)
-  4) Project Settings -> General -> Your apps -> Web app -> Copy firebaseConfig
-  5) Paste it below (replace the object)
-
-  IMPORTANT: After testing, set Firestore rules to prevent abuse.
-*/
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import {
-  getFirestore, collection, addDoc, serverTimestamp,
-  query, orderBy, limit, onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-
-/* 🔥 PASTE YOUR FIREBASE CONFIG HERE */
-const firebaseConfig = {
-  // apiKey: "....",
-  // authDomain: "....",
-  // projectId: "....",
-  // storageBucket: "....",
-  // messagingSenderId: "....",
-  // appId: "...."
-};
-
-const chatStatus = document.getElementById('chatStatus');
-const chatLog = document.getElementById('chatLog');
-const chatName = document.getElementById('chatName');
-const chatRoom = document.getElementById('chatRoom');
-const chatConnect = document.getElementById('chatConnect');
-const chatMsg = document.getElementById('chatMsg');
-const chatSend = document.getElementById('chatSend');
-
-let db = null;
-let unsub = null;
-let connectedRoom = null;
-
-function safeText(s){ return (s ?? "").toString().slice(0, 500); }
-
-function addLine(line){
-  const div = document.createElement('div');
-  div.innerHTML = line;
-  chatLog.appendChild(div);
-  chatLog.scrollTop = chatLog.scrollHeight;
-}
-
-function clearChat(){
-  chatLog.innerHTML = "";
-}
-
-function showStatus(t){
-  chatStatus.textContent = t;
-}
-
-function isConfigValid(cfg){
-  return cfg && cfg.apiKey && cfg.projectId && cfg.appId;
-}
-
-chatConnect.addEventListener('click', async ()=>{
-  const name = safeText(chatName.value.trim()) || "Anonymous";
-  const room = safeText(chatRoom.value.trim()).replace(/\s+/g,'-').toLowerCase();
-  if(!room){
-    showStatus("Enter a room code first.");
-    return;
-  }
-  if(!isConfigValid(firebaseConfig)){
-    showStatus("Firebase config missing. Paste firebaseConfig in code.");
-    return;
-  }
-
-  if(!db){
-    const app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
-  }
-
-  // switch rooms: stop old listener
-  if(unsub){ unsub(); unsub = null; }
-  connectedRoom = room;
-
-  clearChat();
-  showStatus(`Connected to room: ${room}`);
-
-  const msgsRef = collection(db, "rooms", room, "messages");
-  const q = query(msgsRef, orderBy("createdAt","asc"), limit(200));
-
-  unsub = onSnapshot(q, (snap)=>{
-    clearChat();
-    snap.forEach(doc=>{
-      const m = doc.data() || {};
-      const who = safeText(m.name || "Anon");
-      const text = safeText(m.text || "");
-      const time = m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : "";
-      addLine(`<span style="color:rgba(255,255,255,.65)">[${time}]</span> <b>${who}:</b> ${text.replaceAll('<','&lt;').replaceAll('>','&gt;')}`);
-    });
-  }, (err)=>{
-    showStatus("Chat error: " + err.message);
-  });
-
-  // store name locally
-  try{ localStorage.setItem("memoria_chat_name", name); localStorage.setItem("memoria_chat_room", room); }catch{}
-});
-
-chatSend.addEventListener('click', async ()=>{
-  const name = safeText(chatName.value.trim()) || "Anonymous";
-  const room = connectedRoom;
-  const text = safeText(chatMsg.value.trim());
-  if(!db || !room){
-    showStatus("Connect to a room first.");
-    return;
-  }
-  if(!text) return;
-
-  chatMsg.value = "";
-
-  try{
-    const msgsRef = collection(db, "rooms", room, "messages");
-    await addDoc(msgsRef, { name, text, createdAt: serverTimestamp() });
-  }catch(e){
-    showStatus("Send failed: " + e.message);
-  }
-});
-
-chatMsg.addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter') chatSend.click();
-});
-
-// load saved name/room
-try{
-  const savedN = localStorage.getItem("memoria_chat_name");
-  const savedR = localStorage.getItem("memoria_chat_room");
-  if(savedN) chatName.value = savedN;
-  if(savedR) chatRoom.value = savedR;
-}catch{}
-</script>
-<!-- ========= Firebase Multi-Chat (Firestore) ========= -->
+<!-- ========= Firebase Multi-Chat (Firestore) + TOP BUBBLE NOTIFY ========= -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
@@ -1525,85 +1400,164 @@ const firebaseConfig = {
   appId: "1:748657045336:web:1a10be8e3aec289933ff2d"
 };
 
-/* Initialize Firebase + Firestore */
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* Elements (must exist in your HTML) */
-const chatStatus  = document.getElementById("chatStatus");
-const chatLog     = document.getElementById("chatLog");
-const chatName    = document.getElementById("chatName");
-const chatRoom    = document.getElementById("chatRoom");
-const chatConnect = document.getElementById("chatConnect");
-const chatMsg     = document.getElementById("chatMsg");
-const chatSend    = document.getElementById("chatSend");
+/* Elements */
+const chatStatus  = document.getElementById('chatStatus');
+const chatLog     = document.getElementById('chatLog');
+const chatName    = document.getElementById('chatName');
+const chatRoom    = document.getElementById('chatRoom');
+const chatConnect = document.getElementById('chatConnect');
+const chatMsg     = document.getElementById('chatMsg');
+const chatSend    = document.getElementById('chatSend');
+
+/* Top bubble */
+const bubble = document.getElementById('chatBubble');
+const bubbleBtn = document.getElementById('chatBubbleBtn');
+const chatPanel = document.getElementById('chatPanel');
 
 let unsub = null;
 let connectedRoom = null;
 
+/* Unread state */
+let unread = 0;
+let lastDocId = null;
+let chatVisible = false;
+
 function safeText(s){ return (s ?? "").toString().slice(0, 500); }
 function showStatus(t){ if(chatStatus) chatStatus.textContent = t; }
 function clearChat(){ if(chatLog) chatLog.innerHTML = ""; }
+function esc(s){
+  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+}
+
+function setBubble(n){
+  unread = n;
+  if(!bubble) return;
+  if(unread > 0){
+    bubble.style.display = "inline-flex";
+    bubble.textContent = String(unread);
+    // Optional: change tab title
+    document.title = `(${unread}) Memoria NotePro`;
+  }else{
+    bubble.style.display = "none";
+    bubble.textContent = "0";
+    document.title = "Memoria NotePro";
+  }
+}
+
+function clearUnread(){
+  setBubble(0);
+}
 
 function addLine(line){
   if(!chatLog) return;
-  const div = document.createElement("div");
+  const div = document.createElement('div');
   div.innerHTML = line;
   chatLog.appendChild(div);
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-function esc(s){
-  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+/* Detect if chat panel is on screen */
+if(chatPanel){
+  const obs = new IntersectionObserver((entries)=>{
+    chatVisible = entries?.[0]?.isIntersecting === true;
+    // if user opens chat (visible + focused), clear unread
+    if(chatVisible && document.hasFocus()) clearUnread();
+  }, { threshold: 0.35 });
+  obs.observe(chatPanel);
 }
+window.addEventListener("focus", ()=>{
+  if(chatVisible) clearUnread();
+});
+bubbleBtn?.addEventListener("click", ()=>{
+  clearUnread();
+});
 
-/* Connect to a room + listen live */
-chatConnect?.addEventListener("click", async ()=>{
+/* Connect room */
+chatConnect?.addEventListener('click', async ()=>{
   const name = safeText(chatName?.value.trim()) || "Anonymous";
-  const room = safeText(chatRoom?.value.trim()).replace(/\s+/g,"-").toLowerCase();
-
+  const room = safeText(chatRoom?.value.trim()).replace(/\s+/g,'-').toLowerCase();
   if(!room){
     showStatus("Enter a room code first.");
     return;
   }
 
-  // stop old room listener
+  // stop old listener
   if(unsub){ unsub(); unsub = null; }
-
   connectedRoom = room;
+  lastDocId = null;
   clearChat();
+  clearUnread();
   showStatus(`Connected to room: ${room}`);
 
   const msgsRef = collection(db, "rooms", room, "messages");
   const q = query(msgsRef, orderBy("createdAt","asc"), limit(200));
 
   unsub = onSnapshot(q, (snap)=>{
+    // Determine last message + if it's new
+    let newLastDocId = null;
+    let lastMsg = null;
+
+    const docs = [];
+    snap.forEach(d=>{
+      docs.push({ id: d.id, data: d.data() || {} });
+    });
+
+    if(docs.length){
+      newLastDocId = docs[docs.length - 1].id;
+      lastMsg = docs[docs.length - 1].data;
+    }
+
+    // Render full chat
     clearChat();
-    snap.forEach(doc=>{
-      const m = doc.data() || {};
+    for(const item of docs){
+      const m = item.data || {};
       const who  = safeText(m.name || "Anon");
       const text = safeText(m.text || "");
       const time = m.createdAt?.toDate
-        ? m.createdAt.toDate().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+        ? m.createdAt.toDate().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
         : "";
       addLine(`<span style="color:rgba(255,255,255,.65)">[${esc(time)}]</span> <b>${esc(who)}:</b> ${esc(text)}`);
-    });
+    }
+
+    // Bubble logic: if lastDocId changes, count it as new message
+    if(lastDocId && newLastDocId && newLastDocId !== lastDocId){
+      const myName = safeText(chatName?.value.trim()) || "Anonymous";
+      const sender = safeText(lastMsg?.name || "");
+
+      const isFromOther = sender.toLowerCase() !== myName.toLowerCase();
+      const shouldNotify = isFromOther && !(chatVisible && document.hasFocus());
+
+      if(shouldNotify){
+        setBubble(unread + 1);
+        // optional toast
+        window.toast?.("New message", `From ${sender || "Someone"}`);
+      }
+    }
+
+    // Update lastDocId after processing
+    if(newLastDocId) lastDocId = newLastDocId;
+
+    // If user is viewing chat, keep unread at 0
+    if(chatVisible && document.hasFocus()) clearUnread();
+
   }, (err)=>{
     showStatus("Chat error: " + err.message);
   });
 
-  // remember name/room in browser
+  // Save name/room
   try{
     localStorage.setItem("memoria_chat_name", name);
     localStorage.setItem("memoria_chat_room", room);
   }catch{}
 });
 
-/* Send message */
-chatSend?.addEventListener("click", async ()=>{
+/* Send */
+chatSend?.addEventListener('click', async ()=>{
   const name = safeText(chatName?.value.trim()) || "Anonymous";
   const text = safeText(chatMsg?.value.trim());
-
   if(!connectedRoom){
     showStatus("Connect to a room first.");
     return;
@@ -1611,7 +1565,6 @@ chatSend?.addEventListener("click", async ()=>{
   if(!text) return;
 
   chatMsg.value = "";
-
   try{
     const msgsRef = collection(db, "rooms", connectedRoom, "messages");
     await addDoc(msgsRef, { name, text, createdAt: serverTimestamp() });
@@ -1620,11 +1573,11 @@ chatSend?.addEventListener("click", async ()=>{
   }
 });
 
-chatMsg?.addEventListener("keydown", (e)=>{
-  if(e.key === "Enter") chatSend?.click();
+chatMsg?.addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') chatSend?.click();
 });
 
-/* Load saved values */
+/* Load saved */
 try{
   const savedN = localStorage.getItem("memoria_chat_name");
   const savedR = localStorage.getItem("memoria_chat_room");
@@ -1632,5 +1585,6 @@ try{
   if(savedR && chatRoom) chatRoom.value = savedR;
 }catch{}
 </script>
+
 </body>
 </html>
