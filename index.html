@@ -17,7 +17,6 @@
   --shadow:0 0 0 1px rgba(255,255,255,.05),0 14px 50px rgba(0,0,0,.65);
   font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
 }
-
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;color:var(--text)}
 body{
@@ -28,19 +27,10 @@ body{
   background-attachment: fixed;
 }
 
-#matrixCanvas{
-  position:fixed;
-  inset:0;
-  width:100vw;
-  height:100vh;
-  z-index:0;
-  pointer-events:none;
-  display:none;
-}
+#matrixCanvas{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;display:none}
 
 .shell{
-  position:relative;
-  z-index:1;
+  position:relative;z-index:1;
   padding:16px;
   display:grid;
   grid-template-columns:2fr 1fr;
@@ -48,7 +38,7 @@ body{
   max-width:1250px;
   margin:0 auto;
 }
-@media (max-width: 980px){ .shell{grid-template-columns:1fr} }
+@media (max-width:980px){ .shell{grid-template-columns:1fr} }
 
 .panel{
   background:var(--panel);
@@ -104,26 +94,16 @@ textarea{resize:none;width:100%}
 .btn.warn{background:rgba(245,158,11,.18)}
 .btn.danger{background:rgba(239,68,68,.16)}
 
-.chatBubbleBtn{
-  position:relative;
-  padding-right:34px; /* space for badge */
-}
+.chatBubbleBtn{position:relative;padding-right:34px}
 .chatBubble{
-  position:absolute;
-  top:-7px;
-  right:-7px;
-  min-width:20px;
-  height:20px;
-  padding:0 6px;
-  border-radius:999px;
+  position:absolute;top:-7px;right:-7px;
+  min-width:20px;height:20px;padding:0 6px;border-radius:999px;
   background:rgba(239,68,68,.95);
   border:1px solid rgba(255,255,255,.18);
   color:white;
   display:none;
-  align-items:center;
-  justify-content:center;
-  font-size:12px;
-  font-weight:800;
+  align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;
   box-shadow:0 10px 25px rgba(0,0,0,.55);
 }
 
@@ -200,6 +180,28 @@ textarea{resize:none;width:100%}
 .modalHead{display:flex;align-items:center;gap:10px}
 .modalHead h3{margin:0;font-size:16px}
 .modalBody{margin-top:10px}
+
+/* ✅ macOS-style in-page notification (top-right) */
+.macNotify{
+  position:fixed;
+  top:18px;
+  right:18px;
+  width:min(360px, calc(100vw - 36px));
+  background:rgba(25,28,45,.92);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 18px 60px rgba(0,0,0,.7);
+  border-radius:16px;
+  padding:12px 14px;
+  z-index:10000;
+  backdrop-filter: blur(10px);
+  transform: translateX(120%);
+  opacity:0;
+  transition: transform .28s ease, opacity .28s ease;
+  pointer-events:none;
+}
+.macNotify.show{transform:translateX(0);opacity:1}
+.mnTitle{font-weight:800;font-size:13px;margin-bottom:4px}
+.mnBody{font-size:12px;color:rgba(255,255,255,.75);line-height:1.35}
 </style>
 </head>
 
@@ -208,7 +210,6 @@ textarea{resize:none;width:100%}
 
 <div class="shell">
 
-  <!-- Header -->
   <section class="panel">
     <div class="title">
       <div>
@@ -220,7 +221,6 @@ textarea{resize:none;width:100%}
         <span class="badge" id="time">--:--</span>
         <span class="badge">BLOOM</span>
 
-        <!-- ✅ CHAT BUBBLE BUTTON (TOP) -->
         <button class="btn chatBubbleBtn" id="chatBubbleBtn" title="Open chat">
           💬 Chat
           <span class="chatBubble" id="chatBubble">0</span>
@@ -255,21 +255,15 @@ textarea{resize:none;width:100%}
     </div>
   </section>
 
-  <!-- Study Notes -->
   <section class="panel" id="studynotes">
     <div class="title">
       <h2>StudyNotes</h2>
-      <div class="mini">Add + search + edit</div>
+      <div class="mini">Add + search</div>
     </div>
 
     <div class="row">
       <select id="newSubject">
-        <option>Math</option>
-        <option>Science</option>
-        <option>Social</option>
-        <option>English</option>
-        <option>AI</option>
-        <option>Other</option>
+        <option>Math</option><option>Science</option><option>Social</option><option>English</option><option>AI</option><option>Other</option>
       </select>
       <input class="input" id="newTopic" placeholder="Topic (optional) e.g., Algebra" />
     </div>
@@ -287,11 +281,10 @@ textarea{resize:none;width:100%}
     <div class="notes" id="notes"></div>
   </section>
 
-  <!-- Extra Notes -->
   <section class="panel" id="extraPanel">
     <div class="title">
       <h2>Extra Notes</h2>
-      <div class="mini">Permanent + edit</div>
+      <div class="mini">Permanent</div>
     </div>
 
     <textarea id="extraInput" rows="3" placeholder="Write extra note here..."></textarea>
@@ -305,7 +298,6 @@ textarea{resize:none;width:100%}
     <div class="notes" id="extra"></div>
   </section>
 
-  <!-- File Vault -->
   <section class="panel" id="vaultPanel">
     <div class="title">
       <h2>File Vault</h2>
@@ -337,7 +329,6 @@ textarea{resize:none;width:100%}
     <div class="notes" id="vaultList"></div>
   </section>
 
-  <!-- Background Settings -->
   <section class="panel" id="bgPanel">
     <div class="title">
       <h2>Background Settings</h2>
@@ -368,11 +359,10 @@ textarea{resize:none;width:100%}
     <div id="bgControls"></div>
 
     <div class="mini" style="margin-top:8px">
-      Saved locally on this browser. If you clear site data, settings reset.
+      Saved locally on this browser.
     </div>
   </section>
 
-  <!-- Live Chat -->
   <section class="panel" id="chatPanel">
     <div class="title">
       <h2>Live Chat</h2>
@@ -386,7 +376,7 @@ textarea{resize:none;width:100%}
     </div>
 
     <div class="mini" style="margin-top:8px">
-      Share the same Room code with friends to chat together.
+      Share the same Room code with friends.
     </div>
 
     <hr>
@@ -406,7 +396,6 @@ textarea{resize:none;width:100%}
     <div class="mini" style="margin-top:8px" id="chatStatus">Not connected</div>
   </section>
 
-  <!-- Command -->
   <section class="panel">
     <div class="title">
       <h2>Command</h2>
@@ -422,7 +411,6 @@ textarea{resize:none;width:100%}
     </div>
   </section>
 
-  <!-- Static -->
   <section class="panel">
     <div class="title">
       <h2>NT Support</h2>
@@ -441,7 +429,12 @@ textarea{resize:none;width:100%}
   </div>
 </div>
 
-<!-- Preview Modal -->
+<!-- ✅ macOS-style top-right notification -->
+<div id="macNotify" class="macNotify">
+  <div class="mnTitle" id="mnTitle">New message</div>
+  <div class="mnBody" id="mnBody">...</div>
+</div>
+
 <div class="modal" id="modal">
   <div class="modalCard">
     <div class="modalHead">
@@ -484,7 +477,24 @@ function toast(title,msg){
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>el.classList.remove('show'),1600);
 }
-window.toast = toast; // ✅ allow Firebase module to call it
+window.toast = toast;
+
+/* ✅ macOS-style popup (top-right) */
+let mnTimer=null;
+function macNotify(title, body){
+  const box = document.getElementById("macNotify");
+  const t = document.getElementById("mnTitle");
+  const b = document.getElementById("mnBody");
+  if(!box || !t || !b) return;
+
+  t.textContent = title || "Notification";
+  b.textContent = body || "";
+  box.classList.add("show");
+
+  clearTimeout(mnTimer);
+  mnTimer = setTimeout(()=>box.classList.remove("show"), 2600);
+}
+window.macNotify = macNotify;
 
 function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
 function hexToRgb(hex){
@@ -680,7 +690,6 @@ const idb = (() => {
       req.onerror=()=>reject(req.error);
     });
   }
-
   async function put(store, val){
     const d=await open();
     return new Promise((res,rej)=>{
@@ -726,7 +735,6 @@ const idb = (() => {
       tx.onerror=()=>rej(tx.error);
     });
   }
-
   return { put,get,getAll,del,clear };
 })();
 
@@ -746,13 +754,11 @@ async function applyBackground(){
     }
     return;
   }
-
   if(mode==="solid"){
     document.body.style.background = settings.solid;
     document.body.style.backgroundAttachment = "fixed";
     return;
   }
-
   if(mode==="gradient"){
     const g1 = settings.g1 || "#0e1a3a";
     const g2 = settings.g2 || "#101f4a";
@@ -764,7 +770,6 @@ async function applyBackground(){
     document.body.style.backgroundAttachment = "fixed";
     return;
   }
-
   if(mode==="image"){
     const overlay = settings.overlay !== false;
     const asset = await idb.get("assets","bgImage");
@@ -798,13 +803,12 @@ async function applyBackground(){
 }
 
 function renderBgControls(){
-  const mode = $('#bgMode').value;
-  const preset = $('#bgPreset').value;
+  const mode = document.getElementById("bgMode").value;
+  const preset = document.getElementById("bgPreset").value;
   let html = "";
 
   if(mode==="preset"){
     html = `<div class="mini">Choose a preset above and click Apply.</div>`;
-
     if(preset === "matrix"){
       const fps = clamp(Number(settings.matrixFps || 30), 5, 60);
       const col = settings.matrixColor || "#00ff6a";
@@ -830,8 +834,7 @@ function renderBgControls(){
       <div class="row">
         <label class="mini">Color</label>
         <input class="input" type="color" id="solidPick" value="${settings.solid || "#070b1a"}" />
-      </div>
-    `;
+      </div>`;
   }
 
   if(mode==="gradient"){
@@ -842,8 +845,7 @@ function renderBgControls(){
         <label class="mini">Glow 2</label>
         <input class="input" type="color" id="g2Pick" value="${settings.g2 || "#101f4a"}" />
       </div>
-      <div class="mini" style="margin-top:8px">Tip: darker colors look cleaner.</div>
-    `;
+      <div class="mini" style="margin-top:8px">Tip: darker colors look cleaner.</div>`;
   }
 
   if(mode==="image"){
@@ -869,67 +871,53 @@ function renderBgControls(){
                  value="${settings.imageUrl || ""}" />
           <div class="mini" style="margin-top:6px">URL must allow hotlinking.</div>
         </div>
-      </div>
-    `;
+      </div>`;
   }
 
-  $('#bgControls').innerHTML = html;
+  document.getElementById("bgControls").innerHTML = html;
 
   if(mode==="preset" && preset==="matrix"){
-    const mxSpeed = $('#mxSpeed');
-    const mxSpeedVal = $('#mxSpeedVal');
-    const mxColor = $('#mxColor');
-    const mxColorVal = $('#mxColorVal');
+    const mxSpeed = document.getElementById("mxSpeed");
+    const mxSpeedVal = document.getElementById("mxSpeedVal");
+    const mxColor = document.getElementById("mxColor");
+    const mxColorVal = document.getElementById("mxColorVal");
 
-    if(mxSpeed){
-      mxSpeed.addEventListener('input', (e)=>{
-        const v = clamp(Number(e.target.value), 5, 60);
-        settings.matrixFps = v;
-        mxSpeedVal.textContent = `${v} FPS`;
-      });
-    }
-    if(mxColor){
-      mxColor.addEventListener('input', (e)=>{
-        const v = e.target.value;
-        settings.matrixColor = v;
-        mxColorVal.textContent = v;
-      });
-    }
+    mxSpeed?.addEventListener("input",(e)=>{
+      const v = clamp(Number(e.target.value), 5, 60);
+      settings.matrixFps = v;
+      mxSpeedVal.textContent = `${v} FPS`;
+    });
+    mxColor?.addEventListener("input",(e)=>{
+      settings.matrixColor = e.target.value;
+      mxColorVal.textContent = e.target.value;
+    });
   }
 
   if(mode==="solid"){
-    $('#solidPick').addEventListener('input', (e)=>{ settings.solid = e.target.value; });
+    document.getElementById("solidPick")?.addEventListener("input",(e)=> settings.solid = e.target.value);
   }
   if(mode==="gradient"){
-    $('#g1Pick').addEventListener('input', (e)=>{ settings.g1 = e.target.value; });
-    $('#g2Pick').addEventListener('input', (e)=>{ settings.g2 = e.target.value; });
+    document.getElementById("g1Pick")?.addEventListener("input",(e)=> settings.g1 = e.target.value);
+    document.getElementById("g2Pick")?.addEventListener("input",(e)=> settings.g2 = e.target.value);
   }
   if(mode==="image"){
-    $('#imgMode')?.addEventListener('change', (e)=>{
+    document.getElementById("imgMode")?.addEventListener("change",(e)=>{
       settings.imageMode = e.target.value;
       saveLS(DB.settings, settings);
       renderBgControls();
     });
-    $('#imgOverlay')?.addEventListener('change', (e)=>{
-      settings.overlay = e.target.checked;
+    document.getElementById("imgOverlay")?.addEventListener("change",(e)=> settings.overlay = e.target.checked);
+
+    const pick = document.getElementById("bgImagePick");
+    pick?.addEventListener("change", async ()=>{
+      const f = pick.files?.[0];
+      if(!f) return;
+      await idb.put("assets",{key:"bgImage", blob:f, name:f.name, type:f.type, size:f.size, savedAt:Date.now()});
+      toast("Saved", "Background image stored.");
     });
 
-    const pick = $('#bgImagePick');
-    if(pick){
-      pick.addEventListener('change', async ()=>{
-        const f = pick.files?.[0];
-        if(!f) return;
-        await idb.put("assets",{key:"bgImage", blob:f, name:f.name, type:f.type, size:f.size, savedAt:Date.now()});
-        toast("Saved", "Background image stored.");
-      });
-    }
-
-    const url = $('#bgImageUrl');
-    if(url){
-      url.addEventListener('input', ()=>{
-        settings.imageUrl = url.value.trim();
-      });
-    }
+    const url = document.getElementById("bgImageUrl");
+    url?.addEventListener("input", ()=> settings.imageUrl = url.value.trim());
   }
 }
 
@@ -944,26 +932,24 @@ function subjectList(){
   return Array.from(new Set(notes.map(n=>n.m))).sort((a,b)=>a.localeCompare(b));
 }
 function refreshSubjectFilter(){
-  const sel = $('#subjectFilter');
+  const sel = document.getElementById("subjectFilter");
   const current = sel.value;
-  const opts = ['all', ...subjectList()];
-  sel.innerHTML = opts.map(v=>`<option value="${v}">${v==='all'?'All subjects':v}</option>`).join('');
+  const opts = ["all", ...subjectList()];
+  sel.innerHTML = opts.map(v=>`<option value="${v}">${v==='all'?'All subjects':v}</option>`).join("");
   if(opts.includes(current)) sel.value = current;
 }
 function setKPIs(){
-  $('#kNotes').textContent = notes.length;
-  $('#kExtra').textContent = extra.length;
-  $('#kFiles').textContent = vaultFiles.length;
+  document.getElementById("kNotes").textContent = notes.length;
+  document.getElementById("kExtra").textContent = extra.length;
+  document.getElementById("kFiles").textContent = vaultFiles.length;
 }
 function noteHTML(n, kind){
   const metaLeft = kind==='study'
     ? `<span class="pill">${n.m}</span><span class="mini">${n.d}${n.topic?` • ${escapeHTML(n.topic)}`:''}</span>`
     : `<span class="pill">EXTRA</span><span class="mini">${n.d}</span>`;
-
   return `
     <div class="note" data-kind="${kind}" data-id="${n.id}">
       <div class="actions">
-        <button class="iconBtn" data-act="edit" title="Edit">✎</button>
         <button class="iconBtn" data-act="del" title="Delete">🗑</button>
       </div>
       <div class="meta">${metaLeft}</div>
@@ -971,7 +957,7 @@ function noteHTML(n, kind){
     </div>`;
 }
 function renderVault(){
-  const list = $('#vaultList');
+  const list = document.getElementById("vaultList");
   if(!vaultFiles.length){
     list.innerHTML = `<div class="mini">No files in vault.</div>`;
     return;
@@ -993,26 +979,25 @@ function renderVault(){
           <span class="mini">${escapeHTML(when)} • ${escapeHTML(size)}</span>
         </div>
         <div class="body"><b>${escapeHTML(title)}</b><div class="mini">${escapeHTML(f.name||"")}</div></div>
-      </div>
-    `;
-  }).join('');
+      </div>`;
+  }).join("");
 }
 function render(){
-  const q = ($('#search').value||'').trim().toLowerCase();
-  const subj = $('#subjectFilter').value;
+  const q = (document.getElementById("search").value||"").trim().toLowerCase();
+  const subj = document.getElementById("subjectFilter").value;
 
   const filtered = notes.filter(n=>{
-    const matchesQ = !q || (n.t + ' ' + (n.topic||'') + ' ' + n.m).toLowerCase().includes(q);
-    const matchesS = (subj==='all') || (n.m.toLowerCase()===subj.toLowerCase());
+    const matchesQ = !q || (n.t + " " + (n.topic||"") + " " + n.m).toLowerCase().includes(q);
+    const matchesS = (subj==="all") || (n.m.toLowerCase()===subj.toLowerCase());
     return matchesQ && matchesS;
   });
 
-  $('#notes').innerHTML = filtered.length
-    ? filtered.map(n=>noteHTML(n,'study')).join('')
+  document.getElementById("notes").innerHTML = filtered.length
+    ? filtered.map(n=>noteHTML(n,"study")).join("")
     : `<div class="mini">No study notes match your filter.</div>`;
 
-  $('#extra').innerHTML = extra.length
-    ? extra.map(n=>noteHTML(n,'extra')).join('')
+  document.getElementById("extra").innerHTML = extra.length
+    ? extra.map(n=>noteHTML(n,"extra")).join("")
     : `<div class="mini">No extra notes</div>`;
 
   renderVault();
@@ -1020,37 +1005,37 @@ function render(){
   setKPIs();
 }
 
-/* ========= Notes CRUD ========= */
 function addStudyNote(){
-  const m = $('#newSubject').value;
-  const topic = ($('#newTopic').value||'').trim();
-  const t = ($('#newNote').value||'').trim();
-  if(!t){ toast('Missing','Write a note first.'); return; }
+  const m = document.getElementById("newSubject").value;
+  const topic = (document.getElementById("newTopic").value||"").trim();
+  const t = (document.getElementById("newNote").value||"").trim();
+  if(!t){ toast("Missing","Write a note first."); return; }
   notes.unshift({ id: crypto.randomUUID(), m, topic, d: new Date().toLocaleDateString(), t });
   saveLS(DB.notes, notes);
-  $('#newTopic').value='';
-  $('#newNote').value='';
-  toast('Saved','Study note added.');
+  document.getElementById("newTopic").value="";
+  document.getElementById("newNote").value="";
+  toast("Saved","Study note added.");
   render();
 }
 function addExtraNote(){
-  const t = ($('#extraInput').value||'').trim();
-  if(!t){ toast('Missing','Write an extra note first.'); return; }
+  const t = (document.getElementById("extraInput").value||"").trim();
+  if(!t){ toast("Missing","Write an extra note first."); return; }
   extra.unshift({ id: crypto.randomUUID(), d: new Date().toLocaleDateString(), t });
   saveLS(DB.extra, extra);
-  $('#extraInput').value='';
-  toast('Saved','Extra note added.');
+  document.getElementById("extraInput").value="";
+  toast("Saved","Extra note added.");
   render();
 }
+
 function deleteItem(kind, id){
-  if(kind==='study'){
+  if(kind==="study"){
     notes = notes.filter(n=>n.id!==id);
     saveLS(DB.notes, notes);
-    toast('Deleted','Study note removed.');
-  }else if(kind==='extra'){
+    toast("Deleted","Study note removed.");
+  } else if(kind==="extra"){
     extra = extra.filter(n=>n.id!==id);
     saveLS(DB.extra, extra);
-    toast('Deleted','Extra note removed.');
+    toast("Deleted","Extra note removed.");
   }
   render();
 }
@@ -1058,19 +1043,19 @@ function deleteItem(kind, id){
 /* ========= Export/Import ========= */
 function exportNotes(){
   const payload = { version:6, exportedAt:new Date().toISOString(), notes, extra, settings };
-  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href=url;
   a.download=`memoria_notes_backup_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  toast('Exported','Notes backup downloaded.');
+  toast("Exported","Notes backup downloaded.");
 }
 function importNotes(){
-  const input = document.createElement('input');
-  input.type='file';
-  input.accept='application/json';
+  const input = document.createElement("input");
+  input.type="file";
+  input.accept="application/json";
   input.onchange = async ()=>{
     const file=input.files?.[0]; if(!file) return;
     try{
@@ -1082,14 +1067,14 @@ function importNotes(){
       saveLS(DB.notes, notes);
       saveLS(DB.extra, extra);
       saveLS(DB.settings, settings);
-      $('#bgMode').value=settings.mode || "preset";
-      $('#bgPreset').value=settings.preset || "nebula";
+      document.getElementById("bgMode").value=settings.mode || "preset";
+      document.getElementById("bgPreset").value=settings.preset || "nebula";
       renderBgControls();
       await applyBackground();
-      toast('Imported','Notes restored.');
+      toast("Imported","Notes restored.");
       render();
     }catch(e){
-      toast('Error','Import failed (invalid file).');
+      toast("Error","Import failed (invalid file).");
     }
   };
   input.click();
@@ -1102,10 +1087,10 @@ async function loadVault(){
   render();
 }
 async function saveSelectedFile(){
-  const file = $('#filePick').files?.[0];
+  const file = document.getElementById("filePick").files?.[0];
   if(!file){ toast("Missing","Choose a file first."); return; }
-  const title = ($('#fileTitle').value||'').trim();
-  const tag = $('#fileTag').value || "General";
+  const title = (document.getElementById("fileTitle").value||"").trim();
+  const tag = document.getElementById("fileTag").value || "General";
   const rec = {
     id: crypto.randomUUID(),
     name: file.name,
@@ -1118,8 +1103,8 @@ async function saveSelectedFile(){
   };
   try{
     await idb.put("files", rec);
-    $('#filePick').value='';
-    $('#fileTitle').value='';
+    document.getElementById("filePick").value="";
+    document.getElementById("fileTitle").value="";
     toast("Saved","File stored in vault.");
     await loadVault();
   }catch(e){
@@ -1142,7 +1127,7 @@ async function downloadVaultFile(id){
   const rec = await idb.get("files", id);
   if(!rec?.blob){ toast("Error","File not found."); return; }
   const url = URL.createObjectURL(rec.blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = rec.name || "download";
   a.click();
@@ -1152,17 +1137,17 @@ async function downloadVaultFile(id){
 /* ========= Modal Preview ========= */
 let currentPreviewUrl = null;
 function showModal(title, bodyHTML){
-  $('#modalTitle').textContent = title;
-  $('#modalBody').innerHTML = bodyHTML;
-  $('#modal').classList.add('show');
+  document.getElementById("modalTitle").textContent = title;
+  document.getElementById("modalBody").innerHTML = bodyHTML;
+  document.getElementById("modal").classList.add("show");
 }
 function closeModal(){
   if(currentPreviewUrl){
     try{ URL.revokeObjectURL(currentPreviewUrl); }catch{}
     currentPreviewUrl = null;
   }
-  $('#modal').classList.remove('show');
-  $('#modalBody').innerHTML = "";
+  document.getElementById("modal").classList.remove("show");
+  document.getElementById("modalBody").innerHTML = "";
 }
 async function previewVaultFile(id){
   const rec = await idb.get("files", id);
@@ -1175,49 +1160,23 @@ async function previewVaultFile(id){
   const lower = name.toLowerCase();
 
   if(type === "application/pdf" || lower.endsWith(".pdf")){
-    showModal(name, `
-      <iframe src="${url}" style="width:100%;height:70vh;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:#000"></iframe>
-      <div class="mini" style="margin-top:10px">If the PDF doesn’t render, use Download.</div>
-    `);
+    showModal(name, `<iframe src="${url}" style="width:100%;height:70vh;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:#000"></iframe>`);
     return;
   }
   if(type.startsWith("audio") || lower.endsWith(".mp3")){
-    showModal(name, `
-      <audio controls style="width:100%">
-        <source src="${url}" type="${type || "audio/mpeg"}">
-      </audio>
-    `);
+    showModal(name, `<audio controls style="width:100%"><source src="${url}" type="${type || "audio/mpeg"}"></audio>`);
     return;
   }
   if(type.startsWith("video") || lower.endsWith(".mp4")){
-    showModal(name, `
-      <video controls style="width:100%;max-height:70vh;border-radius:12px;border:1px solid rgba(255,255,255,.08)">
-        <source src="${url}" type="${type || "video/mp4"}">
-      </video>
-    `);
+    showModal(name, `<video controls style="width:100%;max-height:70vh;border-radius:12px;border:1px solid rgba(255,255,255,.08)"><source src="${url}" type="${type || "video/mp4"}"></video>`);
     return;
   }
-  showModal(name, `
-    <div class="mini">Preview not available here. Use Download.</div>
-    <hr>
-    <button class="btn green" id="dlFromModal">Download</button>
-  `);
-  setTimeout(()=>{
-    const btn = document.getElementById('dlFromModal');
-    if(btn){
-      btn.onclick = ()=>{
-        const a=document.createElement('a');
-        a.href=url;
-        a.download=rec.name || "file";
-        a.click();
-      };
-    }
-  }, 0);
+  showModal(name, `<div class="mini">Preview not available here. Use Download.</div>`);
 }
 
 /* ========= Command ========= */
 function cmdPrint(html){
-  const o = $('#cmdOut');
+  const o = document.getElementById("cmdOut");
   o.innerHTML += `<div>${html}</div>`;
   o.scrollTop = o.scrollHeight;
 }
@@ -1230,150 +1189,147 @@ function cmdHelp(){
     <br>• <b>vault</b> (scroll)
     <br>• <b>bg</b> (scroll)
     <br>• <b>chat</b> (scroll)
-    <br>• <b>clear</b> (clear console)
+    <br>• <b>clear</b>
     <br>• <b>search &lt;text&gt;</b>
     <br>• <b>subject &lt;name|all&gt;</b>
     <br>• <b>export</b> / <b>import</b>`);
 }
 function runCmd(){
-  const i = $('#cmdIn');
-  const raw = (i.value||'').trim();
+  const i = document.getElementById("cmdIn");
+  const raw = (i.value||"").trim();
   if(!raw) return;
   const lower = raw.toLowerCase();
   cmdPrint(`&gt; <b>${escapeHTML(raw)}</b>`);
-  const [head] = lower.split(' ');
+  const [head] = lower.split(" ");
   const rest = raw.slice(head.length).trim();
 
-  if(head==='help') cmdHelp();
-  else if(head==='time') cmdPrint(`<span class="mini">${nowTime()}</span>`);
-  else if(head==='notes') $('#studynotes').scrollIntoView({behavior:'smooth'});
-  else if(head==='extra') $('#extraPanel').scrollIntoView({behavior:'smooth'});
-  else if(head==='vault') $('#vaultPanel').scrollIntoView({behavior:'smooth'});
-  else if(head==='bg') $('#bgPanel').scrollIntoView({behavior:'smooth'});
-  else if(head==='chat') $('#chatPanel').scrollIntoView({behavior:'smooth'});
-  else if(head==='clear') $('#cmdOut').innerHTML = '';
-  else if(head==='search'){
-    $('#search').value = rest;
+  if(head==="help") cmdHelp();
+  else if(head==="time") cmdPrint(`<span class="mini">${nowTime()}</span>`);
+  else if(head==="notes") document.getElementById("studynotes").scrollIntoView({behavior:"smooth"});
+  else if(head==="extra") document.getElementById("extraPanel").scrollIntoView({behavior:"smooth"});
+  else if(head==="vault") document.getElementById("vaultPanel").scrollIntoView({behavior:"smooth"});
+  else if(head==="bg") document.getElementById("bgPanel").scrollIntoView({behavior:"smooth"});
+  else if(head==="chat") document.getElementById("chatPanel").scrollIntoView({behavior:"smooth"});
+  else if(head==="clear") document.getElementById("cmdOut").innerHTML = "";
+  else if(head==="search"){
+    document.getElementById("search").value = rest;
     render();
     cmdPrint(`<span class="mini">Search set.</span>`);
-  } else if(head==='subject'){
+  } else if(head==="subject"){
     const v = rest.trim().toLowerCase();
-    const sel = $('#subjectFilter');
-    if(!v || v==='all'){ sel.value='all'; }
+    const sel = document.getElementById("subjectFilter");
+    if(!v || v==="all"){ sel.value="all"; }
     else{
       const opts = Array.from(sel.options).map(o=>o.value);
       const found = opts.find(x=>x.toLowerCase()===v);
-      sel.value = found || 'all';
+      sel.value = found || "all";
     }
     render();
     cmdPrint(`<span class="mini">Subject filter updated.</span>`);
-  } else if(head==='export') exportNotes();
-  else if(head==='import') importNotes();
+  } else if(head==="export") exportNotes();
+  else if(head==="import") importNotes();
   else cmdPrint(`<span class="mini">Unknown command. Type <b>help</b>.</span>`);
-  i.value='';
+  i.value="";
 }
 
 /* ========= Events ========= */
-$('#btnAddNote').addEventListener('click', addStudyNote);
-$('#btnAddExtra').addEventListener('click', addExtraNote);
+document.getElementById("btnAddNote").addEventListener("click", addStudyNote);
+document.getElementById("btnAddExtra").addEventListener("click", addExtraNote);
 
-$('#btnClearExtra').addEventListener('click', ()=>{
-  if(!extra.length){ toast('Nothing','No extra notes to clear.'); return; }
-  if(confirm('Clear ALL extra notes?')){
+document.getElementById("btnClearExtra").addEventListener("click", ()=>{
+  if(!extra.length){ toast("Nothing","No extra notes to clear."); return; }
+  if(confirm("Clear ALL extra notes?")){
     extra=[];
     saveLS(DB.extra, extra);
-    toast('Cleared','Extra notes wiped.');
+    toast("Cleared","Extra notes wiped.");
     render();
   }
 });
 
-$('#search').addEventListener('input', render);
-$('#subjectFilter').addEventListener('change', render);
-$('#btnClearSearch').addEventListener('click', ()=>{
-  $('#search').value='';
-  $('#subjectFilter').value='all';
+document.getElementById("search").addEventListener("input", render);
+document.getElementById("subjectFilter").addEventListener("change", render);
+document.getElementById("btnClearSearch").addEventListener("click", ()=>{
+  document.getElementById("search").value="";
+  document.getElementById("subjectFilter").value="all";
   render();
 });
 
-$('#btnExport').addEventListener('click', exportNotes);
-$('#btnImport').addEventListener('click', importNotes);
+document.getElementById("btnExport").addEventListener("click", exportNotes);
+document.getElementById("btnImport").addEventListener("click", importNotes);
 
-$('#btnSaveFile').addEventListener('click', saveSelectedFile);
-$('#btnClearVault').addEventListener('click', clearVault);
+document.getElementById("btnSaveFile").addEventListener("click", saveSelectedFile);
+document.getElementById("btnClearVault").addEventListener("click", clearVault);
 
-$('#bgMode').addEventListener('change', (e)=>{
+document.getElementById("bgMode").addEventListener("change",(e)=>{
   settings.mode = e.target.value;
   saveLS(DB.settings, settings);
   renderBgControls();
 });
-$('#bgPreset').addEventListener('change', (e)=>{
+document.getElementById("bgPreset").addEventListener("change",(e)=>{
   settings.preset = e.target.value;
   saveLS(DB.settings, settings);
   renderBgControls();
 });
 
-$('#btnApplyBg').addEventListener('click', async ()=>{
-  settings.mode = $('#bgMode').value;
-  settings.preset = $('#bgPreset').value;
+document.getElementById("btnApplyBg").addEventListener("click", async ()=>{
+  settings.mode = document.getElementById("bgMode").value;
+  settings.preset = document.getElementById("bgPreset").value;
   saveLS(DB.settings, settings);
   await applyBackground();
   toast("Applied","Background updated.");
 });
-$('#btnResetBg').addEventListener('click', async ()=>{
+document.getElementById("btnResetBg").addEventListener("click", async ()=>{
   settings = {...defaultBg};
   saveLS(DB.settings, settings);
-  $('#bgMode').value=settings.mode;
-  $('#bgPreset').value=settings.preset;
+  document.getElementById("bgMode").value=settings.mode;
+  document.getElementById("bgPreset").value=settings.preset;
   renderBgControls();
   await applyBackground();
   toast("Reset","Background restored.");
 });
 
-$('#cmdIn').addEventListener('keydown', (e)=>{ if(e.key==='Enter') runCmd(); });
+document.getElementById("cmdIn").addEventListener("keydown",(e)=>{ if(e.key==="Enter") runCmd(); });
 
-document.addEventListener('keydown', (e)=>{
-  if((e.ctrlKey || e.metaKey) && e.key === 'Enter'){
-    if(document.activeElement === $('#newNote')) addStudyNote();
+document.addEventListener("keydown",(e)=>{
+  if((e.ctrlKey || e.metaKey) && e.key==="Enter"){
+    if(document.activeElement === document.getElementById("newNote")) addStudyNote();
   }
 });
 
-document.addEventListener('click', async (e)=>{
-  const btn = e.target.closest('[data-act]');
+document.addEventListener("click", async (e)=>{
+  const btn = e.target.closest("[data-act]");
   if(!btn) return;
-  const box = e.target.closest('.note');
+  const box = e.target.closest(".note");
   if(!box) return;
 
-  const kind = box.getAttribute('data-kind');
-  const id = box.getAttribute('data-id');
-  const act = btn.getAttribute('data-act');
+  const kind = box.getAttribute("data-kind");
+  const id = box.getAttribute("data-id");
+  const act = btn.getAttribute("data-act");
 
-  if(kind==='study' || kind==='extra'){
-    if(act==='del') deleteItem(kind, id);
+  if(kind==="study" || kind==="extra"){
+    if(act==="del") deleteItem(kind, id);
   }
-
-  if(kind==='file'){
-    if(act==='delFile') await deleteVaultFile(id);
-    if(act==='download') await downloadVaultFile(id);
-    if(act==='preview') await previewVaultFile(id);
+  if(kind==="file"){
+    if(act==="delFile") await deleteVaultFile(id);
+    if(act==="download") await downloadVaultFile(id);
+    if(act==="preview") await previewVaultFile(id);
   }
 });
 
-$('#modalClose').addEventListener('click', closeModal);
-$('#modal').addEventListener('click', (e)=>{ if(e.target.id==='modal') closeModal(); });
+document.getElementById("modalClose").addEventListener("click", closeModal);
+document.getElementById("modal").addEventListener("click",(e)=>{ if(e.target.id==="modal") closeModal(); });
 
-/* ✅ Chat bubble button scroll + clear (actual clear done by Firebase module too) */
-$('#chatBubbleBtn').addEventListener('click', ()=>{
-  $('#chatPanel').scrollIntoView({behavior:'smooth'});
-  // Let Firebase module clear unread too, but we also hide quickly here:
-  const b = $('#chatBubble');
+document.getElementById("chatBubbleBtn").addEventListener("click", ()=>{
+  document.getElementById("chatPanel").scrollIntoView({behavior:"smooth"});
+  const b = document.getElementById("chatBubble");
   if(b){ b.style.display="none"; b.textContent="0"; }
 });
 
 /* ========= Init ========= */
 (async function init(){
-  $('#cmdOut').innerHTML = `<div class="mini">Memoria console ready. Type <b>help</b>.</div>`;
-  $('#bgMode').value = settings.mode || "preset";
-  $('#bgPreset').value = settings.preset || "nebula";
+  document.getElementById("cmdOut").innerHTML = `<div class="mini">Memoria console ready. Type <b>help</b>.</div>`;
+  document.getElementById("bgMode").value = settings.mode || "preset";
+  document.getElementById("bgPreset").value = settings.preset || "nebula";
   renderBgControls();
   await applyBackground();
   vaultFiles = await idb.getAll("files");
@@ -1382,7 +1338,7 @@ $('#chatBubbleBtn').addEventListener('click', ()=>{
 })();
 </script>
 
-<!-- ========= Firebase Multi-Chat (Firestore) + TOP BUBBLE NOTIFY ========= -->
+<!-- ========= Firebase Chat + Bubble + macOS-style popup ========= -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
 import {
@@ -1390,7 +1346,6 @@ import {
   query, orderBy, limit, onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-/* ✅ Your Firebase config */
 const firebaseConfig = {
   apiKey: "AIzaSyB7AhWd_9tt33c2mvGBMMaFFzBFjxk8svc",
   authDomain: "notepro-3194d.firebaseapp.com",
@@ -1404,23 +1359,22 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 /* Elements */
-const chatStatus  = document.getElementById('chatStatus');
-const chatLog     = document.getElementById('chatLog');
-const chatName    = document.getElementById('chatName');
-const chatRoom    = document.getElementById('chatRoom');
-const chatConnect = document.getElementById('chatConnect');
-const chatMsg     = document.getElementById('chatMsg');
-const chatSend    = document.getElementById('chatSend');
+const chatStatus  = document.getElementById("chatStatus");
+const chatLog     = document.getElementById("chatLog");
+const chatName    = document.getElementById("chatName");
+const chatRoom    = document.getElementById("chatRoom");
+const chatConnect = document.getElementById("chatConnect");
+const chatMsg     = document.getElementById("chatMsg");
+const chatSend    = document.getElementById("chatSend");
 
-/* Top bubble */
-const bubble = document.getElementById('chatBubble');
-const bubbleBtn = document.getElementById('chatBubbleBtn');
-const chatPanel = document.getElementById('chatPanel');
+const bubble = document.getElementById("chatBubble");
+const bubbleBtn = document.getElementById("chatBubbleBtn");
+const chatPanel = document.getElementById("chatPanel");
 
 let unsub = null;
 let connectedRoom = null;
 
-/* Unread state */
+/* Unread tracking */
 let unread = 0;
 let lastDocId = null;
 let chatVisible = false;
@@ -1438,7 +1392,6 @@ function setBubble(n){
   if(unread > 0){
     bubble.style.display = "inline-flex";
     bubble.textContent = String(unread);
-    // Optional: change tab title
     document.title = `(${unread}) Memoria NotePro`;
   }else{
     bubble.style.display = "none";
@@ -1446,46 +1399,34 @@ function setBubble(n){
     document.title = "Memoria NotePro";
   }
 }
-
-function clearUnread(){
-  setBubble(0);
-}
+function clearUnread(){ setBubble(0); }
 
 function addLine(line){
   if(!chatLog) return;
-  const div = document.createElement('div');
+  const div = document.createElement("div");
   div.innerHTML = line;
   chatLog.appendChild(div);
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-/* Detect if chat panel is on screen */
+/* Detect when chat panel is visible */
 if(chatPanel){
   const obs = new IntersectionObserver((entries)=>{
     chatVisible = entries?.[0]?.isIntersecting === true;
-    // if user opens chat (visible + focused), clear unread
     if(chatVisible && document.hasFocus()) clearUnread();
   }, { threshold: 0.35 });
   obs.observe(chatPanel);
 }
-window.addEventListener("focus", ()=>{
-  if(chatVisible) clearUnread();
-});
-bubbleBtn?.addEventListener("click", ()=>{
-  clearUnread();
-});
+window.addEventListener("focus", ()=>{ if(chatVisible) clearUnread(); });
+bubbleBtn?.addEventListener("click", ()=>{ clearUnread(); });
 
-/* Connect room */
-chatConnect?.addEventListener('click', async ()=>{
+/* Connect */
+chatConnect?.addEventListener("click", async ()=>{
   const name = safeText(chatName?.value.trim()) || "Anonymous";
-  const room = safeText(chatRoom?.value.trim()).replace(/\s+/g,'-').toLowerCase();
-  if(!room){
-    showStatus("Enter a room code first.");
-    return;
-  }
+  const room = safeText(chatRoom?.value.trim()).replace(/\s+/g,"-").toLowerCase();
+  if(!room){ showStatus("Enter a room code first."); return; }
 
-  // stop old listener
-  if(unsub){ unsub(); unsub = null; }
+  if(unsub){ unsub(); unsub=null; }
   connectedRoom = room;
   lastDocId = null;
   clearChat();
@@ -1496,58 +1437,50 @@ chatConnect?.addEventListener('click', async ()=>{
   const q = query(msgsRef, orderBy("createdAt","asc"), limit(200));
 
   unsub = onSnapshot(q, (snap)=>{
-    // Determine last message + if it's new
-    let newLastDocId = null;
-    let lastMsg = null;
-
     const docs = [];
-    snap.forEach(d=>{
-      docs.push({ id: d.id, data: d.data() || {} });
-    });
+    snap.forEach(d=>docs.push({id:d.id, data:d.data()||{}}));
 
-    if(docs.length){
-      newLastDocId = docs[docs.length - 1].id;
-      lastMsg = docs[docs.length - 1].data;
-    }
+    const last = docs[docs.length-1] || null;
+    const newLastDocId = last?.id || null;
+    const lastMsg = last?.data || null;
 
-    // Render full chat
     clearChat();
     for(const item of docs){
       const m = item.data || {};
       const who  = safeText(m.name || "Anon");
       const text = safeText(m.text || "");
       const time = m.createdAt?.toDate
-        ? m.createdAt.toDate().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})
+        ? m.createdAt.toDate().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
         : "";
       addLine(`<span style="color:rgba(255,255,255,.65)">[${esc(time)}]</span> <b>${esc(who)}:</b> ${esc(text)}`);
     }
 
-    // Bubble logic: if lastDocId changes, count it as new message
+    // Notify when last message changes
     if(lastDocId && newLastDocId && newLastDocId !== lastDocId){
       const myName = safeText(chatName?.value.trim()) || "Anonymous";
       const sender = safeText(lastMsg?.name || "");
+      const text = safeText(lastMsg?.text || "");
 
       const isFromOther = sender.toLowerCase() !== myName.toLowerCase();
       const shouldNotify = isFromOther && !(chatVisible && document.hasFocus());
 
       if(shouldNotify){
         setBubble(unread + 1);
-        // optional toast
+
+        // ✅ macOS-style popup
+        window.macNotify?.(`💬 New message from ${sender || "Someone"}`, text.slice(0, 120));
+
+        // also keep your bottom toast (optional)
         window.toast?.("New message", `From ${sender || "Someone"}`);
       }
     }
 
-    // Update lastDocId after processing
     if(newLastDocId) lastDocId = newLastDocId;
-
-    // If user is viewing chat, keep unread at 0
     if(chatVisible && document.hasFocus()) clearUnread();
-
   }, (err)=>{
     showStatus("Chat error: " + err.message);
   });
 
-  // Save name/room
   try{
     localStorage.setItem("memoria_chat_name", name);
     localStorage.setItem("memoria_chat_room", room);
@@ -1555,13 +1488,10 @@ chatConnect?.addEventListener('click', async ()=>{
 });
 
 /* Send */
-chatSend?.addEventListener('click', async ()=>{
+chatSend?.addEventListener("click", async ()=>{
   const name = safeText(chatName?.value.trim()) || "Anonymous";
   const text = safeText(chatMsg?.value.trim());
-  if(!connectedRoom){
-    showStatus("Connect to a room first.");
-    return;
-  }
+  if(!connectedRoom){ showStatus("Connect to a room first."); return; }
   if(!text) return;
 
   chatMsg.value = "";
@@ -1572,10 +1502,7 @@ chatSend?.addEventListener('click', async ()=>{
     showStatus("Send failed: " + e.message);
   }
 });
-
-chatMsg?.addEventListener('keydown', (e)=>{
-  if(e.key === 'Enter') chatSend?.click();
-});
+chatMsg?.addEventListener("keydown", (e)=>{ if(e.key==="Enter") chatSend?.click(); });
 
 /* Load saved */
 try{
