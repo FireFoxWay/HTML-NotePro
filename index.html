@@ -1,38 +1,53 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Memoria NotePro — Upgraded</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Memoria NotePro — Vault + Background Settings</title>
+
 <style>
 :root{
-  --bg:#060712;
-  --panel:#0f1220;
   --text:#e6ebff;
   --muted:rgba(255,255,255,.65);
+  --panel:rgba(15,18,32,.92);
+  --border:rgba(255,255,255,.08);
   --neon:#8b5cf6;
   --neon2:#22c55e;
   --danger:#ef4444;
   --warn:#f59e0b;
+  --shadow:0 0 0 1px rgba(255,255,255,.05),0 14px 50px rgba(0,0,0,.65);
   font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
 }
+
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;color:var(--text);background:
-  radial-gradient(1200px 600px at 20% 10%,#0e1a3a,transparent 60%),
-  radial-gradient(900px 500px at 80% 90%,#101f4a,transparent 55%),
-  linear-gradient(180deg,#050512,#070b1a);
+html,body{margin:0;height:100%;color:var(--text)}
+body{
+  background:
+    radial-gradient(1200px 600px at 20% 10%,#0e1a3a,transparent 60%),
+    radial-gradient(900px 500px at 80% 90%,#101f4a,transparent 55%),
+    linear-gradient(180deg,#050512,#070b1a);
+  background-attachment: fixed;
 }
+
 a{color:inherit}
 
-.shell{padding:16px;display:grid;grid-template-columns:2fr 1fr;gap:14px;max-width:1200px;margin:0 auto}
-@media (max-width: 980px){.shell{grid-template-columns:1fr}}
+.shell{
+  padding:16px;
+  display:grid;
+  grid-template-columns:2fr 1fr;
+  gap:14px;
+  max-width:1250px;
+  margin:0 auto;
+}
+@media (max-width: 980px){ .shell{grid-template-columns:1fr} }
+
 .panel{
-  background:rgba(15,18,32,.92);
+  background:var(--panel);
   border-radius:16px;
   padding:14px;
-  box-shadow:0 0 0 1px rgba(255,255,255,.05),0 14px 50px rgba(0,0,0,.65);
-  animation:fadeUp .35s ease both;
+  box-shadow:var(--shadow);
   backdrop-filter: blur(8px);
+  animation:fadeUp .35s ease both;
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
 
@@ -40,9 +55,7 @@ a{color:inherit}
 h1,h2{margin:0;font-weight:750;letter-spacing:.2px}
 .mini{font-size:12px;color:var(--muted)}
 .badge{
-  font-size:11px;
-  padding:4px 8px;
-  border-radius:999px;
+  font-size:11px;padding:4px 8px;border-radius:999px;
   background:rgba(139,92,246,.18);
   box-shadow:0 0 16px rgba(139,92,246,.35);
   border:1px solid rgba(255,255,255,.06);
@@ -54,13 +67,13 @@ hr{border:none;border-top:1px solid rgba(255,255,255,.06);margin:12px 0}
 
 .input, textarea, select{
   background:rgba(0,0,0,.35);
-  border:1px solid rgba(255,255,255,.08);
+  border:1px solid var(--border);
   border-radius:10px;
   color:var(--text);
   padding:9px 10px;
   outline:none;
 }
-textarea{resize:none}
+textarea{resize:none;width:100%}
 .input:focus, textarea:focus, select:focus{
   border-color:rgba(139,92,246,.55);
   box-shadow:0 0 0 4px rgba(139,92,246,.14);
@@ -68,7 +81,7 @@ textarea{resize:none}
 
 .btn{
   background:rgba(139,92,246,.22);
-  border:1px solid rgba(255,255,255,.08);
+  border:1px solid var(--border);
   color:var(--text);
   padding:8px 10px;
   border-radius:10px;
@@ -81,56 +94,48 @@ textarea{resize:none}
 .btn.warn{background:rgba(245,158,11,.18)}
 .btn.danger{background:rgba(239,68,68,.16)}
 
+.kpi{display:flex;gap:8px;flex-wrap:wrap}
+.kbox{
+  padding:8px 10px;border-radius:12px;
+  background:rgba(139,92,246,.14);
+  border:1px solid rgba(255,255,255,.06);
+}
+.kbox b{display:block;font-size:14px}
+.kbox span{font-size:12px;color:var(--muted)}
+
 .notes{display:flex;flex-direction:column;gap:8px}
 .note{
-  padding:10px;
-  border-radius:12px;
+  padding:10px;border-radius:12px;
   background:rgba(255,255,255,.045);
   border:1px solid rgba(255,255,255,.06);
-  animation:slideIn .22s ease both;
   position:relative;
+  animation:slideIn .22s ease both;
 }
 @keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1}}
 .meta{font-size:12px;color:var(--muted);margin-bottom:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .pill{
-  font-size:11px;
-  padding:3px 8px;
-  border-radius:999px;
+  font-size:11px;padding:3px 8px;border-radius:999px;
   background:rgba(139,92,246,.18);
   border:1px solid rgba(255,255,255,.06);
 }
 .actions{position:absolute;top:8px;right:8px;display:flex;gap:6px}
 .iconBtn{
-  font-size:12px;
-  padding:6px 8px;
-  border-radius:10px;
+  font-size:12px;padding:6px 8px;border-radius:10px;
   background:rgba(255,255,255,.06);
   border:1px solid rgba(255,255,255,.08);
   cursor:pointer;
 }
 .iconBtn:hover{filter:brightness(1.15)}
 
-.kpi{display:flex;gap:8px;flex-wrap:wrap}
-.kbox{padding:8px 10px;border-radius:12px;background:rgba(139,92,246,.14);border:1px solid rgba(255,255,255,.06)}
-.kbox b{display:block;font-size:14px}
-.kbox span{font-size:12px;color:var(--muted)}
-
 .cmd{display:flex;flex-direction:column;gap:8px}
 #cmdOut{
   font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
-  font-size:13px;
-  max-height:220px;
-  overflow:auto;
-  padding:10px;
-  border-radius:12px;
+  font-size:13px;max-height:240px;overflow:auto;
+  padding:10px;border-radius:12px;
   background:rgba(0,0,0,.30);
   border:1px solid rgba(255,255,255,.06);
 }
-#cmdIn{
-  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
-  font-size:13px;
-  width:100%;
-}
+#cmdIn{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;width:100%}
 
 .toast{
   position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
@@ -139,14 +144,33 @@ textarea{resize:none}
   box-shadow:0 10px 40px rgba(0,0,0,.65);
   padding:10px 12px;border-radius:14px;
   display:none;gap:10px;align-items:center;
+  z-index:9999;
 }
 .toast.show{display:flex;animation:fadeUp .2s ease both}
 .dot{width:10px;height:10px;border-radius:50%;background:var(--neon);box-shadow:0 0 18px rgba(139,92,246,.6)}
 .small{font-size:12px;color:var(--muted)}
+
+.modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.55);
+  display:none;align-items:center;justify-content:center;
+  padding:16px;z-index:9998;
+}
+.modal.show{display:flex}
+.modalCard{
+  width:min(820px, 100%);
+  background:rgba(15,18,32,.96);
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:16px;
+  box-shadow:0 20px 70px rgba(0,0,0,.75);
+  padding:14px;
+}
+.modalHead{display:flex;align-items:center;gap:10px}
+.modalHead h3{margin:0;font-size:16px}
+.modalBody{margin-top:10px}
 </style>
 </head>
-<body>
 
+<body>
 <div class="shell">
 
   <!-- Header -->
@@ -154,40 +178,46 @@ textarea{resize:none}
     <div class="title">
       <div>
         <h1>Memoria</h1>
-        <div class="mini">NotePro • upgraded build</div>
+        <div class="mini">NotePro • Vault + Background Settings</div>
       </div>
       <div class="row">
         <span class="badge" id="time">--:--</span>
-        <span class="badge">TESTING • BLOOM</span>
+        <span class="badge">BLOOM</span>
       </div>
     </div>
 
     <div class="kpi">
       <div class="kbox"><b id="kNotes">0</b><span>Study notes</span></div>
       <div class="kbox"><b id="kExtra">0</b><span>Extra notes</span></div>
+      <div class="kbox"><b id="kFiles">0</b><span>Vault files</span></div>
       <div class="kbox"><b id="kToday">—</b><span>Today</span></div>
     </div>
 
     <hr>
 
     <div class="row">
-      <input class="input" id="search" placeholder="Search notes (e.g., algebra, photosynthesis)..." />
+      <input class="input" id="search" placeholder="Search notes..." />
       <select id="subjectFilter">
         <option value="all">All subjects</option>
       </select>
       <button class="btn" id="btnClearSearch">Clear</button>
+
       <div class="spacer"></div>
-      <button class="btn warn" id="btnExport">Export</button>
-      <button class="btn green" id="btnImport">Import</button>
+
+      <button class="btn warn" id="btnExport">Export Notes</button>
+      <button class="btn green" id="btnImport">Import Notes</button>
     </div>
-    <div class="mini" style="margin-top:8px">Tip: use commands like <b>add math</b>, <b>search algebra</b>, <b>export</b>, <b>import</b></div>
+
+    <div class="mini" style="margin-top:8px">
+      Commands: <b>help</b>, <b>vault</b>, <b>bg</b>, <b>search</b>, <b>subject</b>, <b>export</b>, <b>import</b>
+    </div>
   </section>
 
   <!-- Study Notes -->
   <section class="panel" id="studynotes">
     <div class="title">
       <h2>StudyNotes</h2>
-      <div class="mini">Subjects + search + edit</div>
+      <div class="mini">Add + search + edit</div>
     </div>
 
     <div class="row">
@@ -199,18 +229,19 @@ textarea{resize:none}
         <option>AI</option>
         <option>Other</option>
       </select>
-      <input class="input" id="newTopic" placeholder="Topic (optional) e.g., Number Systems" />
+      <input class="input" id="newTopic" placeholder="Topic (optional) e.g., Algebra" />
     </div>
+
     <div class="row" style="margin-top:8px">
       <textarea id="newNote" rows="3" placeholder="Write study note here..."></textarea>
     </div>
+
     <div class="row" style="margin-top:8px">
       <button class="btn green" id="btnAddNote">Save Study Note</button>
-      <div class="mini">Shortcut: Ctrl/⌘ + Enter in the note box</div>
+      <div class="mini">Shortcut: Ctrl/⌘ + Enter</div>
     </div>
 
     <hr>
-
     <div class="notes" id="notes"></div>
   </section>
 
@@ -221,83 +252,467 @@ textarea{resize:none}
       <div class="mini">Permanent + edit</div>
     </div>
 
-    <div class="row">
-      <textarea id="extraInput" rows="3" placeholder="Write extra note here..."></textarea>
-    </div>
+    <textarea id="extraInput" rows="3" placeholder="Write extra note here..."></textarea>
+
     <div class="row" style="margin-top:8px">
       <button class="btn" id="btnAddExtra">Save Extra Note</button>
       <button class="btn danger" id="btnClearExtra">Clear All Extra</button>
     </div>
 
     <hr>
-
     <div class="notes" id="extra"></div>
   </section>
 
-  <!-- Command Panel -->
+  <!-- File Vault -->
+  <section class="panel" id="vaultPanel">
+    <div class="title">
+      <h2>File Vault</h2>
+      <div class="mini">Word • PPT • MP3 • MP4 (saved locally)</div>
+    </div>
+
+    <div class="row">
+      <input class="input" id="fileTitle" placeholder="File title (optional)" />
+      <select id="fileTag">
+        <option value="General">General</option>
+        <option value="School">School</option>
+        <option value="Projects">Projects</option>
+        <option value="Media">Media</option>
+      </select>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <input class="input" id="filePick" type="file"
+        accept=".doc,.docx,.ppt,.pptx,audio/mpeg,video/mp4" />
+      <button class="btn green" id="btnSaveFile">Save to Vault</button>
+      <button class="btn danger" id="btnClearVault">Clear Vault</button>
+    </div>
+
+    <div class="mini" style="margin-top:8px">
+      Word/PPT files will be downloadable (preview depends on your device apps). MP3/MP4 can be previewed here.
+    </div>
+
+    <hr>
+    <div class="notes" id="vaultList"></div>
+  </section>
+
+  <!-- Background Settings -->
+  <section class="panel" id="bgPanel">
+    <div class="title">
+      <h2>Background Settings</h2>
+      <div class="mini">Presets • Gradient • Solid • Image</div>
+    </div>
+
+    <div class="row">
+      <select id="bgMode">
+        <option value="preset">Preset</option>
+        <option value="gradient">Custom Gradient</option>
+        <option value="solid">Solid Color</option>
+        <option value="image">Background Image</option>
+      </select>
+
+      <select id="bgPreset">
+        <option value="nebula">Nebula (Default)</option>
+        <option value="midnight">Midnight</option>
+        <option value="ocean">Ocean</option>
+        <option value="sunrise">Sunrise</option>
+        <option value="matrix">Matrix</option>
+      </select>
+
+      <button class="btn" id="btnApplyBg">Apply</button>
+      <button class="btn danger" id="btnResetBg">Reset</button>
+    </div>
+
+    <hr>
+
+    <div id="bgControls">
+      <!-- Filled by JS based on mode -->
+    </div>
+
+    <div class="mini" style="margin-top:8px">
+      Saved locally on this browser. If you clear site data, settings will reset.
+    </div>
+  </section>
+
+  <!-- Command -->
   <section class="panel">
     <div class="title">
       <h2>Command</h2>
       <div class="mini">CMD + Help</div>
     </div>
+
     <div class="cmd">
       <div id="cmdOut"></div>
-      <input id="cmdIn" class="input" placeholder="> type 'help' and hit Enter" />
+      <input id="cmdIn" class="input" placeholder="> type 'help' and press Enter" />
       <div class="mini">
-        Commands: <b>help</b>, <b>time</b>, <b>notes</b>, <b>extra</b>, <b>clear</b>, <b>add &lt;subject&gt;</b>, <b>search &lt;text&gt;</b>,
-        <b>subject &lt;name&gt;</b>, <b>export</b>, <b>import</b>
+        Try: <b>vault</b>, <b>bg</b>, <b>search algebra</b>, <b>subject math</b>, <b>export</b>
       </div>
     </div>
   </section>
 
-  <!-- Tools / Support -->
+  <!-- Static -->
   <section class="panel">
     <div class="title">
       <h2>NT Support</h2>
       <div class="mini">Tools</div>
     </div>
     <div class="mini">Boot Fix • Registry Restore • Device Manager</div>
-    <hr>
-    <div class="mini">This panel is static for now — can be upgraded with tool shortcuts later.</div>
   </section>
 
 </div>
 
-<div class="toast" id="toast"><div class="dot"></div><div><b id="toastTitle">Saved</b><div class="small" id="toastMsg">Done</div></div></div>
+<div class="toast" id="toast">
+  <div class="dot"></div>
+  <div>
+    <b id="toastTitle">Saved</b>
+    <div class="small" id="toastMsg">Done</div>
+  </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal" id="modal">
+  <div class="modalCard">
+    <div class="modalHead">
+      <h3 id="modalTitle">Preview</h3>
+      <div class="spacer"></div>
+      <button class="btn" id="modalClose">Close</button>
+    </div>
+    <div class="modalBody" id="modalBody"></div>
+  </div>
+</div>
 
 <script>
+/* ========= Utils ========= */
 const $ = (q)=>document.querySelector(q);
-
-// ===== Time =====
 const nowTime = ()=>new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-setInterval(()=>$('#time').textContent = nowTime(), 1000);
 $('#kToday').textContent = new Date().toLocaleDateString();
+setInterval(()=>$('#time').textContent = nowTime(), 1000);
 
-// ===== Storage =====
-const DB = {notes:'db_notes_v2', extra:'db_extra_v2'};
-const load = (k, fallback)=>{try{return JSON.parse(localStorage.getItem(k)) ?? fallback}catch{return fallback}};
-const save = (k, v)=>localStorage.setItem(k, JSON.stringify(v));
-
-// Seed
-let notes = load(DB.notes, [
-  {id: crypto.randomUUID(), m:'Math', d:'12 May 2025', topic:'Number Systems', t:'Key points: primes, factors, divisibility rules.'}
-]);
-let extra = load(DB.extra, []);
-
-// ===== Toast =====
-let toastTimer = null;
-function toast(title, msg){
-  $('#toastTitle').textContent = title;
-  $('#toastMsg').textContent = msg;
-  const el = $('#toast');
+function escapeHTML(str){
+  return String(str)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'","&#039;")
+    .replaceAll('\n','<br>');
+}
+function bytesToSize(bytes){
+  if(bytes===0) return "0 B";
+  const k=1024, sizes=["B","KB","MB","GB"];
+  const i=Math.floor(Math.log(bytes)/Math.log(k));
+  return `${(bytes/Math.pow(k,i)).toFixed(i?2:0)} ${sizes[i]}`;
+}
+let toastTimer=null;
+function toast(title,msg){
+  $('#toastTitle').textContent=title;
+  $('#toastMsg').textContent=msg;
+  const el=$('#toast');
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>el.classList.remove('show'), 1600);
+  toastTimer=setTimeout(()=>el.classList.remove('show'),1600);
 }
 
-// ===== Helpers =====
-const norm = (s)=>String(s??'').trim();
-const subjectList = ()=>Array.from(new Set(notes.map(n=>n.m))).sort((a,b)=>a.localeCompare(b));
+/* ========= Notes Storage (localStorage) ========= */
+const DB = { notes:'db_notes_v3', extra:'db_extra_v3', settings:'db_settings_v3' };
+const loadLS=(k,f)=>{ try{ return JSON.parse(localStorage.getItem(k)) ?? f }catch{ return f } };
+const saveLS=(k,v)=>localStorage.setItem(k, JSON.stringify(v));
+
+let notes = loadLS(DB.notes, [
+  {id: crypto.randomUUID(), m:'Math', d:'12 May 2025', topic:'Number Systems', t:'Key points: primes, factors, divisibility rules.'}
+]);
+let extra = loadLS(DB.extra, []);
+
+/* ========= IndexedDB for Vault + Background Image ========= */
+const idb = (() => {
+  const DBNAME="memoria_idb_v1";
+  const VERSION=1;
+  let db=null;
+
+  function open(){
+    if(db) return Promise.resolve(db);
+    return new Promise((resolve,reject)=>{
+      const req=indexedDB.open(DBNAME, VERSION);
+      req.onupgradeneeded = (e)=>{
+        const d=req.result;
+        if(!d.objectStoreNames.contains("files")){
+          d.createObjectStore("files",{keyPath:"id"});
+        }
+        if(!d.objectStoreNames.contains("assets")){
+          d.createObjectStore("assets",{keyPath:"key"});
+        }
+      };
+      req.onsuccess=()=>{ db=req.result; resolve(db); };
+      req.onerror=()=>reject(req.error);
+    });
+  }
+
+  async function put(store, val){
+    const d=await open();
+    return new Promise((res,rej)=>{
+      const tx=d.transaction(store,"readwrite");
+      tx.objectStore(store).put(val);
+      tx.oncomplete=()=>res(true);
+      tx.onerror=()=>rej(tx.error);
+    });
+  }
+  async function get(store, key){
+    const d=await open();
+    return new Promise((res,rej)=>{
+      const tx=d.transaction(store,"readonly");
+      const r=tx.objectStore(store).get(key);
+      r.onsuccess=()=>res(r.result||null);
+      r.onerror=()=>rej(r.error);
+    });
+  }
+  async function getAll(store){
+    const d=await open();
+    return new Promise((res,rej)=>{
+      const tx=d.transaction(store,"readonly");
+      const r=tx.objectStore(store).getAll();
+      r.onsuccess=()=>res(r.result||[]);
+      r.onerror=()=>rej(r.error);
+    });
+  }
+  async function del(store, key){
+    const d=await open();
+    return new Promise((res,rej)=>{
+      const tx=d.transaction(store,"readwrite");
+      tx.objectStore(store).delete(key);
+      tx.oncomplete=()=>res(true);
+      tx.onerror=()=>rej(tx.error);
+    });
+  }
+  async function clear(store){
+    const d=await open();
+    return new Promise((res,rej)=>{
+      const tx=d.transaction(store,"readwrite");
+      tx.objectStore(store).clear();
+      tx.oncomplete=()=>res(true);
+      tx.onerror=()=>rej(tx.error);
+    });
+  }
+
+  return { put,get,getAll,del,clear };
+})();
+
+let vaultFiles = []; // loaded from IndexedDB
+
+/* ========= Background Settings ========= */
+const defaultBg = {
+  mode:"preset",
+  preset:"nebula",
+  solid:"#070b1a",
+  g1:"#0e1a3a",
+  g2:"#101f4a",
+  imageMode:"upload",   // upload | url
+  imageUrl:"",
+  overlay:true
+};
+
+let settings = loadLS(DB.settings, defaultBg);
+
+function presetCSS(name){
+  // returns a CSS background string
+  if(name==="midnight"){
+    return `
+      radial-gradient(1100px 540px at 20% 10%, #1b1f3a, transparent 60%),
+      radial-gradient(900px 520px at 80% 90%, #14162a, transparent 55%),
+      linear-gradient(180deg,#050512,#0b0f2a)
+    `;
+  }
+  if(name==="ocean"){
+    return `
+      radial-gradient(1100px 540px at 20% 10%, #063b52, transparent 60%),
+      radial-gradient(900px 520px at 80% 90%, #0a274e, transparent 55%),
+      linear-gradient(180deg,#021019,#041b2a)
+    `;
+  }
+  if(name==="sunrise"){
+    return `
+      radial-gradient(1100px 540px at 25% 15%, #6b2cff, transparent 55%),
+      radial-gradient(900px 520px at 75% 85%, #ff5c7a, transparent 55%),
+      linear-gradient(180deg,#120018,#150a2a)
+    `;
+  }
+  if(name==="matrix"){
+    return `
+      radial-gradient(1100px 540px at 30% 20%, #00ff6a22, transparent 60%),
+      radial-gradient(900px 520px at 70% 85%, #00ff6a18, transparent 55%),
+      linear-gradient(180deg,#020a04,#021306)
+    `;
+  }
+  // nebula default
+  return `
+    radial-gradient(1200px 600px at 20% 10%, #0e1a3a, transparent 60%),
+    radial-gradient(900px 500px at 80% 90%, #101f4a, transparent 55%),
+    linear-gradient(180deg,#050512,#070b1a)
+  `;
+}
+
+let bgObjectURL = null; // for uploaded image preview in CSS
+
+async function applyBackground(){
+  // cleanup old object URL
+  if(bgObjectURL){ URL.revokeObjectURL(bgObjectURL); bgObjectURL=null; }
+
+  const mode = settings.mode;
+
+  if(mode==="preset"){
+    document.body.style.background = presetCSS(settings.preset);
+    document.body.style.backgroundAttachment = "fixed";
+    return;
+  }
+
+  if(mode==="solid"){
+    document.body.style.background = settings.solid;
+    document.body.style.backgroundAttachment = "fixed";
+    return;
+  }
+
+  if(mode==="gradient"){
+    const g1 = settings.g1 || "#0e1a3a";
+    const g2 = settings.g2 || "#101f4a";
+    document.body.style.background = `
+      radial-gradient(1200px 600px at 20% 10%, ${g1}, transparent 60%),
+      radial-gradient(900px 500px at 80% 90%, ${g2}, transparent 55%),
+      linear-gradient(180deg,#050512,#070b1a)
+    `;
+    document.body.style.backgroundAttachment = "fixed";
+    return;
+  }
+
+  if(mode==="image"){
+    // Use uploaded blob from IndexedDB if present, else URL
+    const overlay = settings.overlay !== false;
+    const asset = await idb.get("assets","bgImage");
+    let img = null;
+
+    if(settings.imageMode==="upload" && asset?.blob){
+      bgObjectURL = URL.createObjectURL(asset.blob);
+      img = `url("${bgObjectURL}")`;
+    } else if(settings.imageMode==="url" && settings.imageUrl){
+      img = `url("${settings.imageUrl}")`;
+    }
+
+    const overlayCss = overlay ? `
+      radial-gradient(1200px 600px at 20% 10%, rgba(14,26,58,.85), transparent 60%),
+      radial-gradient(900px 500px at 80% 90%, rgba(16,31,74,.75), transparent 55%),
+      linear-gradient(180deg, rgba(5,5,18,.85), rgba(7,11,26,.85))
+    ` : `linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.35))`;
+
+    if(img){
+      document.body.style.background = `${overlayCss}, ${img}`;
+      document.body.style.backgroundSize = `auto, cover`;
+      document.body.style.backgroundPosition = `0 0, center`;
+      document.body.style.backgroundRepeat = `no-repeat, no-repeat`;
+      document.body.style.backgroundAttachment = `fixed, fixed`;
+    }else{
+      document.body.style.background = presetCSS("nebula");
+      document.body.style.backgroundAttachment = "fixed";
+      toast("No Image", "Upload an image or set a URL.");
+    }
+  }
+}
+
+function renderBgControls(){
+  const mode = $('#bgMode').value;
+  let html = "";
+
+  if(mode==="preset"){
+    html = `<div class="mini">Choose a preset above and click Apply.</div>`;
+  }
+
+  if(mode==="solid"){
+    html = `
+      <div class="row">
+        <label class="mini">Color</label>
+        <input class="input" type="color" id="solidPick" value="${settings.solid || "#070b1a"}" />
+      </div>
+    `;
+  }
+
+  if(mode==="gradient"){
+    html = `
+      <div class="row">
+        <label class="mini">Glow 1</label>
+        <input class="input" type="color" id="g1Pick" value="${settings.g1 || "#0e1a3a"}" />
+        <label class="mini">Glow 2</label>
+        <input class="input" type="color" id="g2Pick" value="${settings.g2 || "#101f4a"}" />
+      </div>
+      <div class="mini" style="margin-top:8px">Tip: darker colors look cleaner.</div>
+    `;
+  }
+
+  if(mode==="image"){
+    const checked = settings.overlay !== false ? "checked" : "";
+    const urlMode = (settings.imageMode==="url");
+    html = `
+      <div class="row">
+        <select id="imgMode">
+          <option value="upload" ${!urlMode?'selected':''}>Upload Image</option>
+          <option value="url" ${urlMode?'selected':''}>Use Image URL</option>
+        </select>
+        <label class="mini"><input type="checkbox" id="imgOverlay" ${checked}/> overlay glow</label>
+      </div>
+
+      <div style="margin-top:10px">
+        <div id="imgUploadWrap" style="display:${urlMode?'none':'block'}">
+          <input class="input" id="bgImagePick" type="file" accept="image/*" />
+          <div class="mini" style="margin-top:6px">Uploaded image is stored in your browser (IndexedDB).</div>
+        </div>
+
+        <div id="imgUrlWrap" style="display:${urlMode?'block':'none'}">
+          <input class="input" id="bgImageUrl" placeholder="https://example.com/image.jpg"
+                 value="${settings.imageUrl || ""}" />
+          <div class="mini" style="margin-top:6px">URL image must allow hotlinking to show.</div>
+        </div>
+      </div>
+    `;
+  }
+
+  $('#bgControls').innerHTML = html;
+
+  // bind dynamic controls
+  if(mode==="solid"){
+    $('#solidPick').addEventListener('input', (e)=>{ settings.solid = e.target.value; });
+  }
+  if(mode==="gradient"){
+    $('#g1Pick').addEventListener('input', (e)=>{ settings.g1 = e.target.value; });
+    $('#g2Pick').addEventListener('input', (e)=>{ settings.g2 = e.target.value; });
+  }
+  if(mode==="image"){
+    $('#imgMode').addEventListener('change', (e)=>{
+      settings.imageMode = e.target.value;
+      saveLS(DB.settings, settings);
+      renderBgControls();
+    });
+    $('#imgOverlay').addEventListener('change', (e)=>{
+      settings.overlay = e.target.checked;
+    });
+
+    const pick = $('#bgImagePick');
+    if(pick){
+      pick.addEventListener('change', async ()=>{
+        const f = pick.files?.[0];
+        if(!f) return;
+        await idb.put("assets",{key:"bgImage", blob:f, name:f.name, type:f.type, size:f.size, savedAt:Date.now()});
+        toast("Saved", "Background image stored.");
+      });
+    }
+
+    const url = $('#bgImageUrl');
+    if(url){
+      url.addEventListener('input', ()=>{
+        settings.imageUrl = url.value.trim();
+      });
+    }
+  }
+}
+
+/* ========= Notes Render ========= */
+function subjectList(){
+  return Array.from(new Set(notes.map(n=>n.m))).sort((a,b)=>a.localeCompare(b));
+}
 function refreshSubjectFilter(){
   const sel = $('#subjectFilter');
   const current = sel.value;
@@ -308,38 +723,25 @@ function refreshSubjectFilter(){
 function setKPIs(){
   $('#kNotes').textContent = notes.length;
   $('#kExtra').textContent = extra.length;
+  $('#kFiles').textContent = vaultFiles.length;
 }
-
-// ===== Render =====
 function noteHTML(n, kind){
   const metaLeft = kind==='study'
-    ? `<span class="pill">${n.m}</span><span class="mini">${n.d}${n.topic?` • ${n.topic}`:''}</span>`
+    ? `<span class="pill">${n.m}</span><span class="mini">${n.d}${n.topic?` • ${escapeHTML(n.topic)}`:''}</span>`
     : `<span class="pill">EXTRA</span><span class="mini">${n.d}</span>`;
 
   return `
-  <div class="note" data-id="${n.id}">
-    <div class="actions">
-      <button class="iconBtn" data-act="edit" title="Edit">✎</button>
-      <button class="iconBtn" data-act="del" title="Delete">🗑</button>
-    </div>
-    <div class="meta">${metaLeft}</div>
-    <div class="body">${escapeHTML(n.t)}</div>
-  </div>`;
+    <div class="note" data-kind="${kind}" data-id="${n.id}">
+      <div class="actions">
+        <button class="iconBtn" data-act="edit" title="Edit">✎</button>
+        <button class="iconBtn" data-act="del" title="Delete">🗑</button>
+      </div>
+      <div class="meta">${metaLeft}</div>
+      <div class="body">${escapeHTML(n.t)}</div>
+    </div>`;
 }
-
-function escapeHTML(str){
-  return String(str)
-    .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
-    .replaceAll('>','&gt;')
-    .replaceAll('"','&quot;')
-    .replaceAll("'",'&#039;')
-    .replaceAll('\n','<br>');
-}
-
 function render(){
-  // Filters
-  const q = norm($('#search').value).toLowerCase();
+  const q = ($('#search').value||'').trim().toLowerCase();
   const subj = $('#subjectFilter').value;
 
   const filtered = notes.filter(n=>{
@@ -356,205 +758,270 @@ function render(){
     ? extra.map(n=>noteHTML(n,'extra')).join('')
     : `<div class="mini">No extra notes</div>`;
 
+  renderVault();
   refreshSubjectFilter();
   setKPIs();
 }
 
-// ===== CRUD: Study Notes =====
+/* ========= Notes CRUD ========= */
 function addStudyNote(){
   const m = $('#newSubject').value;
-  const topic = norm($('#newTopic').value);
-  const t = norm($('#newNote').value);
-  if(!t){ toast('Missing', 'Write a note first.'); return; }
+  const topic = ($('#newTopic').value||'').trim();
+  const t = ($('#newNote').value||'').trim();
+  if(!t){ toast('Missing','Write a note first.'); return; }
 
-  notes.unshift({
-    id: crypto.randomUUID(),
-    m, topic,
-    d: new Date().toLocaleDateString(),
-    t
-  });
+  notes.unshift({ id: crypto.randomUUID(), m, topic, d: new Date().toLocaleDateString(), t });
+  saveLS(DB.notes, notes);
 
-  save(DB.notes, notes);
-  $('#newTopic').value = '';
-  $('#newNote').value = '';
-  toast('Saved', 'Study note added.');
+  $('#newTopic').value='';
+  $('#newNote').value='';
+  delete $('#btnAddNote').dataset.editId;
+
+  toast('Saved','Study note added.');
   render();
 }
+function addExtraNote(){
+  const t = ($('#extraInput').value||'').trim();
+  if(!t){ toast('Missing','Write an extra note first.'); return; }
 
+  extra.unshift({ id: crypto.randomUUID(), d: new Date().toLocaleDateString(), t });
+  saveLS(DB.extra, extra);
+
+  $('#extraInput').value='';
+  delete $('#btnAddExtra').dataset.editId;
+
+  toast('Saved','Extra note added.');
+  render();
+}
 function editItem(kind, id){
-  const arr = (kind==='study') ? notes : extra;
-  const idx = arr.findIndex(x=>x.id===id);
-  if(idx<0) return;
-
-  const old = arr[idx];
-  let promptText = old.t;
-
-  // Inline editor (no browser prompt)
-  // We’ll reuse the input areas for editing:
   if(kind==='study'){
-    $('#newSubject').value = old.m;
-    $('#newTopic').value = old.topic || '';
-    $('#newNote').value = old.t;
+    const idx=notes.findIndex(n=>n.id===id); if(idx<0) return;
+    const n=notes[idx];
+    $('#newSubject').value=n.m;
+    $('#newTopic').value=n.topic||'';
+    $('#newNote').value=n.t;
     $('#newNote').focus();
-    toast('Edit Mode', 'Update fields and click "Save Study Note".');
-    // Replace on next save:
-    $('#btnAddNote').dataset.editId = id;
-  }else{
-    $('#extraInput').value = old.t;
+    $('#btnAddNote').dataset.editId=id;
+    toast('Edit Mode','Update and press "Save Study Note".');
+  } else if(kind==='extra'){
+    const idx=extra.findIndex(n=>n.id===id); if(idx<0) return;
+    const n=extra[idx];
+    $('#extraInput').value=n.t;
     $('#extraInput').focus();
-    toast('Edit Mode', 'Update text and click "Save Extra Note".');
-    $('#btnAddExtra').dataset.editId = id;
+    $('#btnAddExtra').dataset.editId=id;
+    toast('Edit Mode','Update and press "Save Extra Note".');
   }
 }
-
 function deleteItem(kind, id){
   if(kind==='study'){
     notes = notes.filter(n=>n.id!==id);
-    save(DB.notes, notes);
-    toast('Deleted', 'Study note removed.');
-  }else{
+    saveLS(DB.notes, notes);
+    toast('Deleted','Study note removed.');
+  }else if(kind==='extra'){
     extra = extra.filter(n=>n.id!==id);
-    save(DB.extra, extra);
-    toast('Deleted', 'Extra note removed.');
+    saveLS(DB.extra, extra);
+    toast('Deleted','Extra note removed.');
   }
   render();
 }
 
-// ===== CRUD: Extra =====
-function addExtra(){
-  const t = norm($('#extraInput').value);
-  if(!t){ toast('Missing', 'Write an extra note first.'); return; }
-
-  extra.unshift({id: crypto.randomUUID(), d: new Date().toLocaleDateString(), t});
-  save(DB.extra, extra);
-  $('#extraInput').value = '';
-  toast('Saved', 'Extra note added.');
-  render();
-}
-
-// ===== Save handlers with edit-mode support =====
-$('#btnAddNote').addEventListener('click', ()=>{
-  const editId = $('#btnAddNote').dataset.editId;
-  if(editId){
-    const idx = notes.findIndex(n=>n.id===editId);
-    if(idx>=0){
-      notes[idx].m = $('#newSubject').value;
-      notes[idx].topic = norm($('#newTopic').value);
-      notes[idx].t = norm($('#newNote').value) || notes[idx].t;
-      notes[idx].d = new Date().toLocaleDateString();
-      save(DB.notes, notes);
-      delete $('#btnAddNote').dataset.editId;
-      $('#newTopic').value=''; $('#newNote').value='';
-      toast('Updated', 'Study note updated.');
-      render();
-      return;
-    }
-  }
-  addStudyNote();
-});
-
-$('#btnAddExtra').addEventListener('click', ()=>{
-  const editId = $('#btnAddExtra').dataset.editId;
-  if(editId){
-    const idx = extra.findIndex(n=>n.id===editId);
-    if(idx>=0){
-      extra[idx].t = norm($('#extraInput').value) || extra[idx].t;
-      extra[idx].d = new Date().toLocaleDateString();
-      save(DB.extra, extra);
-      delete $('#btnAddExtra').dataset.editId;
-      $('#extraInput').value='';
-      toast('Updated', 'Extra note updated.');
-      render();
-      return;
-    }
-  }
-  addExtra();
-});
-
-// Ctrl/⌘ + Enter to save study note
-$('#newNote').addEventListener('keydown', (e)=>{
-  if((e.ctrlKey || e.metaKey) && e.key==='Enter') addStudyNote();
-});
-
-// Clear search
-$('#btnClearSearch').addEventListener('click', ()=>{
-  $('#search').value='';
-  $('#subjectFilter').value='all';
-  render();
-});
-
-// Clear all extra
-$('#btnClearExtra').addEventListener('click', ()=>{
-  if(!extra.length){ toast('Nothing', 'No extra notes to clear.'); return; }
-  if(confirm('Clear ALL extra notes?')){
-    extra = [];
-    save(DB.extra, extra);
-    toast('Cleared', 'Extra notes wiped.');
-    render();
-  }
-});
-
-// Search/filter re-render
-$('#search').addEventListener('input', render);
-$('#subjectFilter').addEventListener('change', render);
-
-// ===== Delegated clicks for edit/delete =====
-document.addEventListener('click', (e)=>{
-  const btn = e.target.closest('[data-act]');
-  if(!btn) return;
-
-  const noteEl = e.target.closest('.note');
-  if(!noteEl) return;
-
-  const id = noteEl.getAttribute('data-id');
-  const isStudy = noteEl.closest('#notes') !== null;
-  const kind = isStudy ? 'study' : 'extra';
-
-  if(btn.dataset.act==='edit') editItem(kind, id);
-  if(btn.dataset.act==='del') deleteItem(kind, id);
-});
-
-// ===== Export / Import =====
-function exportJSON(){
-  const payload = {version:2, exportedAt:new Date().toISOString(), notes, extra};
+/* ========= Export/Import Notes (not Vault files) ========= */
+function exportNotes(){
+  const payload = { version:3, exportedAt:new Date().toISOString(), notes, extra, settings };
   const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = `memoria_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.href=url;
+  a.download=`memoria_notes_backup_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  toast('Exported', 'Backup downloaded.');
+  toast('Exported','Notes backup downloaded.');
 }
-
-function importJSON(){
+function importNotes(){
   const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'application/json';
+  input.type='file';
+  input.accept='application/json';
   input.onchange = async ()=>{
-    const file = input.files?.[0];
-    if(!file) return;
+    const file=input.files?.[0]; if(!file) return;
     try{
-      const text = await file.text();
-      const data = JSON.parse(text);
-      if(!data || (!Array.isArray(data.notes) && !Array.isArray(data.extra))) throw new Error('Invalid file');
-      if(Array.isArray(data.notes)) notes = data.notes.map(n=>({id:n.id||crypto.randomUUID(), ...n}));
-      if(Array.isArray(data.extra)) extra = data.extra.map(n=>({id:n.id||crypto.randomUUID(), ...n}));
-      save(DB.notes, notes);
-      save(DB.extra, extra);
-      toast('Imported', 'Backup restored.');
+      const txt=await file.text();
+      const data=JSON.parse(txt);
+      if(Array.isArray(data.notes)) notes=data.notes.map(n=>({id:n.id||crypto.randomUUID(), ...n}));
+      if(Array.isArray(data.extra)) extra=data.extra.map(n=>({id:n.id||crypto.randomUUID(), ...n}));
+      if(data.settings) settings={...defaultBg, ...data.settings};
+
+      saveLS(DB.notes, notes);
+      saveLS(DB.extra, extra);
+      saveLS(DB.settings, settings);
+
+      $('#bgMode').value=settings.mode || "preset";
+      $('#bgPreset').value=settings.preset || "nebula";
+      renderBgControls();
+      await applyBackground();
+
+      toast('Imported','Notes restored.');
       render();
-    }catch(err){
-      toast('Error', 'Import failed (invalid JSON).');
+    }catch(e){
+      toast('Error','Import failed (invalid file).');
     }
   };
   input.click();
 }
 
-$('#btnExport').addEventListener('click', exportJSON);
-$('#btnImport').addEventListener('click', importJSON);
+/* ========= Vault ========= */
+function fileIcon(type, name){
+  const n=(name||'').toLowerCase();
+  if(type.startsWith("audio") || n.endsWith(".mp3")) return "🎧";
+  if(type.startsWith("video") || n.endsWith(".mp4")) return "🎬";
+  if(n.endsWith(".ppt") || n.endsWith(".pptx")) return "📽️";
+  if(n.endsWith(".doc") || n.endsWith(".docx")) return "📝";
+  return "📁";
+}
 
-// ===== Command Console =====
+async function loadVault(){
+  vaultFiles = await idb.getAll("files");
+  // newest first
+  vaultFiles.sort((a,b)=> (b.savedAt||0) - (a.savedAt||0));
+  render();
+}
+
+function renderVault(){
+  const list = $('#vaultList');
+  if(!vaultFiles.length){
+    list.innerHTML = `<div class="mini">No files in vault.</div>`;
+    return;
+  }
+
+  list.innerHTML = vaultFiles.map(f=>{
+    const icon = fileIcon(f.type||"", f.name||"");
+    const when = new Date(f.savedAt||Date.now()).toLocaleString();
+    const size = bytesToSize(f.size||0);
+    const tag = f.tag || "General";
+    const title = f.title || f.name || "Untitled";
+
+    return `
+      <div class="note" data-kind="file" data-id="${f.id}">
+        <div class="actions">
+          <button class="iconBtn" data-act="preview" title="Preview">▶</button>
+          <button class="iconBtn" data-act="download" title="Download">⬇</button>
+          <button class="iconBtn" data-act="delFile" title="Delete">🗑</button>
+        </div>
+        <div class="meta">
+          <span class="pill">${icon} ${escapeHTML(tag)}</span>
+          <span class="mini">${escapeHTML(when)} • ${escapeHTML(size)}</span>
+        </div>
+        <div class="body"><b>${escapeHTML(title)}</b><div class="mini">${escapeHTML(f.name||"")}</div></div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function saveSelectedFile(){
+  const file = $('#filePick').files?.[0];
+  if(!file){ toast("Missing","Choose a file first."); return; }
+
+  const title = ($('#fileTitle').value||'').trim();
+  const tag = $('#fileTag').value || "General";
+
+  // store Blob in IndexedDB
+  const rec = {
+    id: crypto.randomUUID(),
+    name: file.name,
+    type: file.type || "application/octet-stream",
+    size: file.size,
+    title,
+    tag,
+    savedAt: Date.now(),
+    blob: file
+  };
+
+  try{
+    await idb.put("files", rec);
+    $('#filePick').value='';
+    $('#fileTitle').value='';
+    toast("Saved","File stored in vault.");
+    await loadVault();
+  }catch(e){
+    toast("Error","Could not save (storage limit?).");
+  }
+}
+
+async function deleteVaultFile(id){
+  await idb.del("files", id);
+  toast("Deleted","File removed.");
+  await loadVault();
+}
+
+async function clearVault(){
+  if(!vaultFiles.length){ toast("Nothing","Vault is already empty."); return; }
+  if(!confirm("Clear ALL vault files?")) return;
+  await idb.clear("files");
+  toast("Cleared","Vault wiped.");
+  await loadVault();
+}
+
+async function downloadVaultFile(id){
+  const rec = await idb.get("files", id);
+  if(!rec?.blob){ toast("Error","File not found."); return; }
+  const url = URL.createObjectURL(rec.blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = rec.name || "download";
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+function showModal(title, bodyHTML){
+  $('#modalTitle').textContent = title;
+  $('#modalBody').innerHTML = bodyHTML;
+  $('#modal').classList.add('show');
+}
+function closeModal(){
+  const body = $('#modalBody');
+  // stop media
+  body.querySelectorAll('video,audio').forEach(el=>{ try{ el.pause?.(); }catch{} });
+  $('#modal').classList.remove('show');
+  $('#modalBody').innerHTML = "";
+}
+
+async function previewVaultFile(id){
+  const rec = await idb.get("files", id);
+  if(!rec?.blob){ toast("Error","File not found."); return; }
+
+  const name = rec.name || "Preview";
+  const type = rec.type || "";
+  const url = URL.createObjectURL(rec.blob);
+
+  if(type.startsWith("audio") || name.toLowerCase().endsWith(".mp3")){
+    showModal(name, `
+      <audio controls style="width:100%">
+        <source src="${url}" type="${type || "audio/mpeg"}">
+      </audio>
+      <div class="mini" style="margin-top:10px">If audio doesn’t play, download and open in a player.</div>
+    `);
+    return;
+  }
+
+  if(type.startsWith("video") || name.toLowerCase().endsWith(".mp4")){
+    showModal(name, `
+      <video controls style="width:100%;max-height:60vh;border-radius:12px;border:1px solid rgba(255,255,255,.08)">
+        <source src="${url}" type="${type || "video/mp4"}">
+      </video>
+      <div class="mini" style="margin-top:10px">If video doesn’t play, download and open in a player.</div>
+    `);
+    return;
+  }
+
+  // Word/PPT: no reliable in-browser preview without external libraries
+  showModal(name, `
+    <div class="mini">Preview not available for this file type in a static app.</div>
+    <hr>
+    <button class="btn green" onclick="(function(){ const a=document.createElement('a'); a.href='${url}'; a.download='${(rec.name||"file").replaceAll("'","")}'; a.click(); })()">Download to Open</button>
+    <div class="mini" style="margin-top:10px">Open it using Microsoft Office / Google Docs / PowerPoint app.</div>
+  `);
+}
+
+/* ========= Command Console ========= */
 function cmdPrint(html){
   const o = $('#cmdOut');
   o.innerHTML += `<div>${html}</div>`;
@@ -562,39 +1029,34 @@ function cmdPrint(html){
 }
 function cmdHelp(){
   cmdPrint(`<span class="mini">Commands:</span>
-  <br>• <b>help</b>
-  <br>• <b>time</b>
-  <br>• <b>notes</b> (scroll)
-  <br>• <b>extra</b> (scroll)
-  <br>• <b>clear</b> (clear console)
-  <br>• <b>add &lt;subject&gt;</b> (focus add form)
-  <br>• <b>search &lt;text&gt;</b> (sets search)
-  <br>• <b>subject &lt;name|all&gt;</b> (sets filter)
-  <br>• <b>export</b> / <b>import</b>`);
+    <br>• <b>help</b>
+    <br>• <b>time</b>
+    <br>• <b>notes</b> (scroll)
+    <br>• <b>extra</b> (scroll)
+    <br>• <b>vault</b> (scroll)
+    <br>• <b>bg</b> (scroll)
+    <br>• <b>clear</b> (clear console)
+    <br>• <b>search &lt;text&gt;</b>
+    <br>• <b>subject &lt;name|all&gt;</b>
+    <br>• <b>export</b> / <b>import</b>`);
 }
 function runCmd(){
   const i = $('#cmdIn');
-  const raw = norm(i.value);
+  const raw = (i.value||'').trim();
   if(!raw) return;
-  const c = raw.toLowerCase();
-
+  const lower = raw.toLowerCase();
   cmdPrint(`&gt; <b>${escapeHTML(raw)}</b>`);
 
-  const parts = c.split(' ');
-  const head = parts[0];
+  const [head, ...restArr] = lower.split(' ');
   const rest = raw.slice(head.length).trim();
 
   if(head==='help') cmdHelp();
   else if(head==='time') cmdPrint(`<span class="mini">${nowTime()}</span>`);
   else if(head==='notes') $('#studynotes').scrollIntoView({behavior:'smooth'});
   else if(head==='extra') $('#extraPanel').scrollIntoView({behavior:'smooth'});
+  else if(head==='vault') $('#vaultPanel').scrollIntoView({behavior:'smooth'});
+  else if(head==='bg') $('#bgPanel').scrollIntoView({behavior:'smooth'});
   else if(head==='clear') $('#cmdOut').innerHTML = '';
-  else if(head==='add'){
-    const subj = rest || 'Math';
-    $('#newSubject').value = capitalize(subj);
-    $('#newNote').focus();
-    cmdPrint(`<span class="mini">Add mode: subject = ${escapeHTML(capitalize(subj))}</span>`);
-  }
   else if(head==='search'){
     $('#search').value = rest;
     render();
@@ -603,39 +1065,186 @@ function runCmd(){
   else if(head==='subject'){
     const v = rest.trim().toLowerCase();
     const sel = $('#subjectFilter');
-    if(v==='all' || v===''){
-      sel.value = 'all';
-    }else{
-      // Try exact match
+    if(!v || v==='all'){ sel.value='all'; }
+    else{
       const opts = Array.from(sel.options).map(o=>o.value);
-      const found = opts.find(x=>x.toLowerCase()===capitalize(v).toLowerCase()) ||
-                    opts.find(x=>x.toLowerCase()===v);
+      const found = opts.find(x=>x.toLowerCase()===v);
       sel.value = found || 'all';
     }
     render();
     cmdPrint(`<span class="mini">Subject filter updated.</span>`);
   }
-  else if(head==='export') exportJSON();
-  else if(head==='import') importJSON();
+  else if(head==='export') exportNotes();
+  else if(head==='import') importNotes();
   else cmdPrint(`<span class="mini">Unknown command. Type <b>help</b>.</span>`);
 
   i.value='';
 }
 
-function capitalize(s){
-  s = String(s||'').trim();
-  if(!s) return s;
-  return s[0].toUpperCase() + s.slice(1);
-}
-
-$('#cmdIn').addEventListener('keydown', (e)=>{
-  if(e.key==='Enter') runCmd();
+/* ========= Events ========= */
+// Notes buttons
+$('#btnAddNote').addEventListener('click', ()=>{
+  const editId = $('#btnAddNote').dataset.editId;
+  if(editId){
+    const idx = notes.findIndex(n=>n.id===editId);
+    if(idx>=0){
+      notes[idx].m = $('#newSubject').value;
+      notes[idx].topic = ($('#newTopic').value||'').trim();
+      notes[idx].t = ($('#newNote').value||'').trim() || notes[idx].t;
+      notes[idx].d = new Date().toLocaleDateString();
+      saveLS(DB.notes, notes);
+      delete $('#btnAddNote').dataset.editId;
+      $('#newTopic').value=''; $('#newNote').value='';
+      toast('Updated','Study note updated.');
+      render();
+      return;
+    }
+  }
+  addStudyNote();
+});
+$('#btnAddExtra').addEventListener('click', ()=>{
+  const editId = $('#btnAddExtra').dataset.editId;
+  if(editId){
+    const idx = extra.findIndex(n=>n.id===editId);
+    if(idx>=0){
+      extra[idx].t = ($('#extraInput').value||'').trim() || extra[idx].t;
+      extra[idx].d = new Date().toLocaleDateString();
+      saveLS(DB.extra, extra);
+      delete $('#btnAddExtra').dataset.editId;
+      $('#extraInput').value='';
+      toast('Updated','Extra note updated.');
+      render();
+      return;
+    }
+  }
+  addExtraNote();
 });
 
-// ===== Boot =====
-(function init(){
-  $('#cmdOut').innerHTML =
-    `<div class="mini">Memoria console ready. Type <b>help</b>.</div>`;
+$('#newNote').addEventListener('keydown', (e)=>{
+  if((e.ctrlKey || e.metaKey) && e.key==='Enter') addStudyNote();
+});
+
+$('#btnClearExtra').addEventListener('click', ()=>{
+  if(!extra.length){ toast('Nothing','No extra notes to clear.'); return; }
+  if(confirm('Clear ALL extra notes?')){
+    extra=[];
+    saveLS(DB.extra, extra);
+    toast('Cleared','Extra notes wiped.');
+    render();
+  }
+});
+
+// Search/filter
+$('#search').addEventListener('input', render);
+$('#subjectFilter').addEventListener('change', render);
+$('#btnClearSearch').addEventListener('click', ()=>{
+  $('#search').value='';
+  $('#subjectFilter').value='all';
+  render();
+});
+
+// Export/import
+$('#btnExport').addEventListener('click', exportNotes);
+$('#btnImport').addEventListener('click', importNotes);
+
+// Vault
+$('#btnSaveFile').addEventListener('click', saveSelectedFile);
+$('#btnClearVault').addEventListener('click', clearVault);
+
+// Background settings
+$('#bgMode').addEventListener('change', (e)=>{
+  settings.mode = e.target.value;
+  saveLS(DB.settings, settings);
+  renderBgControls();
+});
+$('#bgPreset').addEventListener('change', (e)=>{
+  settings.preset = e.target.value;
+  saveLS(DB.settings, settings);
+});
+$('#btnApplyBg').addEventListener('click', async ()=>{
+  // collect from controls
+  settings.mode = $('#bgMode').value;
+  settings.preset = $('#bgPreset').value;
+
+  if(settings.mode==="solid"){
+    const solid = $('#solidPick')?.value;
+    if(solid) settings.solid = solid;
+  }
+  if(settings.mode==="gradient"){
+    const g1 = $('#g1Pick')?.value; const g2 = $('#g2Pick')?.value;
+    if(g1) settings.g1 = g1;
+    if(g2) settings.g2 = g2;
+  }
+  if(settings.mode==="image"){
+    const imgMode = $('#imgMode')?.value;
+    if(imgMode) settings.imageMode = imgMode;
+    const overlay = $('#imgOverlay')?.checked;
+    settings.overlay = overlay !== false;
+
+    const url = $('#bgImageUrl')?.value?.trim();
+    if(settings.imageMode==="url" && url) settings.imageUrl = url;
+  }
+
+  saveLS(DB.settings, settings);
+  await applyBackground();
+  toast("Applied","Background updated.");
+});
+
+$('#btnResetBg').addEventListener('click', async ()=>{
+  settings = {...defaultBg};
+  saveLS(DB.settings, settings);
+  $('#bgMode').value=settings.mode;
+  $('#bgPreset').value=settings.preset;
+  renderBgControls();
+  await applyBackground();
+  toast("Reset","Background restored.");
+});
+
+// Command
+$('#cmdIn').addEventListener('keydown', (e)=>{ if(e.key==='Enter') runCmd(); });
+
+// Delegated actions (notes + vault)
+document.addEventListener('click', async (e)=>{
+  const btn = e.target.closest('[data-act]');
+  if(!btn) return;
+  const box = e.target.closest('.note');
+  if(!box) return;
+
+  const kind = box.getAttribute('data-kind');
+  const id = box.getAttribute('data-id');
+
+  const act = btn.getAttribute('data-act');
+
+  if(kind==='study' || kind==='extra'){
+    if(act==='edit') editItem(kind, id);
+    if(act==='del') deleteItem(kind, id);
+  }
+
+  if(kind==='file'){
+    if(act==='delFile') await deleteVaultFile(id);
+    if(act==='download') await downloadVaultFile(id);
+    if(act==='preview') await previewVaultFile(id);
+  }
+});
+
+// Modal
+$('#modalClose').addEventListener('click', closeModal);
+$('#modal').addEventListener('click', (e)=>{ if(e.target.id==='modal') closeModal(); });
+
+/* ========= Init ========= */
+(async function init(){
+  $('#cmdOut').innerHTML = `<div class="mini">Memoria console ready. Type <b>help</b>.</div>`;
+
+  // load settings into UI
+  $('#bgMode').value = settings.mode || "preset";
+  $('#bgPreset').value = settings.preset || "nebula";
+  renderBgControls();
+  await applyBackground();
+
+  // load vault
+  await loadVault();
+
+  // initial render
   render();
 })();
 </script>
