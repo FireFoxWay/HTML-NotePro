@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Clock + Dock</title>
+  <title>Memoria NotePro — Clock + Dock</title>
 
   <style>
     :root{
@@ -13,16 +13,45 @@
       --panel: rgba(18,20,35,.70);
       --border: rgba(255,255,255,.12);
       --shadow: 0 18px 70px rgba(0,0,0,.70);
+      --accent: rgba(139,92,246,.35);
+      --wallpaper: radial-gradient(1200px 600px at 20% 10%, #0e1a3a, transparent 60%),
+                   radial-gradient(900px 500px at 80% 90%, #101f4a, transparent 55%),
+                   linear-gradient(180deg, #050512, #070b1a);
+      --wallpaperImg: none; /* optional url(...) */
     }
 
     html,body{height:100%;margin:0}
     body{
-      background:
-        radial-gradient(1200px 600px at 20% 10%, #0e1a3a, transparent 60%),
-        radial-gradient(900px 500px at 80% 90%, #101f4a, transparent 55%),
-        linear-gradient(180deg, #050512, #070b1a);
       color: var(--text);
       overflow:hidden;
+      background: var(--wallpaper);
+    }
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      background-image: var(--wallpaperImg);
+      background-size: cover;
+      background-position: center;
+      filter: saturate(1.1) contrast(1.05);
+      opacity: .35;
+      pointer-events:none;
+      z-index:-2;
+    }
+    body::after{
+      content:"";
+      position:fixed; inset:0;
+      background: radial-gradient(900px 500px at 50% 40%, rgba(139,92,246,.10), transparent 60%);
+      pointer-events:none;
+      z-index:-1;
+    }
+
+    /* Matrix canvas */
+    #matrix{
+      position:fixed; inset:0;
+      width:100vw; height:100vh;
+      pointer-events:none;
+      z-index:-1;
+      opacity: .85;
     }
 
     /* VIEWS */
@@ -60,7 +89,7 @@
 
     /* WINDOW CONTENT */
     .window{
-      max-width: 980px;
+      max-width: 1040px;
       margin: 0 auto;
       background: var(--panel);
       border: 1px solid var(--border);
@@ -83,9 +112,7 @@
     .spacer{flex:1}
     hr{border:none;border-top:1px solid rgba(255,255,255,.10);margin:12px 0}
 
-    input, select, textarea, button{
-      font: inherit;
-    }
+    input, select, textarea, button{font: inherit;}
     input, select, textarea{
       background: rgba(0,0,0,.30);
       border: 1px solid rgba(255,255,255,.12);
@@ -131,6 +158,14 @@
     }
     .smallBtn{padding:7px 9px;border-radius:10px;font-size:12px}
 
+    /* Key points list */
+    .kp{
+      margin: 10px 0 0;
+      padding-left: 18px;
+      color: rgba(255,255,255,.82);
+    }
+    .kp li{margin: 6px 0}
+
     /* DOCK */
     .dock{
       position:fixed;
@@ -163,6 +198,7 @@
       font-size:20px;
       transition: transform .16s ease, filter .16s ease, background .16s ease;
       padding:0;
+      position: relative;
     }
     .dockBtn:hover{
       transform: translateY(-6px) scale(1.10);
@@ -187,6 +223,17 @@
     }
     .dockItem:hover .dockTip{opacity:1}
 
+    /* Tiny dot notification (for chat) */
+    .bubble{
+      position:absolute;
+      top:6px; right:8px;
+      width:10px; height:10px;
+      border-radius:999px;
+      background: rgba(239,68,68,.95);
+      box-shadow: 0 0 0 3px rgba(0,0,0,.25), 0 0 18px rgba(239,68,68,.45);
+      display:none;
+    }
+
     /* CHAT LOG */
     .chatLog{
       height: 320px;
@@ -199,6 +246,21 @@
       font-size: 13px;
       line-height: 1.45;
     }
+
+    /* TERMINAL */
+    .termOut{
+      height: 320px;
+      overflow:auto;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.10);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .termLine{color: rgba(255,255,255,.86)}
+    .termDim{color: rgba(255,255,255,.55)}
 
     /* MODAL PREVIEW */
     .modal{
@@ -222,6 +284,7 @@
 </head>
 
 <body>
+  <canvas id="matrix"></canvas>
 
   <!-- HOME (Clock-only + Dock) -->
   <section class="view active" id="home">
@@ -230,6 +293,40 @@
         <div class="time" id="t">--:--</div>
         <div class="sub" id="d">—</div>
       </div>
+    </div>
+  </section>
+
+  <!-- STUDY NOTES WINDOW (Key Points) -->
+  <section class="view" id="studynotes">
+    <div class="window">
+      <div class="windowHead">
+        <h2>Study Notes (Key Points)</h2>
+        <div class="mini">Save quick bullet points • stored in browser</div>
+      </div>
+
+      <div class="row">
+        <select id="snSubject">
+          <option>Math</option>
+          <option>Science</option>
+          <option>Social</option>
+          <option>English</option>
+          <option>AI</option>
+        </select>
+        <input id="snTitle" placeholder="Topic (e.g., Number Systems)" style="flex:1" />
+      </div>
+
+      <div class="row" style="margin-top:10px; align-items:stretch;">
+        <textarea id="snPoints" rows="5" placeholder="Write key points, one per line..."></textarea>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btnGreen" id="snSave">Save Key Points</button>
+        <button class="btnRed" id="snClearAll">Clear All Notes</button>
+      </div>
+
+      <hr>
+
+      <div class="list" id="snList"></div>
     </div>
   </section>
 
@@ -296,6 +393,84 @@
     </div>
   </section>
 
+  <!-- TERMINAL WINDOW -->
+  <section class="view" id="terminal">
+    <div class="window">
+      <div class="windowHead">
+        <h2>Terminal</h2>
+        <div class="mini">Commands + quick navigation</div>
+      </div>
+
+      <div class="termOut" id="termOut"></div>
+
+      <div class="row" style="margin-top:12px">
+        <input id="termIn" style="flex:1" placeholder="Type: help" />
+        <button class="btnPurple" id="termRun">Run</button>
+      </div>
+
+      <div class="mini" style="margin-top:8px">
+        Example: <b>goto chat</b>, <b>matrix on</b>, <b>matrix speed 1.2</b>, <b>matrix color #00ff88</b>, <b>wallpaper neon</b>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS WINDOW (Wallpaper + Matrix) -->
+  <section class="view" id="settings">
+    <div class="window">
+      <div class="windowHead">
+        <h2>Settings</h2>
+        <div class="mini">Wallpaper + Matrix</div>
+      </div>
+
+      <div class="row">
+        <div style="min-width:180px">
+          <div class="mini">Wallpaper (preset)</div>
+          <select id="wpPreset">
+            <option value="default">Default</option>
+            <option value="neon">Neon Bloom</option>
+            <option value="midnight">Midnight</option>
+            <option value="sunset">Sunset</option>
+            <option value="ocean">Ocean</option>
+            <option value="mono">Mono Dark</option>
+          </select>
+        </div>
+
+        <div style="flex:1; min-width:240px">
+          <div class="mini">Wallpaper image URL (optional)</div>
+          <input id="wpUrl" placeholder="https://.../image.jpg" />
+        </div>
+
+        <button class="btnGreen" id="wpApply">Apply</button>
+        <button class="btnRed" id="wpReset">Reset</button>
+      </div>
+
+      <hr>
+
+      <div class="row">
+        <label class="mini" style="display:flex;gap:8px;align-items:center">
+          <input type="checkbox" id="mxOn" />
+          Matrix ON
+        </label>
+
+        <div style="min-width:160px">
+          <div class="mini">Matrix speed</div>
+          <input id="mxSpeed" type="number" step="0.1" min="0.1" max="6" />
+        </div>
+
+        <div style="min-width:180px">
+          <div class="mini">Matrix color</div>
+          <input id="mxColor" type="text" placeholder="#00ff88" />
+        </div>
+
+        <button class="btnPurple" id="mxApply">Apply Matrix</button>
+      </div>
+
+      <div class="mini" style="margin-top:10px">
+        Tip: keep speed around <b>0.7–1.5</b>.
+      </div>
+    </div>
+  </section>
+
   <!-- DOCK (always visible) -->
   <nav class="dock" aria-label="Dock">
     <div class="dockItem">
@@ -303,12 +478,26 @@
       <button class="dockBtn" data-go="home" aria-label="Home">🏠</button>
     </div>
     <div class="dockItem">
+      <div class="dockTip">Study Notes</div>
+      <button class="dockBtn" data-go="studynotes" aria-label="Study Notes">📚</button>
+    </div>
+    <div class="dockItem">
       <div class="dockTip">Chat</div>
-      <button class="dockBtn" data-go="chat" aria-label="Chat">💬</button>
+      <button class="dockBtn" id="dockChat" data-go="chat" aria-label="Chat">
+        💬 <span class="bubble" id="chatBubble"></span>
+      </button>
     </div>
     <div class="dockItem">
       <div class="dockTip">Vault</div>
       <button class="dockBtn" data-go="vault" aria-label="Vault">🗂️</button>
+    </div>
+    <div class="dockItem">
+      <div class="dockTip">Terminal</div>
+      <button class="dockBtn" data-go="terminal" aria-label="Terminal">⌘</button>
+    </div>
+    <div class="dockItem">
+      <div class="dockTip">Settings</div>
+      <button class="dockBtn" data-go="settings" aria-label="Settings">⚙️</button>
     </div>
   </nav>
 
@@ -325,6 +514,17 @@
   </div>
 
   <script>
+    /* =========================
+       APP GLOBALS
+    ========================== */
+    const App = window.App = {
+      views: ["home","studynotes","chat","vault","terminal","settings"],
+      showView: null,
+      setMatrix: null,
+      setWallpaper: null,
+      stats: { vaultCount: 0, notesCount: 0, chatUnread: 0 }
+    };
+
     /* ===== CLOCK ===== */
     function updateClock(){
       const now = new Date();
@@ -339,14 +539,19 @@
     setInterval(updateClock, 1000);
 
     /* ===== VIEW SWITCH + BACK BUTTON ===== */
-    const views = ["home","chat","vault"];
     function showView(id, push=true){
-      if(!views.includes(id)) id="home";
-      for(const v of views){
+      if(!App.views.includes(id)) id="home";
+      for(const v of App.views){
         document.getElementById(v).classList.toggle("active", v===id);
+      }
+      // Clear chat bubble when you open chat
+      if(id === "chat"){
+        App.stats.chatUnread = 0;
+        renderChatBubble();
       }
       if(push) history.pushState({view:id}, "", "#"+id);
     }
+    App.showView = showView;
 
     document.querySelectorAll("[data-go]").forEach(btn=>{
       btn.addEventListener("click", ()=>showView(btn.dataset.go, true));
@@ -361,15 +566,105 @@
     history.replaceState({view:start}, "", "#"+start);
     showView(start, false);
 
-    /* ===== VAULT (IndexedDB) ===== */
+    /* ===== CHAT DOCK BUBBLE ===== */
+    const chatBubble = document.getElementById("chatBubble");
+    function renderChatBubble(){
+      chatBubble.style.display = App.stats.chatUnread > 0 ? "block" : "none";
+    }
+
+    /* =========================
+       STUDY NOTES (KEY POINTS) - localStorage
+    ========================== */
+    const SN_KEY = "memoria_studynotes_v1";
+    const snList = document.getElementById("snList");
+    let studyNotes = [];
+    function loadSN(){
+      try{ studyNotes = JSON.parse(localStorage.getItem(SN_KEY) || "[]"); }
+      catch{ studyNotes = []; }
+      App.stats.notesCount = studyNotes.length;
+      renderSN();
+    }
+    function saveSN(){
+      localStorage.setItem(SN_KEY, JSON.stringify(studyNotes));
+      App.stats.notesCount = studyNotes.length;
+    }
+    function renderSN(){
+      if(!studyNotes.length){
+        snList.innerHTML = `<div class="mini">No study notes yet.</div>`;
+        return;
+      }
+      snList.innerHTML = studyNotes.map(n=>{
+        const when = new Date(n.ts).toLocaleString();
+        const points = (n.points || []).map(p=>`<li>${escapeHtml(p)}</li>`).join("");
+        return `
+          <div class="card" data-id="${escapeHtml(n.id)}">
+            <div class="cardActions">
+              <button class="smallBtn btnRed" data-act="del">Delete</button>
+            </div>
+            <div class="cardTitle">${escapeHtml(n.subject)} • ${escapeHtml(n.title || "Untitled")}</div>
+            <div class="cardMeta">${escapeHtml(when)}</div>
+            <ul class="kp">${points}</ul>
+          </div>
+        `;
+      }).join("");
+    }
+    function addSN(){
+      const subject = document.getElementById("snSubject").value;
+      const title = document.getElementById("snTitle").value.trim();
+      const raw = document.getElementById("snPoints").value.trim();
+      if(!raw){ alert("Write at least 1 key point (one per line)."); return; }
+      const points = raw.split("\n").map(s=>s.trim()).filter(Boolean).slice(0, 30);
+
+      studyNotes.unshift({
+        id: crypto.randomUUID(),
+        subject, title,
+        points,
+        ts: Date.now()
+      });
+      saveSN();
+      renderSN();
+      document.getElementById("snTitle").value = "";
+      document.getElementById("snPoints").value = "";
+    }
+    function delSN(id){
+      studyNotes = studyNotes.filter(n=>n.id !== id);
+      saveSN();
+      renderSN();
+    }
+    document.getElementById("snSave").addEventListener("click", addSN);
+    document.getElementById("snClearAll").addEventListener("click", ()=>{
+      if(!confirm("Clear all study notes?")) return;
+      studyNotes = [];
+      saveSN();
+      renderSN();
+    });
+    snList.addEventListener("click", (e)=>{
+      const btn = e.target.closest("button[data-act]");
+      if(!btn) return;
+      const card = e.target.closest(".card");
+      if(!card) return;
+      const id = card.getAttribute("data-id");
+      if(btn.getAttribute("data-act")==="del") delSN(id);
+    });
+
+    /* =========================
+       VAULT (IndexedDB)
+    ========================== */
     const vaultList = document.getElementById("vaultList");
     const modal = document.getElementById("modal");
     const modalTitle = document.getElementById("modalTitle");
     const modalBody = document.getElementById("modalBody");
     const modalClose = document.getElementById("modalClose");
-
     let previewUrl = null;
 
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
     function bytesToSize(bytes){
       if(bytes===0) return "0 B";
       const k=1024, sizes=["B","KB","MB","GB"];
@@ -378,7 +673,7 @@
     }
 
     const IDB = (() => {
-      const DBNAME="clockdock_vault_v1";
+      const DBNAME="memoria_vault_v2";
       const VERSION=1;
       let db=null;
 
@@ -452,13 +747,10 @@
 
     let vaultFiles = [];
 
-    function esc(s){
-      return String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
-    }
-
     async function loadVault(){
       vaultFiles = await IDB.getAll();
       vaultFiles.sort((a,b)=> (b.savedAt||0) - (a.savedAt||0));
+      App.stats.vaultCount = vaultFiles.length;
       renderVault();
     }
 
@@ -474,14 +766,14 @@
         const title = f.title || f.name || "Untitled";
         const tag = f.tag || "General";
         return `
-          <div class="card" data-id="${esc(f.id)}">
+          <div class="card" data-id="${escapeHtml(f.id)}">
             <div class="cardActions">
               <button class="smallBtn btnPurple" data-act="preview">Preview</button>
               <button class="smallBtn" data-act="download">Download</button>
               <button class="smallBtn btnRed" data-act="delete">Delete</button>
             </div>
-            <div class="cardTitle">${esc(title)}</div>
-            <div class="cardMeta">📁 ${esc(tag)} • ${esc(when)} • ${esc(size)} • ${esc(f.name || "")}</div>
+            <div class="cardTitle">${escapeHtml(title)}</div>
+            <div class="cardMeta">📁 ${escapeHtml(tag)} • ${escapeHtml(when)} • ${escapeHtml(size)} • ${escapeHtml(f.name || "")}</div>
           </div>
         `;
       }).join("");
@@ -599,9 +891,318 @@
     modal.addEventListener("click", (e)=>{ if(e.target === modal) closeModal(); });
 
     loadVault();
+    loadSN();
+
+    /* =========================
+       MATRIX (real falling characters)
+    ========================== */
+    const mx = {
+      on: true,
+      speed: 1.0,
+      color: "#00ff88",
+      chars: "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+      fontSize: 16,
+      columns: [],
+      lastW: 0,
+      lastH: 0
+    };
+
+    const canvas = document.getElementById("matrix");
+    const ctx = canvas.getContext("2d");
+
+    function resizeMatrix(){
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const w = Math.floor(window.innerWidth);
+      const h = Math.floor(window.innerHeight);
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+
+      mx.lastW = w; mx.lastH = h;
+      const cols = Math.floor(w / mx.fontSize);
+      mx.columns = new Array(cols).fill(0).map(()=> Math.random() * h);
+    }
+
+    function drawMatrix(){
+      if(!mx.on){
+        requestAnimationFrame(drawMatrix);
+        return;
+      }
+      const w = mx.lastW || window.innerWidth;
+      const h = mx.lastH || window.innerHeight;
+
+      // fade background
+      ctx.fillStyle = "rgba(0,0,0,0.08)";
+      ctx.fillRect(0,0,w,h);
+
+      ctx.font = `${mx.fontSize}px ui-monospace, Menlo, Consolas, monospace`;
+      ctx.fillStyle = mx.color;
+
+      for(let i=0; i<mx.columns.length; i++){
+        const x = i * mx.fontSize;
+        const y = mx.columns[i];
+        const ch = mx.chars[Math.floor(Math.random()*mx.chars.length)];
+        ctx.fillText(ch, x, y);
+
+        mx.columns[i] += (mx.fontSize * (0.65 + Math.random()*0.65)) * mx.speed;
+
+        if(mx.columns[i] > h + 40 && Math.random() > 0.965){
+          mx.columns[i] = -Math.random()*200;
+        }
+      }
+      requestAnimationFrame(drawMatrix);
+    }
+
+    window.addEventListener("resize", resizeMatrix);
+    resizeMatrix();
+    requestAnimationFrame(drawMatrix);
+
+    function setMatrixSettings({on, speed, color}){
+      if(typeof on === "boolean") mx.on = on;
+      if(typeof speed === "number" && isFinite(speed)) mx.speed = Math.min(6, Math.max(0.1, speed));
+      if(typeof color === "string" && color.trim()) mx.color = color.trim();
+      savePrefs();
+    }
+    App.setMatrix = setMatrixSettings;
+
+    /* =========================
+       WALLPAPER SETTINGS
+    ========================== */
+    const WALLPAPERS = {
+      default: `radial-gradient(1200px 600px at 20% 10%, #0e1a3a, transparent 60%),
+                radial-gradient(900px 500px at 80% 90%, #101f4a, transparent 55%),
+                linear-gradient(180deg, #050512, #070b1a)`,
+      neon: `radial-gradient(1200px 600px at 20% 10%, rgba(139,92,246,.65), transparent 60%),
+             radial-gradient(900px 500px at 80% 90%, rgba(34,197,94,.35), transparent 55%),
+             linear-gradient(180deg, #050512, #070b1a)`,
+      midnight: `radial-gradient(900px 600px at 30% 20%, rgba(59,130,246,.35), transparent 60%),
+                 radial-gradient(900px 600px at 70% 80%, rgba(168,85,247,.25), transparent 55%),
+                 linear-gradient(180deg, #02020a, #040818)`,
+      sunset: `radial-gradient(900px 600px at 20% 25%, rgba(244,63,94,.28), transparent 60%),
+               radial-gradient(900px 600px at 80% 75%, rgba(250,204,21,.20), transparent 55%),
+               linear-gradient(180deg, #09040d, #14051a)`,
+      ocean: `radial-gradient(900px 600px at 20% 25%, rgba(14,165,233,.30), transparent 60%),
+              radial-gradient(900px 600px at 80% 75%, rgba(16,185,129,.18), transparent 55%),
+              linear-gradient(180deg, #020a12, #03101b)`,
+      mono: `radial-gradient(900px 600px at 35% 25%, rgba(255,255,255,.10), transparent 60%),
+             radial-gradient(900px 600px at 75% 75%, rgba(255,255,255,.06), transparent 55%),
+             linear-gradient(180deg, #050509, #08080f)`
+    };
+
+    function setWallpaper(preset, imageUrl){
+      const root = document.documentElement;
+      const wp = WALLPAPERS[preset] || WALLPAPERS.default;
+      root.style.setProperty("--wallpaper", wp);
+
+      if(imageUrl && imageUrl.trim()){
+        root.style.setProperty("--wallpaperImg", `url("${imageUrl.trim()}")`);
+      }else{
+        root.style.setProperty("--wallpaperImg", "none");
+      }
+
+      savePrefs();
+    }
+    App.setWallpaper = setWallpaper;
+
+    /* =========================
+       SETTINGS UI wiring
+    ========================== */
+    const wpPreset = document.getElementById("wpPreset");
+    const wpUrl = document.getElementById("wpUrl");
+    const wpApply = document.getElementById("wpApply");
+    const wpReset = document.getElementById("wpReset");
+
+    const mxOn = document.getElementById("mxOn");
+    const mxSpeed = document.getElementById("mxSpeed");
+    const mxColor = document.getElementById("mxColor");
+    const mxApply = document.getElementById("mxApply");
+
+    function savePrefs(){
+      const prefs = {
+        wallpaperPreset: wpPreset.value || "default",
+        wallpaperUrl: wpUrl.value || "",
+        matrixOn: mx.on,
+        matrixSpeed: mx.speed,
+        matrixColor: mx.color
+      };
+      localStorage.setItem("memoria_prefs_v1", JSON.stringify(prefs));
+    }
+
+    function loadPrefs(){
+      try{
+        const p = JSON.parse(localStorage.getItem("memoria_prefs_v1") || "{}");
+        // Wallpaper
+        wpPreset.value = p.wallpaperPreset || "default";
+        wpUrl.value = p.wallpaperUrl || "";
+        setWallpaper(wpPreset.value, wpUrl.value);
+
+        // Matrix
+        mxOn.checked = (p.matrixOn !== false);
+        mxSpeed.value = String(p.matrixSpeed ?? 1.0);
+        mxColor.value = String(p.matrixColor ?? "#00ff88");
+        setMatrixSettings({
+          on: mxOn.checked,
+          speed: parseFloat(mxSpeed.value),
+          color: mxColor.value
+        });
+      }catch{
+        wpPreset.value = "default";
+        wpUrl.value = "";
+        mxOn.checked = true;
+        mxSpeed.value = "1.0";
+        mxColor.value = "#00ff88";
+        setWallpaper("default", "");
+        setMatrixSettings({on:true, speed:1.0, color:"#00ff88"});
+      }
+    }
+
+    wpApply.addEventListener("click", ()=> setWallpaper(wpPreset.value, wpUrl.value));
+    wpReset.addEventListener("click", ()=>{
+      wpPreset.value = "default";
+      wpUrl.value = "";
+      setWallpaper("default", "");
+    });
+
+    mxApply.addEventListener("click", ()=>{
+      setMatrixSettings({
+        on: mxOn.checked,
+        speed: parseFloat(mxSpeed.value),
+        color: mxColor.value
+      });
+    });
+
+    loadPrefs();
+
+    /* =========================
+       TERMINAL (Commands)
+    ========================== */
+    const termOut = document.getElementById("termOut");
+    const termIn = document.getElementById("termIn");
+    const termRun = document.getElementById("termRun");
+
+    function termPrint(line, dim=false){
+      const div = document.createElement("div");
+      div.className = dim ? "termLine termDim" : "termLine";
+      div.textContent = line;
+      termOut.appendChild(div);
+      termOut.scrollTop = termOut.scrollHeight;
+    }
+
+    function termHelp(){
+      termPrint("Commands:", true);
+      termPrint("help");
+      termPrint("time");
+      termPrint("goto home | studynotes | chat | vault | terminal | settings");
+      termPrint("clear");
+      termPrint("stats");
+      termPrint("matrix on | off");
+      termPrint("matrix speed <number>");
+      termPrint("matrix color <#hex>");
+      termPrint("wallpaper default|neon|midnight|sunset|ocean|mono");
+      termPrint("wallpaper url <https://...image>");
+    }
+
+    function termClear(){
+      termOut.innerHTML = "";
+      termPrint("Memoria Terminal • type 'help'", true);
+    }
+
+    function runTerminal(cmdRaw){
+      const cmd = (cmdRaw || "").trim();
+      if(!cmd) return;
+      termPrint("> " + cmd, true);
+
+      const parts = cmd.split(" ").filter(Boolean);
+      const main = (parts[0] || "").toLowerCase();
+
+      if(main === "help"){ termHelp(); return; }
+      if(main === "time"){
+        termPrint(new Date().toString());
+        return;
+      }
+      if(main === "goto"){
+        const v = (parts[1] || "").toLowerCase();
+        if(App.views.includes(v)){
+          App.showView(v, true);
+          termPrint("Opened: " + v);
+        } else {
+          termPrint("Unknown view. Try: home, studynotes, chat, vault, terminal, settings");
+        }
+        return;
+      }
+      if(main === "clear"){ termClear(); return; }
+      if(main === "stats"){
+        termPrint(`Vault files: ${App.stats.vaultCount}`);
+        termPrint(`Study notes: ${App.stats.notesCount}`);
+        termPrint(`Chat unread: ${App.stats.chatUnread}`);
+        return;
+      }
+      if(main === "matrix"){
+        const sub = (parts[1] || "").toLowerCase();
+        if(sub === "on"){ mxOn.checked = true; App.setMatrix({on:true}); termPrint("Matrix: ON"); return; }
+        if(sub === "off"){ mxOn.checked = false; App.setMatrix({on:false}); termPrint("Matrix: OFF"); return; }
+        if(sub === "speed"){
+          const n = parseFloat(parts[2]);
+          if(!isFinite(n)){ termPrint("Usage: matrix speed 1.2"); return; }
+          mxSpeed.value = String(n);
+          App.setMatrix({speed:n});
+          termPrint("Matrix speed set to " + mx.speed);
+          return;
+        }
+        if(sub === "color"){
+          const c = parts[2] || "";
+          if(!c){ termPrint("Usage: matrix color #00ff88"); return; }
+          mxColor.value = c;
+          App.setMatrix({color:c});
+          termPrint("Matrix color set to " + mx.color);
+          return;
+        }
+        termPrint("Usage: matrix on/off | matrix speed <n> | matrix color <hex>");
+        return;
+      }
+      if(main === "wallpaper"){
+        const sub = (parts[1] || "").toLowerCase();
+        if(sub === "url"){
+          const url = parts.slice(2).join(" ");
+          wpUrl.value = url;
+          App.setWallpaper(wpPreset.value, url);
+          termPrint("Wallpaper image URL applied.");
+          return;
+        }
+        if(WALLPAPERS[sub]){
+          wpPreset.value = sub;
+          App.setWallpaper(sub, wpUrl.value);
+          termPrint("Wallpaper preset set to " + sub);
+          return;
+        }
+        termPrint("Usage: wallpaper default|neon|midnight|sunset|ocean|mono OR wallpaper url <image>");
+        return;
+      }
+
+      termPrint("Unknown command. Type: help");
+    }
+
+    termRun.addEventListener("click", ()=>{
+      runTerminal(termIn.value);
+      termIn.value = "";
+      termIn.focus();
+    });
+    termIn.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter"){
+        runTerminal(termIn.value);
+        termIn.value = "";
+      }
+    });
+
+    termClear();
   </script>
 
-  <!-- ===== FIREBASE CHAT (Firestore) ===== -->
+  <!-- =========================
+       FIREBASE CHAT (Firestore)
+       (Multi-people chat)
+  ========================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import {
@@ -609,7 +1210,6 @@
       query, orderBy, limit, onSnapshot
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
 
-    // ✅ Your config (already yours)
     const firebaseConfig = {
       apiKey: "AIzaSyB7AhWd_9tt33c2mvGBMMaFFzBFjxk8svc",
       authDomain: "notepro-3194d.firebaseapp.com",
@@ -632,8 +1232,9 @@
 
     let unsub = null;
     let connectedRoom = null;
+    let lastSeenCount = 0;
 
-    function safeText(s){ return (s ?? "").toString().slice(0, 500); }
+    function safeText(s){ return (s ?? "").toString().slice(0, 800); }
     function showStatus(t){ chatStatus.textContent = t; }
     function clearChat(){ chatLog.innerHTML = ""; }
     function esc(s){
@@ -646,7 +1247,6 @@
       chatLog.scrollTop = chatLog.scrollHeight;
     }
 
-    // Restore saved
     try{
       const n = localStorage.getItem("cd_chat_name");
       const r = localStorage.getItem("cd_chat_room");
@@ -659,7 +1259,6 @@
       const room = safeText(chatRoom.value.trim()).replace(/\s+/g,"-").toLowerCase();
       if(!room){ showStatus("Enter a room code first."); return; }
 
-      // save
       try{
         localStorage.setItem("cd_chat_name", name);
         localStorage.setItem("cd_chat_room", room);
@@ -674,8 +1273,13 @@
       const q = query(msgsRef, orderBy("createdAt","asc"), limit(250));
 
       unsub = onSnapshot(q, (snap)=>{
+        // unread bubble only if you're NOT on chat view
+        const isChatOpen = document.getElementById("chat").classList.contains("active");
+
         clearChat();
+        let count = 0;
         snap.forEach(doc=>{
+          count++;
           const m = doc.data() || {};
           const who  = safeText(m.name || "Anon");
           const text = safeText(m.text || "");
@@ -684,6 +1288,20 @@
             : "--:--";
           addLine(`<span style="color:rgba(255,255,255,.65)">[${esc(time)}]</span> <b>${esc(who)}:</b> ${esc(text)}`);
         });
+
+        if(!isChatOpen && count > lastSeenCount){
+          window.App.stats.chatUnread += (count - lastSeenCount);
+          // show bubble
+          const bubble = document.getElementById("chatBubble");
+          bubble.style.display = "block";
+        }
+        if(isChatOpen){
+          window.App.stats.chatUnread = 0;
+          const bubble = document.getElementById("chatBubble");
+          bubble.style.display = "none";
+        }
+
+        lastSeenCount = count;
       }, (err)=>{
         showStatus("Chat error: " + err.message);
       });
@@ -707,6 +1325,5 @@
     chatSend.addEventListener("click", send);
     chatMsg.addEventListener("keydown", (e)=>{ if(e.key==="Enter") send(); });
   </script>
-
 </body>
 </html>
