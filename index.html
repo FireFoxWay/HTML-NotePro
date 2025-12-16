@@ -1,1685 +1,232 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Memoria NotePro</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Clock + Dock</title>
 
-<style>
-:root{
-  --text:#e6ebff;
-  --muted:rgba(255,255,255,.65);
-  --panel:rgba(15,18,32,.92);
-  --border:rgba(255,255,255,.08);
-  --neon:#8b5cf6;
-  --good:#22c55e;
-  --danger:#ef4444;
-  --shadow:0 0 0 1px rgba(255,255,255,.05),0 14px 50px rgba(0,0,0,.65);
-  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;
-}
-*{box-sizing:border-box}
-html,body{margin:0;height:100%;color:var(--text)}
-body{
-  background:
-    radial-gradient(1200px 600px at 20% 10%,#0e1a3a,transparent 60%),
-    radial-gradient(900px 500px at 80% 90%,#101f4a,transparent 55%),
-    linear-gradient(180deg,#050512,#070b1a);
-  background-attachment: fixed;
-}
+  <style>
+    :root{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+      --panel: rgba(18,20,35,.70);
+      --border: rgba(255,255,255,.12);
+      --shadow: 0 18px 70px rgba(0,0,0,.70);
+    }
 
-#matrixCanvas{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none;display:none}
+    html,body{height:100%;margin:0}
+    body{
+      background:
+        radial-gradient(1200px 600px at 20% 10%, #0e1a3a, transparent 60%),
+        radial-gradient(900px 500px at 80% 90%, #101f4a, transparent 55%),
+        linear-gradient(180deg, #050512, #070b1a);
+      color: var(--text);
+      overflow:hidden;
+    }
 
-.shell{
-  position:relative;z-index:1;
-  padding:16px;
-  display:grid;
-  grid-template-columns:2fr 1fr;
-  gap:14px;
-  max-width:1250px;
-  margin:0 auto;
-}
-@media (max-width:980px){ .shell{grid-template-columns:1fr} }
+    /* VIEWS */
+    .view{
+      position:fixed;
+      inset:0;
+      display:none;
+      padding: 28px 18px 90px; /* bottom room for dock */
+      overflow:auto;
+    }
+    .view.active{display:block}
 
-.panel{
-  background:var(--panel);
-  border-radius:16px;
-  padding:14px;
-  box-shadow:var(--shadow);
-  backdrop-filter: blur(8px);
-  animation:fadeUp .35s ease both;
-}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
+    /* HOME CLOCK */
+    .homeCenter{
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      user-select:none;
+    }
+    .time{
+      font-size: clamp(56px, 10vw, 110px);
+      font-weight: 900;
+      letter-spacing: 1px;
+      line-height: 1;
+      text-shadow: 0 18px 70px rgba(0,0,0,.6);
+    }
+    .sub{
+      margin-top: 14px;
+      font-size: clamp(14px, 2.5vw, 20px);
+      color: var(--muted);
+      letter-spacing: .2px;
+    }
 
-.title{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
-h1,h2{margin:0;font-weight:750;letter-spacing:.2px}
-.mini{font-size:12px;color:var(--muted)}
-.badge{
-  font-size:11px;padding:4px 8px;border-radius:999px;
-  background:rgba(139,92,246,.18);
-  box-shadow:0 0 16px rgba(139,92,246,.35);
-  border:1px solid rgba(255,255,255,.06);
-}
-.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.spacer{flex:1}
-hr{border:none;border-top:1px solid rgba(255,255,255,.06);margin:12px 0}
+    /* WINDOW CONTENT */
+    .window{
+      max-width: 920px;
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      padding: 16px;
+    }
+    .window h2{margin:0 0 8px;font-size:18px}
+    .window p{margin:0;color:var(--muted);line-height:1.5}
 
-.input, textarea, select{
-  background:rgba(0,0,0,.35);
-  border:1px solid var(--border);
-  border-radius:10px;
-  color:var(--text);
-  padding:9px 10px;
-  outline:none;
-}
-textarea{resize:none;width:100%}
-.input:focus, textarea:focus, select:focus{
-  border-color:rgba(139,92,246,.55);
-  box-shadow:0 0 0 4px rgba(139,92,246,.14);
-}
-
-.btn{
-  background:rgba(139,92,246,.22);
-  border:1px solid var(--border);
-  color:var(--text);
-  padding:8px 10px;
-  border-radius:10px;
-  cursor:pointer;
-  transition:.15s transform ease,.15s filter ease,.15s background ease;
-  user-select:none;
-}
-.btn:hover{filter:brightness(1.1)}
-.btn:active{transform:translateY(1px)}
-.btn.green{background:rgba(34,197,94,.20)}
-.btn.warn{background:rgba(245,158,11,.18)}
-.btn.danger{background:rgba(239,68,68,.16)}
-
-.chatBubbleBtn{position:relative;padding-right:34px}
-.chatBubble{
-  position:absolute;top:-7px;right:-7px;
-  min-width:20px;height:20px;padding:0 6px;border-radius:999px;
-  background:rgba(239,68,68,.95);
-  border:1px solid rgba(255,255,255,.18);
-  color:white;
-  display:none;
-  align-items:center;justify-content:center;
-  font-size:12px;font-weight:800;
-  box-shadow:0 10px 25px rgba(0,0,0,.55);
-}
-
-.kpi{display:flex;gap:8px;flex-wrap:wrap}
-.kbox{
-  padding:8px 10px;border-radius:12px;
-  background:rgba(139,92,246,.14);
-  border:1px solid rgba(255,255,255,.06);
-}
-.kbox b{display:block;font-size:14px}
-.kbox span{font-size:12px;color:var(--muted)}
-
-.notes{display:flex;flex-direction:column;gap:8px}
-.note{
-  padding:10px;border-radius:12px;
-  background:rgba(255,255,255,.045);
-  border:1px solid rgba(255,255,255,.06);
-  position:relative;
-  animation:slideIn .22s ease both;
-}
-@keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1}}
-.meta{font-size:12px;color:var(--muted);margin-bottom:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.pill{
-  font-size:11px;padding:3px 8px;border-radius:999px;
-  background:rgba(139,92,246,.18);
-  border:1px solid rgba(255,255,255,.06);
-}
-.actions{position:absolute;top:8px;right:8px;display:flex;gap:6px}
-.iconBtn{
-  font-size:12px;padding:6px 8px;border-radius:10px;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.08);
-  cursor:pointer;
-}
-.iconBtn:hover{filter:brightness(1.15)}
-
-.cmd{display:flex;flex-direction:column;gap:8px}
-#cmdOut{
-  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
-  font-size:13px;max-height:240px;overflow:auto;
-  padding:10px;border-radius:12px;
-  background:rgba(0,0,0,.30);
-  border:1px solid rgba(255,255,255,.06);
-}
-#cmdIn{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:13px;width:100%}
-
-.toast{
-  position:fixed;left:50%;bottom:18px;transform:translateX(-50%);
-  background:rgba(15,18,32,.95);
-  border:1px solid rgba(255,255,255,.10);
-  box-shadow:0 10px 40px rgba(0,0,0,.65);
-  padding:10px 12px;border-radius:14px;
-  display:none;gap:10px;align-items:center;
-  z-index:9999;
-}
-.toast.show{display:flex;animation:fadeUp .2s ease both}
-.dot{width:10px;height:10px;border-radius:50%;background:var(--neon);box-shadow:0 0 18px rgba(139,92,246,.6)}
-.small{font-size:12px;color:var(--muted)}
-
-.modal{
-  position:fixed;inset:0;background:rgba(0,0,0,.55);
-  display:none;align-items:center;justify-content:center;
-  padding:16px;z-index:9998;
-}
-.modal.show{display:flex}
-.modalCard{
-  width:min(900px, 100%);
-  background:rgba(15,18,32,.96);
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:16px;
-  box-shadow:0 20px 70px rgba(0,0,0,.75);
-  padding:14px;
-}
-.modalHead{display:flex;align-items:center;gap:10px}
-.modalHead h3{margin:0;font-size:16px}
-.modalBody{margin-top:10px}
-
-/* ✅ macOS-style in-page notification (top-right) */
-.macNotify{
-  position:fixed;
-  top:18px;
-  right:18px;
-  width:min(360px, calc(100vw - 36px));
-  background:rgba(25,28,45,.92);
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 18px 60px rgba(0,0,0,.7);
-  border-radius:16px;
-  padding:12px 14px;
-  z-index:10000;
-  backdrop-filter: blur(10px);
-  transform: translateX(120%);
-  opacity:0;
-  transition: transform .28s ease, opacity .28s ease;
-  pointer-events:none;
-}
-.macNotify.show{transform:translateX(0);opacity:1}
-.mnTitle{font-weight:800;font-size:13px;margin-bottom:4px}
-.mnBody{font-size:12px;color:rgba(255,255,255,.75);line-height:1.35}
-
-/* ✅ HERO / LOCKSCREEN-LIKE CLOCK */
-.hero{grid-column:1/-1}
-.heroWrap{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:14px;
-}
-.heroLeft{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.bigTime{
-  font-size:64px;
-  line-height:1;
-  font-weight:900;
-  letter-spacing:1px;
-  text-shadow:0 16px 60px rgba(0,0,0,.55);
-}
-@media (max-width:980px){ .bigTime{font-size:52px} }
-.bigSub{
-  display:flex;gap:10px;flex-wrap:wrap;align-items:center;
-  font-size:14px;color:rgba(255,255,255,.78)
-}
-.bigSub .chip{
-  padding:6px 10px;border-radius:999px;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.10);
-}
-.heroRight{
-  display:flex;flex-direction:column;gap:10px;align-items:flex-end;
-}
-
-/* ✅ DOCK NAV */
-.dock{
-  position:fixed;
-  left:50%;
-  bottom:14px;
-  transform:translateX(-50%);
-  z-index:9997;
-  display:flex;
-  gap:10px;
-  padding:10px 12px;
-  border-radius:22px;
-  background:rgba(18,20,35,.55);
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 18px 70px rgba(0,0,0,.70);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-.dockItem{
-  position:relative;
-  width:48px;height:48px;
-  border-radius:16px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.10);
-  transition: transform .18s ease, filter .18s ease, background .18s ease;
-  user-select:none;
-}
-.dockItem:hover{
-  transform:translateY(-6px) scale(1.10);
-  filter:brightness(1.15);
-  background:rgba(139,92,246,.18);
-}
-.dockIcon{font-size:20px}
-.dockTip{
-  position:absolute;
-  bottom:58px;
-  left:50%;
-  transform:translateX(-50%);
-  font-size:11px;
-  padding:6px 8px;
-  border-radius:10px;
-  background:rgba(0,0,0,.55);
-  border:1px solid rgba(255,255,255,.12);
-  color:rgba(255,255,255,.85);
-  white-space:nowrap;
-  opacity:0;
-  pointer-events:none;
-  transition:opacity .15s ease;
-}
-.dockItem:hover .dockTip{opacity:1}
-.dockBubble{
-  position:absolute;
-  top:-7px; right:-7px;
-  min-width:20px;height:20px;padding:0 6px;border-radius:999px;
-  background:rgba(239,68,68,.95);
-  border:1px solid rgba(255,255,255,.18);
-  color:white;
-  display:none;
-  align-items:center;justify-content:center;
-  font-size:12px;font-weight:800;
-  box-shadow:0 10px 25px rgba(0,0,0,.55);
-}
-</style>
+    /* DOCK */
+    .dock{
+      position:fixed;
+      left:50%;
+      bottom:14px;
+      transform:translateX(-50%);
+      z-index:9999;
+      display:flex;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:22px;
+      background: rgba(18,20,35,.55);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      user-select:none;
+    }
+    .dockBtn{
+      width:52px;height:52px;
+      border-radius:16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      color: var(--text);
+      font-size:20px;
+      transition: transform .16s ease, filter .16s ease, background .16s ease;
+    }
+    .dockBtn:hover{
+      transform: translateY(-6px) scale(1.10);
+      filter: brightness(1.15);
+      background: rgba(255,255,255,.10);
+    }
+    .dockTip{
+      position:absolute;
+      bottom:62px;
+      left:50%;
+      transform:translateX(-50%);
+      font-size:11px;
+      padding:6px 8px;
+      border-radius:10px;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(255,255,255,.85);
+      white-space:nowrap;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .15s ease;
+    }
+    .dockItem{position:relative}
+    .dockItem:hover .dockTip{opacity:1}
+  </style>
 </head>
 
 <body>
-<canvas id="matrixCanvas" aria-hidden="true"></canvas>
 
-<div class="shell">
-
-  <!-- ✅ HERO CLOCK PANEL -->
-  <section class="panel hero" id="home">
-    <div class="heroWrap">
-      <div class="heroLeft">
-        <div class="mini">Memoria NotePro • Vault + Background + Matrix + Multi Chat</div>
-        <div class="bigTime" id="heroTime">--:--</div>
-        <div class="bigSub">
-          <span class="chip" id="heroDay">—</span>
-          <span class="chip" id="heroDate">—</span>
-          <span class="chip">BLOOM</span>
-        </div>
-      </div>
-
-      <div class="heroRight">
-        <div class="row">
-          <span class="badge" id="time">--:--</span>
-          <button class="btn chatBubbleBtn" id="chatBubbleBtn" title="Open chat">
-            💬 Chat
-            <span class="chatBubble" id="chatBubble">0</span>
-          </button>
-        </div>
-
-        <div class="kpi">
-          <div class="kbox"><b id="kNotes">0</b><span>Study notes</span></div>
-          <div class="kbox"><b id="kExtra">0</b><span>Extra notes</span></div>
-          <div class="kbox"><b id="kFiles">0</b><span>Vault files</span></div>
-          <div class="kbox"><b id="kToday">—</b><span>Today</span></div>
-        </div>
-
-        <div class="row" style="margin-top:6px">
-          <input class="input" id="search" placeholder="Search notes..." />
-          <select id="subjectFilter">
-            <option value="all">All subjects</option>
-          </select>
-          <button class="btn" id="btnClearSearch">Clear</button>
-        </div>
-
-        <div class="row">
-          <button class="btn warn" id="btnExport">Export Notes</button>
-          <button class="btn green" id="btnImport">Import Notes</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="mini" style="margin-top:10px">
-      Commands: <b>help</b>, <b>vault</b>, <b>bg</b>, <b>chat</b>, <b>search</b>, <b>subject</b>, <b>export</b>, <b>import</b>
-    </div>
-  </section>
-
-  <section class="panel" id="studynotes">
-    <div class="title">
-      <h2>StudyNotes</h2>
-      <div class="mini">Add + search</div>
-    </div>
-
-    <div class="row">
-      <select id="newSubject">
-        <option>Math</option><option>Science</option><option>Social</option><option>English</option><option>AI</option><option>Other</option>
-      </select>
-      <input class="input" id="newTopic" placeholder="Topic (optional) e.g., Algebra" />
-    </div>
-
-    <div class="row" style="margin-top:8px">
-      <textarea id="newNote" rows="3" placeholder="Write study note here..."></textarea>
-    </div>
-
-    <div class="row" style="margin-top:8px">
-      <button class="btn green" id="btnAddNote">Save Study Note</button>
-      <div class="mini">Shortcut: Ctrl/⌘ + Enter</div>
-    </div>
-
-    <hr>
-    <div class="notes" id="notes"></div>
-  </section>
-
-  <section class="panel" id="extraPanel">
-    <div class="title">
-      <h2>Extra Notes</h2>
-      <div class="mini">Permanent</div>
-    </div>
-
-    <textarea id="extraInput" rows="3" placeholder="Write extra note here..."></textarea>
-
-    <div class="row" style="margin-top:8px">
-      <button class="btn" id="btnAddExtra">Save Extra Note</button>
-      <button class="btn danger" id="btnClearExtra">Clear All Extra</button>
-    </div>
-
-    <hr>
-    <div class="notes" id="extra"></div>
-  </section>
-
-  <section class="panel" id="vaultPanel">
-    <div class="title">
-      <h2>File Vault</h2>
-      <div class="mini">Word • PPT • PDF • MP3 • MP4 (saved locally)</div>
-    </div>
-
-    <div class="row">
-      <input class="input" id="fileTitle" placeholder="File title (optional)" />
-      <select id="fileTag">
-        <option value="General">General</option>
-        <option value="School">School</option>
-        <option value="Projects">Projects</option>
-        <option value="Media">Media</option>
-      </select>
-    </div>
-
-    <div class="row" style="margin-top:8px">
-      <input class="input" id="filePick" type="file"
-        accept=".doc,.docx,.ppt,.pptx,.pdf,application/pdf,audio/mpeg,video/mp4" />
-      <button class="btn green" id="btnSaveFile">Save to Vault</button>
-      <button class="btn danger" id="btnClearVault">Clear Vault</button>
-    </div>
-
-    <div class="mini" style="margin-top:8px">
-      MP3/MP4/PDF can be previewed here. Word/PPT are downloadable.
-    </div>
-
-    <hr>
-    <div class="notes" id="vaultList"></div>
-  </section>
-
-  <section class="panel" id="bgPanel">
-    <div class="title">
-      <h2>Background Settings</h2>
-      <div class="mini">Presets • Gradient • Solid • Image • Matrix controls</div>
-    </div>
-
-    <div class="row">
-      <select id="bgMode">
-        <option value="preset">Preset</option>
-        <option value="gradient">Custom Gradient</option>
-        <option value="solid">Solid Color</option>
-        <option value="image">Background Image</option>
-      </select>
-
-      <select id="bgPreset">
-        <option value="nebula">Nebula (Default)</option>
-        <option value="midnight">Midnight</option>
-        <option value="ocean">Ocean</option>
-        <option value="sunrise">Sunrise</option>
-        <option value="matrix">Matrix (Rain)</option>
-      </select>
-
-      <button class="btn" id="btnApplyBg">Apply</button>
-      <button class="btn danger" id="btnResetBg">Reset</button>
-    </div>
-
-    <hr>
-    <div id="bgControls"></div>
-
-    <div class="mini" style="margin-top:8px">
-      Saved locally on this browser.
-    </div>
-  </section>
-
-  <section class="panel" id="chatPanel">
-    <div class="title">
-      <h2>Live Chat</h2>
-      <div class="mini">Multi-people • Rooms (Firebase)</div>
-    </div>
-
-    <div class="row">
-      <input class="input" id="chatName" placeholder="Your name (e.g., Umesh)" />
-      <input class="input" id="chatRoom" placeholder="Room code (e.g., memoria)" />
-      <button class="btn green" id="chatConnect">Connect</button>
-    </div>
-
-    <div class="mini" style="margin-top:8px">
-      Share the same Room code with friends.
-    </div>
-
-    <hr>
-
-    <div id="chatLog" style="
-      height:260px; overflow:auto; padding:10px; border-radius:12px;
-      background:rgba(0,0,0,.30); border:1px solid rgba(255,255,255,.06);
-      font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
-      font-size:13px;
-    "></div>
-
-    <div class="row" style="margin-top:10px">
-      <input class="input" id="chatMsg" placeholder="Type a message..." style="flex:1" />
-      <button class="btn" id="chatSend">Send</button>
-    </div>
-
-    <div class="mini" style="margin-top:8px" id="chatStatus">Not connected</div>
-  </section>
-
-  <section class="panel" id="cmdPanel">
-    <div class="title">
-      <h2>Command</h2>
-      <div class="mini">CMD + Help</div>
-    </div>
-
-    <div class="cmd">
-      <div id="cmdOut"></div>
-      <input id="cmdIn" class="input" placeholder="> type 'help' and press Enter" />
-      <div class="mini">
-        Try: <b>vault</b>, <b>bg</b>, <b>chat</b>, <b>search algebra</b>, <b>subject math</b>, <b>export</b>
+  <!-- HOME (Clock-only + Dock) -->
+  <section class="view active" id="home">
+    <div class="homeCenter">
+      <div>
+        <div class="time" id="t">--:--</div>
+        <div class="sub" id="d">—</div>
       </div>
     </div>
   </section>
 
-  <section class="panel">
-    <div class="title">
-      <h2>NT Support</h2>
-      <div class="mini">Tools</div>
+  <!-- “Windows” (same page) -->
+  <section class="view" id="notes">
+    <div class="window">
+      <h2>Notes</h2>
+      <p>This is a new window (same page). Press Back or tap 🏠 to return to the clock.</p>
     </div>
-    <div class="mini">Boot Fix • Registry Restore • Device Manager</div>
   </section>
 
-</div>
-
-<!-- ✅ DOCK NAV -->
-<nav class="dock" id="dockNav" aria-label="Dock Navigation">
-  <div class="dockItem" data-target="home" title="Home">
-    <div class="dockTip">Home</div>
-    <div class="dockIcon">🏠</div>
-  </div>
-
-  <div class="dockItem" data-target="studynotes" title="StudyNotes">
-    <div class="dockTip">StudyNotes</div>
-    <div class="dockIcon">📘</div>
-  </div>
-
-  <div class="dockItem" data-target="extraPanel" title="Extra Notes">
-    <div class="dockTip">Extra Notes</div>
-    <div class="dockIcon">📝</div>
-  </div>
-
-  <div class="dockItem" data-target="vaultPanel" title="Vault">
-    <div class="dockTip">Vault</div>
-    <div class="dockIcon">🗂️</div>
-  </div>
-
-  <div class="dockItem" data-target="bgPanel" title="Background">
-    <div class="dockTip">Background</div>
-    <div class="dockIcon">🌄</div>
-  </div>
-
-  <div class="dockItem" data-target="chatPanel" title="Chat">
-    <div class="dockTip">Chat</div>
-    <div class="dockIcon">💬</div>
-    <span class="dockBubble" id="dockChatBubble">0</span>
-  </div>
-
-  <div class="dockItem" data-target="cmdPanel" title="Command">
-    <div class="dockTip">Command</div>
-    <div class="dockIcon">⌨️</div>
-  </div>
-</nav>
-
-<div class="toast" id="toast">
-  <div class="dot"></div>
-  <div>
-    <b id="toastTitle">Saved</b>
-    <div class="small" id="toastMsg">Done</div>
-  </div>
-</div>
-
-<div id="macNotify" class="macNotify">
-  <div class="mnTitle" id="mnTitle">New message</div>
-  <div class="mnBody" id="mnBody">...</div>
-</div>
-
-<div class="modal" id="modal">
-  <div class="modalCard">
-    <div class="modalHead">
-      <h3 id="modalTitle">Preview</h3>
-      <div class="spacer"></div>
-      <button class="btn" id="modalClose">Close</button>
+  <section class="view" id="vault">
+    <div class="window">
+      <h2>Vault</h2>
+      <p>This is another window. Put your vault UI here later.</p>
     </div>
-    <div class="modalBody" id="modalBody"></div>
-  </div>
-</div>
+  </section>
 
-<script>
-/* ========= Utils ========= */
-const $ = (q)=>document.querySelector(q);
-const nowTime = ()=>new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-$('#kToday').textContent = new Date().toLocaleDateString();
-setInterval(()=>$('#time').textContent = nowTime(), 1000);
+  <section class="view" id="settings">
+    <div class="window">
+      <h2>Settings</h2>
+      <p>This is settings window. Press Back or 🏠 to return home.</p>
+    </div>
+  </section>
 
-function updateHeroClock(){
-  const d = new Date();
-  const time = d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-  const day  = d.toLocaleDateString([], {weekday:'long'});
-  const date = d.toLocaleDateString([], {year:'numeric',month:'long',day:'numeric'});
-  const ht = document.getElementById("heroTime");
-  const hd = document.getElementById("heroDay");
-  const hdate = document.getElementById("heroDate");
-  if(ht) ht.textContent = time;
-  if(hd) hd.textContent = day;
-  if(hdate) hdate.textContent = date;
-}
-updateHeroClock();
-setInterval(updateHeroClock, 1000);
+  <!-- DOCK (always visible) -->
+  <nav class="dock" aria-label="Dock">
+    <div class="dockItem">
+      <div class="dockTip">Home</div>
+      <button class="dockBtn" data-go="home" aria-label="Home">🏠</button>
+    </div>
+    <div class="dockItem">
+      <div class="dockTip">Notes</div>
+      <button class="dockBtn" data-go="notes" aria-label="Notes">📝</button>
+    </div>
+    <div class="dockItem">
+      <div class="dockTip">Vault</div>
+      <button class="dockBtn" data-go="vault" aria-label="Vault">🗂️</button>
+    </div>
+    <div class="dockItem">
+      <div class="dockTip">Settings</div>
+      <button class="dockBtn" data-go="settings" aria-label="Settings">⚙️</button>
+    </div>
+  </nav>
 
-function escapeHTML(str){
-  return String(str)
-    .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
-    .replaceAll('>','&gt;')
-    .replaceAll('"','&quot;')
-    .replaceAll("'","&#039;")
-    .replaceAll('\n','<br>');
-}
-function bytesToSize(bytes){
-  if(bytes===0) return "0 B";
-  const k=1024, sizes=["B","KB","MB","GB"];
-  const i=Math.floor(Math.log(bytes)/Math.log(k));
-  return `${(bytes/Math.pow(k,i)).toFixed(i?2:0)} ${sizes[i]}`;
-}
-let toastTimer=null;
-function toast(title,msg){
-  $('#toastTitle').textContent=title;
-  $('#toastMsg').textContent=msg;
-  const el=$('#toast');
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>el.classList.remove('show'),1600);
-}
-window.toast = toast;
+  <script>
+    /* Clock */
+    function updateClock(){
+      const now = new Date();
+      document.getElementById("t").textContent =
+        now.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
 
-/* ✅ macOS-style popup (top-right) */
-let mnTimer=null;
-function macNotify(title, body){
-  const box = document.getElementById("macNotify");
-  const t = document.getElementById("mnTitle");
-  const b = document.getElementById("mnBody");
-  if(!box || !t || !b) return;
-  t.textContent = title || "Notification";
-  b.textContent = body || "";
-  box.classList.add("show");
-  clearTimeout(mnTimer);
-  mnTimer = setTimeout(()=>box.classList.remove("show"), 2600);
-}
-window.macNotify = macNotify;
-
-function clamp(n,min,max){ return Math.max(min, Math.min(max, n)); }
-function hexToRgb(hex){
-  const h = (hex||"").replace("#","").trim();
-  if(h.length===3){
-    const r=parseInt(h[0]+h[0],16), g=parseInt(h[1]+h[1],16), b=parseInt(h[2]+h[2],16);
-    return {r,g,b};
-  }
-  if(h.length===6){
-    const r=parseInt(h.slice(0,2),16), g=parseInt(h.slice(2,4),16), b=parseInt(h.slice(4,6),16);
-    return {r,g,b};
-  }
-  return {r:0,g:255,b:106};
-}
-function rgbToHex(r,g,b){
-  const to = (x)=>x.toString(16).padStart(2,"0");
-  return "#"+to(r)+to(g)+to(b);
-}
-function lighten(hex, amount){
-  const {r,g,b} = hexToRgb(hex);
-  const nr = Math.round(r + (255-r)*amount);
-  const ng = Math.round(g + (255-g)*amount);
-  const nb = Math.round(b + (255-b)*amount);
-  return rgbToHex(nr,ng,nb);
-}
-
-/* ========= Dock Navigation ========= */
-document.getElementById("dockNav")?.addEventListener("click",(e)=>{
-  const item = e.target.closest(".dockItem");
-  if(!item) return;
-  const id = item.getAttribute("data-target");
-  const el = document.getElementById(id);
-  if(el) el.scrollIntoView({behavior:"smooth"});
-});
-
-/* ========= Matrix Rain ========= */
-const matrix = (() => {
-  const canvas = document.getElementById('matrixCanvas');
-  const ctx = canvas.getContext('2d');
-
-  let raf = null;
-  let drops = [];
-  let columns = 0;
-  let fontSize = 16;
-
-  let fps = 30;
-  let baseColor = "#00ff6a";
-  let headColor = "#b7ffcf";
-  let lastDraw = 0;
-
-  const chars =
-    "アイウエオカキクケコサシスセソタチツテトナニヌネノ" +
-    "ハヒフヘホマミムメモヤユヨラリルレロワヲン" +
-    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-  function resize(){
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
-    canvas.width  = Math.floor(window.innerWidth * dpr);
-    canvas.height = Math.floor(window.innerHeight * dpr);
-    canvas.style.width = window.innerWidth + "px";
-    canvas.style.height = window.innerHeight + "px";
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-
-    fontSize = Math.max(14, Math.min(22, Math.floor(window.innerWidth / 60)));
-    columns = Math.max(1, Math.floor(window.innerWidth / fontSize));
-    drops = Array(columns).fill(1);
-
-    ctx.font = `${fontSize}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`;
-  }
-
-  function setOptions(opts={}){
-    if(typeof opts.fps === "number") fps = clamp(opts.fps, 5, 60);
-    if(typeof opts.color === "string" && opts.color.trim()) baseColor = opts.color.trim();
-    headColor = lighten(baseColor, 0.72);
-  }
-
-  function drawOnce(){
-    ctx.fillStyle = "rgba(0,0,0,0.08)";
-    ctx.fillRect(0,0, window.innerWidth, window.innerHeight);
-
-    for(let i=0;i<drops.length;i++){
-      const text = chars[Math.floor(Math.random()*chars.length)];
-      const x = i * fontSize;
-      const y = drops[i] * fontSize;
-
-      ctx.fillStyle = (Math.random() > 0.985) ? headColor : baseColor;
-      ctx.fillText(text, x, y);
-
-      if(y > window.innerHeight && Math.random() > 0.975) drops[i] = 0;
-      drops[i]++;
+      const day  = now.toLocaleDateString([], { weekday:"long" });
+      const date = now.toLocaleDateString([], { year:"numeric", month:"long", day:"numeric" });
+      document.getElementById("d").textContent = `${day} • ${date}`;
     }
-  }
-
-  function frame(t){
-    const interval = 1000 / fps;
-    if(!lastDraw) lastDraw = t;
-
-    if(t - lastDraw >= interval){
-      drawOnce();
-      lastDraw = t;
-    }
-    raf = requestAnimationFrame(frame);
-  }
-
-  function start(opts={}){
-    setOptions(opts);
-    if(raf) return;
-    canvas.style.display = "block";
-    resize();
-    lastDraw = 0;
-    raf = requestAnimationFrame(frame);
-    window.addEventListener('resize', resize);
-  }
-
-  function stop(){
-    canvas.style.display = "none";
-    window.removeEventListener('resize', resize);
-    if(raf){
-      cancelAnimationFrame(raf);
-      raf = null;
-    }
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-  }
-
-  return { start, stop, setOptions };
-})();
-
-/* ========= localStorage ========= */
-const DB = { notes:'db_notes_v6', extra:'db_extra_v6', settings:'db_settings_v6' };
-const loadLS=(k,f)=>{ try{ return JSON.parse(localStorage.getItem(k)) ?? f }catch{ return f } };
-const saveLS=(k,v)=>localStorage.setItem(k, JSON.stringify(v));
-
-/* ========= Background Settings ========= */
-const defaultBg = {
-  mode:"preset",
-  preset:"nebula",
-  solid:"#070b1a",
-  g1:"#0e1a3a",
-  g2:"#101f4a",
-  imageMode:"upload",
-  imageUrl:"",
-  overlay:true,
-  matrixFps: 30,
-  matrixColor: "#00ff6a"
-};
-
-let settings = loadLS(DB.settings, defaultBg);
-
-function presetCSS(name){
-  if(name==="midnight"){
-    return `
-      radial-gradient(1100px 540px at 20% 10%, #1b1f3a, transparent 60%),
-      radial-gradient(900px 520px at 80% 90%, #14162a, transparent 55%),
-      linear-gradient(180deg,#050512,#0b0f2a)
-    `;
-  }
-  if(name==="ocean"){
-    return `
-      radial-gradient(1100px 540px at 20% 10%, #063b52, transparent 60%),
-      radial-gradient(900px 520px at 80% 90%, #0a274e, transparent 55%),
-      linear-gradient(180deg,#021019,#041b2a)
-    `;
-  }
-  if(name==="sunrise"){
-    return `
-      radial-gradient(1100px 540px at 25% 15%, #6b2cff, transparent 55%),
-      radial-gradient(900px 520px at 75% 85%, #ff5c7a, transparent 55%),
-      linear-gradient(180deg,#120018,#150a2a)
-    `;
-  }
-  if(name==="matrix"){
-    return `
-      radial-gradient(1100px 540px at 30% 20%, ${settings.matrixColor}22, transparent 60%),
-      radial-gradient(900px 520px at 70% 85%, ${settings.matrixColor}18, transparent 55%),
-      linear-gradient(180deg,#020a04,#021306)
-    `;
-  }
-  return `
-    radial-gradient(1200px 600px at 20% 10%, #0e1a3a, transparent 60%),
-    radial-gradient(900px 500px at 80% 90%, #101f4a, transparent 55%),
-    linear-gradient(180deg,#050512,#070b1a)
-  `;
-}
-
-/* ========= IndexedDB ========= */
-const idb = (() => {
-  const DBNAME="memoria_idb_v1";
-  const VERSION=1;
-  let db=null;
-
-  function open(){
-    if(db) return Promise.resolve(db);
-    return new Promise((resolve,reject)=>{
-      const req=indexedDB.open(DBNAME, VERSION);
-      req.onupgradeneeded = ()=>{
-        const d=req.result;
-        if(!d.objectStoreNames.contains("files")) d.createObjectStore("files",{keyPath:"id"});
-        if(!d.objectStoreNames.contains("assets")) d.createObjectStore("assets",{keyPath:"key"});
-      };
-      req.onsuccess=()=>{ db=req.result; resolve(db); };
-      req.onerror=()=>reject(req.error);
-    });
-  }
-  async function put(store, val){
-    const d=await open();
-    return new Promise((res,rej)=>{
-      const tx=d.transaction(store,"readwrite");
-      tx.objectStore(store).put(val);
-      tx.oncomplete=()=>res(true);
-      tx.onerror=()=>rej(tx.error);
-    });
-  }
-  async function get(store, key){
-    const d=await open();
-    return new Promise((res,rej)=>{
-      const tx=d.transaction(store,"readonly");
-      const r=tx.objectStore(store).get(key);
-      r.onsuccess=()=>res(r.result||null);
-      r.onerror=()=>rej(r.error);
-    });
-  }
-  async function getAll(store){
-    const d=await open();
-    return new Promise((res,rej)=>{
-      const tx=d.transaction(store,"readonly");
-      const r=tx.objectStore(store).getAll();
-      r.onsuccess=()=>res(r.result||[]);
-      r.onerror=()=>rej(tx.error);
-    });
-  }
-  async function del(store, key){
-    const d=await open();
-    return new Promise((res,rej)=>{
-      const tx=d.transaction(store,"readwrite");
-      tx.objectStore(store).delete(key);
-      tx.oncomplete=()=>res(true);
-      tx.onerror=()=>rej(tx.error);
-    });
-  }
-  async function clear(store){
-    const d=await open();
-    return new Promise((res,rej)=>{
-      const tx=d.transaction(store,"readwrite");
-      tx.objectStore(store).clear();
-      tx.oncomplete=()=>res(true);
-      tx.onerror=()=>rej(tx.error);
-    });
-  }
-  return { put,get,getAll,del,clear };
-})();
-
-let bgObjectURL = null;
-
-async function applyBackground(){
-  matrix.stop();
-  if(bgObjectURL){ URL.revokeObjectURL(bgObjectURL); bgObjectURL=null; }
-
-  const mode = settings.mode;
-
-  if(mode==="preset"){
-    document.body.style.background = presetCSS(settings.preset);
-    document.body.style.backgroundAttachment = "fixed";
-    if(settings.preset === "matrix"){
-      matrix.start({ fps: settings.matrixFps, color: settings.matrixColor });
-    }
-    return;
-  }
-  if(mode==="solid"){
-    document.body.style.background = settings.solid;
-    document.body.style.backgroundAttachment = "fixed";
-    return;
-  }
-  if(mode==="gradient"){
-    const g1 = settings.g1 || "#0e1a3a";
-    const g2 = settings.g2 || "#101f4a";
-    document.body.style.background = `
-      radial-gradient(1200px 600px at 20% 10%, ${g1}, transparent 60%),
-      radial-gradient(900px 500px at 80% 90%, ${g2}, transparent 55%),
-      linear-gradient(180deg,#050512,#070b1a)
-    `;
-    document.body.style.backgroundAttachment = "fixed";
-    return;
-  }
-  if(mode==="image"){
-    const overlay = settings.overlay !== false;
-    const asset = await idb.get("assets","bgImage");
-    let img = null;
-
-    if(settings.imageMode==="upload" && asset?.blob){
-      bgObjectURL = URL.createObjectURL(asset.blob);
-      img = `url("${bgObjectURL}")`;
-    } else if(settings.imageMode==="url" && settings.imageUrl){
-      img = `url("${settings.imageUrl}")`;
-    }
-
-    const overlayCss = overlay ? `
-      radial-gradient(1200px 600px at 20% 10%, rgba(14,26,58,.85), transparent 60%),
-      radial-gradient(900px 500px at 80% 90%, rgba(16,31,74,.75), transparent 55%),
-      linear-gradient(180deg, rgba(5,5,18,.85), rgba(7,11,26,.85))
-    ` : `linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.35))`;
-
-    if(img){
-      document.body.style.background = `${overlayCss}, ${img}`;
-      document.body.style.backgroundSize = `auto, cover`;
-      document.body.style.backgroundPosition = `0 0, center`;
-      document.body.style.backgroundRepeat = `no-repeat, no-repeat`;
-      document.body.style.backgroundAttachment = `fixed, fixed`;
-    }else{
-      document.body.style.background = presetCSS("nebula");
-      document.body.style.backgroundAttachment = "fixed";
-      toast("No Image", "Upload an image or set a URL.");
-    }
-  }
-}
-
-function renderBgControls(){
-  const mode = document.getElementById("bgMode").value;
-  const preset = document.getElementById("bgPreset").value;
-  let html = "";
-
-  if(mode==="preset"){
-    html = `<div class="mini">Choose a preset above and click Apply.</div>`;
-    if(preset === "matrix"){
-      const fps = clamp(Number(settings.matrixFps || 30), 5, 60);
-      const col = settings.matrixColor || "#00ff6a";
-      html += `
-        <hr>
-        <div class="row">
-          <label class="mini">Matrix speed</label>
-          <input class="input" id="mxSpeed" type="range" min="5" max="60" value="${fps}" style="flex:1">
-          <span class="mini" id="mxSpeedVal">${fps} FPS</span>
-        </div>
-        <div class="row" style="margin-top:10px">
-          <label class="mini">Matrix color</label>
-          <input class="input" id="mxColor" type="color" value="${col}">
-          <span class="mini" id="mxColorVal">${col}</span>
-        </div>
-        <div class="mini" style="margin-top:8px">After changing, click <b>Apply</b>.</div>
-      `;
-    }
-  }
-
-  if(mode==="solid"){
-    html = `
-      <div class="row">
-        <label class="mini">Color</label>
-        <input class="input" type="color" id="solidPick" value="${settings.solid || "#070b1a"}" />
-      </div>`;
-  }
-
-  if(mode==="gradient"){
-    html = `
-      <div class="row">
-        <label class="mini">Glow 1</label>
-        <input class="input" type="color" id="g1Pick" value="${settings.g1 || "#0e1a3a"}" />
-        <label class="mini">Glow 2</label>
-        <input class="input" type="color" id="g2Pick" value="${settings.g2 || "#101f4a"}" />
-      </div>
-      <div class="mini" style="margin-top:8px">Tip: darker colors look cleaner.</div>`;
-  }
-
-  if(mode==="image"){
-    const checked = settings.overlay !== false ? "checked" : "";
-    const urlMode = (settings.imageMode==="url");
-    html = `
-      <div class="row">
-        <select id="imgMode">
-          <option value="upload" ${!urlMode?'selected':''}>Upload Image</option>
-          <option value="url" ${urlMode?'selected':''}>Use Image URL</option>
-        </select>
-        <label class="mini"><input type="checkbox" id="imgOverlay" ${checked}/> overlay glow</label>
-      </div>
-
-      <div style="margin-top:10px">
-        <div id="imgUploadWrap" style="display:${urlMode?'none':'block'}">
-          <input class="input" id="bgImagePick" type="file" accept="image/*" />
-          <div class="mini" style="margin-top:6px">Stored in your browser (IndexedDB).</div>
-        </div>
-
-        <div id="imgUrlWrap" style="display:${urlMode?'block':'none'}">
-          <input class="input" id="bgImageUrl" placeholder="https://example.com/image.jpg"
-                 value="${settings.imageUrl || ""}" />
-          <div class="mini" style="margin-top:6px">URL must allow hotlinking.</div>
-        </div>
-      </div>`;
-  }
-
-  document.getElementById("bgControls").innerHTML = html;
-
-  if(mode==="preset" && preset==="matrix"){
-    const mxSpeed = document.getElementById("mxSpeed");
-    const mxSpeedVal = document.getElementById("mxSpeedVal");
-    const mxColor = document.getElementById("mxColor");
-    const mxColorVal = document.getElementById("mxColorVal");
-
-    mxSpeed?.addEventListener("input",(e)=>{
-      const v = clamp(Number(e.target.value), 5, 60);
-      settings.matrixFps = v;
-      mxSpeedVal.textContent = `${v} FPS`;
-    });
-    mxColor?.addEventListener("input",(e)=>{
-      settings.matrixColor = e.target.value;
-      mxColorVal.textContent = e.target.value;
-    });
-  }
-
-  if(mode==="solid"){
-    document.getElementById("solidPick")?.addEventListener("input",(e)=> settings.solid = e.target.value);
-  }
-  if(mode==="gradient"){
-    document.getElementById("g1Pick")?.addEventListener("input",(e)=> settings.g1 = e.target.value);
-    document.getElementById("g2Pick")?.addEventListener("input",(e)=> settings.g2 = e.target.value);
-  }
-  if(mode==="image"){
-    document.getElementById("imgMode")?.addEventListener("change",(e)=>{
-      settings.imageMode = e.target.value;
-      saveLS(DB.settings, settings);
-      renderBgControls();
-    });
-    document.getElementById("imgOverlay")?.addEventListener("change",(e)=> settings.overlay = e.target.checked);
-
-    const pick = document.getElementById("bgImagePick");
-    pick?.addEventListener("change", async ()=>{
-      const f = pick.files?.[0];
-      if(!f) return;
-      await idb.put("assets",{key:"bgImage", blob:f, name:f.name, type:f.type, size:f.size, savedAt:Date.now()});
-      toast("Saved", "Background image stored.");
-    });
-
-    const url = document.getElementById("bgImageUrl");
-    url?.addEventListener("input", ()=> settings.imageUrl = url.value.trim());
-  }
-}
-
-/* ========= Notes ========= */
-let notes = loadLS(DB.notes, [
-  {id: crypto.randomUUID(), m:'Math', d:'12 May 2025', topic:'Number Systems', t:'Key points: primes, factors, divisibility rules.'}
-]);
-let extra = loadLS(DB.extra, []);
-let vaultFiles = [];
-
-function subjectList(){
-  return Array.from(new Set(notes.map(n=>n.m))).sort((a,b)=>a.localeCompare(b));
-}
-function refreshSubjectFilter(){
-  const sel = document.getElementById("subjectFilter");
-  const current = sel.value;
-  const opts = ["all", ...subjectList()];
-  sel.innerHTML = opts.map(v=>`<option value="${v}">${v==='all'?'All subjects':v}</option>`).join("");
-  if(opts.includes(current)) sel.value = current;
-}
-function setKPIs(){
-  document.getElementById("kNotes").textContent = notes.length;
-  document.getElementById("kExtra").textContent = extra.length;
-  document.getElementById("kFiles").textContent = vaultFiles.length;
-}
-function noteHTML(n, kind){
-  const metaLeft = kind==='study'
-    ? `<span class="pill">${n.m}</span><span class="mini">${n.d}${n.topic?` • ${escapeHTML(n.topic)}`:''}</span>`
-    : `<span class="pill">EXTRA</span><span class="mini">${n.d}</span>`;
-  return `
-    <div class="note" data-kind="${kind}" data-id="${n.id}">
-      <div class="actions">
-        <button class="iconBtn" data-act="del" title="Delete">🗑</button>
-      </div>
-      <div class="meta">${metaLeft}</div>
-      <div class="body">${escapeHTML(n.t)}</div>
-    </div>`;
-}
-function renderVault(){
-  const list = document.getElementById("vaultList");
-  if(!vaultFiles.length){
-    list.innerHTML = `<div class="mini">No files in vault.</div>`;
-    return;
-  }
-  list.innerHTML = vaultFiles.map(f=>{
-    const when = new Date(f.savedAt||Date.now()).toLocaleString();
-    const size = bytesToSize(f.size||0);
-    const tag = f.tag || "General";
-    const title = f.title || f.name || "Untitled";
-    return `
-      <div class="note" data-kind="file" data-id="${f.id}">
-        <div class="actions">
-          <button class="iconBtn" data-act="preview" title="Preview">▶</button>
-          <button class="iconBtn" data-act="download" title="Download">⬇</button>
-          <button class="iconBtn" data-act="delFile" title="Delete">🗑</button>
-        </div>
-        <div class="meta">
-          <span class="pill">📁 ${escapeHTML(tag)}</span>
-          <span class="mini">${escapeHTML(when)} • ${escapeHTML(size)}</span>
-        </div>
-        <div class="body"><b>${escapeHTML(title)}</b><div class="mini">${escapeHTML(f.name||"")}</div></div>
-      </div>`;
-  }).join("");
-}
-function render(){
-  const q = (document.getElementById("search").value||"").trim().toLowerCase();
-  const subj = document.getElementById("subjectFilter").value;
-
-  const filtered = notes.filter(n=>{
-    const matchesQ = !q || (n.t + " " + (n.topic||"") + " " + n.m).toLowerCase().includes(q);
-    const matchesS = (subj==="all") || (n.m.toLowerCase()===subj.toLowerCase());
-    return matchesQ && matchesS;
-  });
-
-  document.getElementById("notes").innerHTML = filtered.length
-    ? filtered.map(n=>noteHTML(n,"study")).join("")
-    : `<div class="mini">No study notes match your filter.</div>`;
-
-  document.getElementById("extra").innerHTML = extra.length
-    ? extra.map(n=>noteHTML(n,"extra")).join("")
-    : `<div class="mini">No extra notes</div>`;
-
-  renderVault();
-  refreshSubjectFilter();
-  setKPIs();
-}
-
-function addStudyNote(){
-  const m = document.getElementById("newSubject").value;
-  const topic = (document.getElementById("newTopic").value||"").trim();
-  const t = (document.getElementById("newNote").value||"").trim();
-  if(!t){ toast("Missing","Write a note first."); return; }
-  notes.unshift({ id: crypto.randomUUID(), m, topic, d: new Date().toLocaleDateString(), t });
-  saveLS(DB.notes, notes);
-  document.getElementById("newTopic").value="";
-  document.getElementById("newNote").value="";
-  toast("Saved","Study note added.");
-  render();
-}
-function addExtraNote(){
-  const t = (document.getElementById("extraInput").value||"").trim();
-  if(!t){ toast("Missing","Write an extra note first."); return; }
-  extra.unshift({ id: crypto.randomUUID(), d: new Date().toLocaleDateString(), t });
-  saveLS(DB.extra, extra);
-  document.getElementById("extraInput").value="";
-  toast("Saved","Extra note added.");
-  render();
-}
-
-function deleteItem(kind, id){
-  if(kind==="study"){
-    notes = notes.filter(n=>n.id!==id);
-    saveLS(DB.notes, notes);
-    toast("Deleted","Study note removed.");
-  } else if(kind==="extra"){
-    extra = extra.filter(n=>n.id!==id);
-    saveLS(DB.extra, extra);
-    toast("Deleted","Extra note removed.");
-  }
-  render();
-}
-
-/* ========= Export/Import ========= */
-function exportNotes(){
-  const payload = { version:6, exportedAt:new Date().toISOString(), notes, extra, settings };
-  const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href=url;
-  a.download=`memoria_notes_backup_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
-  toast("Exported","Notes backup downloaded.");
-}
-function importNotes(){
-  const input = document.createElement("input");
-  input.type="file";
-  input.accept="application/json";
-  input.onchange = async ()=>{
-    const file=input.files?.[0]; if(!file) return;
-    try{
-      const txt=await file.text();
-      const data=JSON.parse(txt);
-      if(Array.isArray(data.notes)) notes=data.notes.map(n=>({id:n.id||crypto.randomUUID(), ...n}));
-      if(Array.isArray(data.extra)) extra=data.extra.map(n=>({id:n.id||crypto.randomUUID(), ...n}));
-      if(data.settings) settings={...defaultBg, ...data.settings};
-      saveLS(DB.notes, notes);
-      saveLS(DB.extra, extra);
-      saveLS(DB.settings, settings);
-      document.getElementById("bgMode").value=settings.mode || "preset";
-      document.getElementById("bgPreset").value=settings.preset || "nebula";
-      renderBgControls();
-      await applyBackground();
-      toast("Imported","Notes restored.");
-      render();
-    }catch(e){
-      toast("Error","Import failed (invalid file).");
-    }
-  };
-  input.click();
-}
-
-/* ========= Vault ========= */
-async function loadVault(){
-  vaultFiles = await idb.getAll("files");
-  vaultFiles.sort((a,b)=> (b.savedAt||0) - (a.savedAt||0));
-  render();
-}
-async function saveSelectedFile(){
-  const file = document.getElementById("filePick").files?.[0];
-  if(!file){ toast("Missing","Choose a file first."); return; }
-  const title = (document.getElementById("fileTitle").value||"").trim();
-  const tag = document.getElementById("fileTag").value || "General";
-  const rec = {
-    id: crypto.randomUUID(),
-    name: file.name,
-    type: file.type || "application/octet-stream",
-    size: file.size,
-    title,
-    tag,
-    savedAt: Date.now(),
-    blob: file
-  };
-  try{
-    await idb.put("files", rec);
-    document.getElementById("filePick").value="";
-    document.getElementById("fileTitle").value="";
-    toast("Saved","File stored in vault.");
-    await loadVault();
-  }catch(e){
-    toast("Error","Could not save (storage limit?).");
-  }
-}
-async function deleteVaultFile(id){
-  await idb.del("files", id);
-  toast("Deleted","File removed.");
-  await loadVault();
-}
-async function clearVault(){
-  if(!vaultFiles.length){ toast("Nothing","Vault is already empty."); return; }
-  if(!confirm("Clear ALL vault files?")) return;
-  await idb.clear("files");
-  toast("Cleared","Vault wiped.");
-  await loadVault();
-}
-async function downloadVaultFile(id){
-  const rec = await idb.get("files", id);
-  if(!rec?.blob){ toast("Error","File not found."); return; }
-  const url = URL.createObjectURL(rec.blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = rec.name || "download";
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(url), 1200);
-}
-
-/* ========= Modal Preview ========= */
-let currentPreviewUrl = null;
-function showModal(title, bodyHTML){
-  document.getElementById("modalTitle").textContent = title;
-  document.getElementById("modalBody").innerHTML = bodyHTML;
-  document.getElementById("modal").classList.add("show");
-}
-function closeModal(){
-  if(currentPreviewUrl){
-    try{ URL.revokeObjectURL(currentPreviewUrl); }catch{}
-    currentPreviewUrl = null;
-  }
-  document.getElementById("modal").classList.remove("show");
-  document.getElementById("modalBody").innerHTML = "";
-}
-async function previewVaultFile(id){
-  const rec = await idb.get("files", id);
-  if(!rec?.blob){ toast("Error","File not found."); return; }
-
-  const name = rec.name || "Preview";
-  const type = rec.type || "";
-  const url = URL.createObjectURL(rec.blob);
-  currentPreviewUrl = url;
-  const lower = name.toLowerCase();
-
-  if(type === "application/pdf" || lower.endsWith(".pdf")){
-    showModal(name, `<iframe src="${url}" style="width:100%;height:70vh;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:#000"></iframe>`);
-    return;
-  }
-  if(type.startsWith("audio") || lower.endsWith(".mp3")){
-    showModal(name, `<audio controls style="width:100%"><source src="${url}" type="${type || "audio/mpeg"}"></audio>`);
-    return;
-  }
-  if(type.startsWith("video") || lower.endsWith(".mp4")){
-    showModal(name, `<video controls style="width:100%;max-height:70vh;border-radius:12px;border:1px solid rgba(255,255,255,.08)"><source src="${url}" type="${type || "video/mp4"}"></video>`);
-    return;
-  }
-  showModal(name, `<div class="mini">Preview not available here. Use Download.</div>`);
-}
-
-/* ========= Command ========= */
-function cmdPrint(html){
-  const o = document.getElementById("cmdOut");
-  o.innerHTML += `<div>${html}</div>`;
-  o.scrollTop = o.scrollHeight;
-}
-function cmdHelp(){
-  cmdPrint(`<span class="mini">Commands:</span>
-    <br>• <b>help</b>
-    <br>• <b>time</b>
-    <br>• <b>notes</b> (scroll)
-    <br>• <b>extra</b> (scroll)
-    <br>• <b>vault</b> (scroll)
-    <br>• <b>bg</b> (scroll)
-    <br>• <b>chat</b> (scroll)
-    <br>• <b>clear</b>
-    <br>• <b>search &lt;text&gt;</b>
-    <br>• <b>subject &lt;name|all&gt;</b>
-    <br>• <b>export</b> / <b>import</b>`);
-}
-function runCmd(){
-  const i = document.getElementById("cmdIn");
-  const raw = (i.value||"").trim();
-  if(!raw) return;
-  const lower = raw.toLowerCase();
-  cmdPrint(`&gt; <b>${escapeHTML(raw)}</b>`);
-  const [head] = lower.split(" ");
-  const rest = raw.slice(head.length).trim();
-
-  if(head==="help") cmdHelp();
-  else if(head==="time") cmdPrint(`<span class="mini">${nowTime()}</span>`);
-  else if(head==="notes") document.getElementById("studynotes").scrollIntoView({behavior:"smooth"});
-  else if(head==="extra") document.getElementById("extraPanel").scrollIntoView({behavior:"smooth"});
-  else if(head==="vault") document.getElementById("vaultPanel").scrollIntoView({behavior:"smooth"});
-  else if(head==="bg") document.getElementById("bgPanel").scrollIntoView({behavior:"smooth"});
-  else if(head==="chat") document.getElementById("chatPanel").scrollIntoView({behavior:"smooth"});
-  else if(head==="clear") document.getElementById("cmdOut").innerHTML = "";
-  else if(head==="search"){
-    document.getElementById("search").value = rest;
-    render();
-    cmdPrint(`<span class="mini">Search set.</span>`);
-  } else if(head==="subject"){
-    const v = rest.trim().toLowerCase();
-    const sel = document.getElementById("subjectFilter");
-    if(!v || v==="all"){ sel.value="all"; }
-    else{
-      const opts = Array.from(sel.options).map(o=>o.value);
-      const found = opts.find(x=>x.toLowerCase()===v);
-      sel.value = found || "all";
-    }
-    render();
-    cmdPrint(`<span class="mini">Subject filter updated.</span>`);
-  } else if(head==="export") exportNotes();
-  else if(head==="import") importNotes();
-  else cmdPrint(`<span class="mini">Unknown command. Type <b>help</b>.</span>`);
-  i.value="";
-}
-
-/* ========= Events ========= */
-document.getElementById("btnAddNote").addEventListener("click", addStudyNote);
-document.getElementById("btnAddExtra").addEventListener("click", addExtraNote);
-
-document.getElementById("btnClearExtra").addEventListener("click", ()=>{
-  if(!extra.length){ toast("Nothing","No extra notes to clear."); return; }
-  if(confirm("Clear ALL extra notes?")){
-    extra=[];
-    saveLS(DB.extra, extra);
-    toast("Cleared","Extra notes wiped.");
-    render();
-  }
-});
-
-document.getElementById("search").addEventListener("input", render);
-document.getElementById("subjectFilter").addEventListener("change", render);
-document.getElementById("btnClearSearch").addEventListener("click", ()=>{
-  document.getElementById("search").value="";
-  document.getElementById("subjectFilter").value="all";
-  render();
-});
-
-document.getElementById("btnExport").addEventListener("click", exportNotes);
-document.getElementById("btnImport").addEventListener("click", importNotes);
-
-document.getElementById("btnSaveFile").addEventListener("click", saveSelectedFile);
-document.getElementById("btnClearVault").addEventListener("click", clearVault);
-
-document.getElementById("bgMode").addEventListener("change",(e)=>{
-  settings.mode = e.target.value;
-  saveLS(DB.settings, settings);
-  renderBgControls();
-});
-document.getElementById("bgPreset").addEventListener("change",(e)=>{
-  settings.preset = e.target.value;
-  saveLS(DB.settings, settings);
-  renderBgControls();
-});
-
-document.getElementById("btnApplyBg").addEventListener("click", async ()=>{
-  settings.mode = document.getElementById("bgMode").value;
-  settings.preset = document.getElementById("bgPreset").value;
-  saveLS(DB.settings, settings);
-  await applyBackground();
-  toast("Applied","Background updated.");
-});
-document.getElementById("btnResetBg").addEventListener("click", async ()=>{
-  settings = {...defaultBg};
-  saveLS(DB.settings, settings);
-  document.getElementById("bgMode").value=settings.mode;
-  document.getElementById("bgPreset").value=settings.preset;
-  renderBgControls();
-  await applyBackground();
-  toast("Reset","Background restored.");
-});
-
-document.getElementById("cmdIn").addEventListener("keydown",(e)=>{ if(e.key==="Enter") runCmd(); });
-
-document.addEventListener("keydown",(e)=>{
-  if((e.ctrlKey || e.metaKey) && e.key==="Enter"){
-    if(document.activeElement === document.getElementById("newNote")) addStudyNote();
-  }
-});
-
-document.addEventListener("click", async (e)=>{
-  const btn = e.target.closest("[data-act]");
-  if(!btn) return;
-  const box = e.target.closest(".note");
-  if(!box) return;
-
-  const kind = box.getAttribute("data-kind");
-  const id = box.getAttribute("data-id");
-  const act = btn.getAttribute("data-act");
-
-  if(kind==="study" || kind==="extra"){
-    if(act==="del") deleteItem(kind, id);
-  }
-  if(kind==="file"){
-    if(act==="delFile") await deleteVaultFile(id);
-    if(act==="download") await downloadVaultFile(id);
-    if(act==="preview") await previewVaultFile(id);
-  }
-});
-
-document.getElementById("modalClose").addEventListener("click", closeModal);
-document.getElementById("modal").addEventListener("click",(e)=>{ if(e.target.id==="modal") closeModal(); });
-
-document.getElementById("chatBubbleBtn").addEventListener("click", ()=>{
-  document.getElementById("chatPanel").scrollIntoView({behavior:"smooth"});
-  const b = document.getElementById("chatBubble");
-  if(b){ b.style.display="none"; b.textContent="0"; }
-  const db = document.getElementById("dockChatBubble");
-  if(db){ db.style.display="none"; db.textContent="0"; }
-});
-
-/* ========= Init ========= */
-(async function init(){
-  document.getElementById("cmdOut").innerHTML = `<div class="mini">Memoria console ready. Type <b>help</b>.</div>`;
-  document.getElementById("bgMode").value = settings.mode || "preset";
-  document.getElementById("bgPreset").value = settings.preset || "nebula";
-  renderBgControls();
-  await applyBackground();
-  vaultFiles = await idb.getAll("files");
-  vaultFiles.sort((a,b)=> (b.savedAt||0) - (a.savedAt||0));
-  render();
-})();
-</script>
-
-<!-- ========= Firebase Chat + Bubble + macOS-style popup ========= -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import {
-  getFirestore, collection, addDoc, serverTimestamp,
-  query, orderBy, limit, onSnapshot
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyB7AhWd_9tt33c2mvGBMMaFFzBFjxk8svc",
-  authDomain: "notepro-3194d.firebaseapp.com",
-  projectId: "notepro-3194d",
-  storageBucket: "notepro-3194d.firebasestorage.app",
-  messagingSenderId: "748657045336",
-  appId: "1:748657045336:web:1a10be8e3aec289933ff2d"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-/* Elements */
-const chatStatus  = document.getElementById("chatStatus");
-const chatLog     = document.getElementById("chatLog");
-const chatName    = document.getElementById("chatName");
-const chatRoom    = document.getElementById("chatRoom");
-const chatConnect = document.getElementById("chatConnect");
-const chatMsg     = document.getElementById("chatMsg");
-const chatSend    = document.getElementById("chatSend");
-
-const bubble = document.getElementById("chatBubble");
-const dockBubble = document.getElementById("dockChatBubble");
-const bubbleBtn = document.getElementById("chatBubbleBtn");
-const chatPanel = document.getElementById("chatPanel");
-
-let unsub = null;
-let connectedRoom = null;
-
-/* Unread tracking */
-let unread = 0;
-let lastDocId = null;
-let chatVisible = false;
-
-function safeText(s){ return (s ?? "").toString().slice(0, 500); }
-function showStatus(t){ if(chatStatus) chatStatus.textContent = t; }
-function clearChat(){ if(chatLog) chatLog.innerHTML = ""; }
-function esc(s){
-  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
-}
-
-function setBubble(n){
-  unread = n;
-
-  const apply = (el)=>{
-    if(!el) return;
-    if(unread > 0){
-      el.style.display = "inline-flex";
-      el.textContent = String(unread);
-    } else {
-      el.style.display = "none";
-      el.textContent = "0";
-    }
-  };
-
-  apply(bubble);
-  apply(dockBubble);
-
-  document.title = unread > 0 ? `(${unread}) Memoria NotePro` : "Memoria NotePro";
-}
-function clearUnread(){ setBubble(0); }
-
-function addLine(line){
-  if(!chatLog) return;
-  const div = document.createElement("div");
-  div.innerHTML = line;
-  chatLog.appendChild(div);
-  chatLog.scrollTop = chatLog.scrollHeight;
-}
-
-/* Detect when chat panel is visible */
-if(chatPanel){
-  const obs = new IntersectionObserver((entries)=>{
-    chatVisible = entries?.[0]?.isIntersecting === true;
-    if(chatVisible && document.hasFocus()) clearUnread();
-  }, { threshold: 0.35 });
-  obs.observe(chatPanel);
-}
-window.addEventListener("focus", ()=>{ if(chatVisible) clearUnread(); });
-bubbleBtn?.addEventListener("click", ()=>{ clearUnread(); });
-
-/* Connect */
-chatConnect?.addEventListener("click", async ()=>{
-  const name = safeText(chatName?.value.trim()) || "Anonymous";
-  const room = safeText(chatRoom?.value.trim()).replace(/\s+/g,"-").toLowerCase();
-  if(!room){ showStatus("Enter a room code first."); return; }
-
-  if(unsub){ unsub(); unsub=null; }
-  connectedRoom = room;
-  lastDocId = null;
-  clearChat();
-  clearUnread();
-  showStatus(`Connected to room: ${room}`);
-
-  const msgsRef = collection(db, "rooms", room, "messages");
-  const q = query(msgsRef, orderBy("createdAt","asc"), limit(200));
-
-  unsub = onSnapshot(q, (snap)=>{
-    const docs = [];
-    snap.forEach(d=>docs.push({id:d.id, data:d.data()||{}}));
-
-    const last = docs[docs.length-1] || null;
-    const newLastDocId = last?.id || null;
-    const lastMsg = last?.data || null;
-
-    clearChat();
-    for(const item of docs){
-      const m = item.data || {};
-      const who  = safeText(m.name || "Anon");
-      const text = safeText(m.text || "");
-      const time = m.createdAt?.toDate
-        ? m.createdAt.toDate().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
-        : "";
-      addLine(`<span style="color:rgba(255,255,255,.65)">[${esc(time)}]</span> <b>${esc(who)}:</b> ${esc(text)}`);
-    }
-
-    // Notify when last message changes
-    if(lastDocId && newLastDocId && newLastDocId !== lastDocId){
-      const myName = safeText(chatName?.value.trim()) || "Anonymous";
-      const sender = safeText(lastMsg?.name || "");
-      const text = safeText(lastMsg?.text || "");
-
-      const isFromOther = sender.toLowerCase() !== myName.toLowerCase();
-      const shouldNotify = isFromOther && !(chatVisible && document.hasFocus());
-
-      if(shouldNotify){
-        setBubble(unread + 1);
-        window.macNotify?.(`💬 New message from ${sender || "Someone"}`, text.slice(0, 120));
-        window.toast?.("New message", `From ${sender || "Someone"}`);
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    /* View switching + browser back support */
+    const views = ["home","notes","vault","settings"];
+
+    function showView(id, push=true){
+      if(!views.includes(id)) id = "home";
+      for(const v of views){
+        document.getElementById(v).classList.toggle("active", v===id);
+      }
+      if(push){
+        history.pushState({view:id}, "", "#" + id);
       }
     }
 
-    if(newLastDocId) lastDocId = newLastDocId;
-    if(chatVisible && document.hasFocus()) clearUnread();
-  }, (err)=>{
-    showStatus("Chat error: " + err.message);
-  });
+    // Dock click
+    document.querySelectorAll("[data-go]").forEach(btn=>{
+      btn.addEventListener("click", () => showView(btn.dataset.go, true));
+    });
 
-  try{
-    localStorage.setItem("memoria_chat_name", name);
-    localStorage.setItem("memoria_chat_room", room);
-  }catch{}
-});
+    // Back/Forward buttons
+    window.addEventListener("popstate", (e)=>{
+      const id = (e.state && e.state.view) ? e.state.view : (location.hash.replace("#","") || "home");
+      showView(id, false);
+    });
 
-/* Send */
-chatSend?.addEventListener("click", async ()=>{
-  const name = safeText(chatName?.value.trim()) || "Anonymous";
-  const text = safeText(chatMsg?.value.trim());
-  if(!connectedRoom){ showStatus("Connect to a room first."); return; }
-  if(!text) return;
-
-  chatMsg.value = "";
-  try{
-    const msgsRef = collection(db, "rooms", connectedRoom, "messages");
-    await addDoc(msgsRef, { name, text, createdAt: serverTimestamp() });
-  }catch(e){
-    showStatus("Send failed: " + e.message);
-  }
-});
-chatMsg?.addEventListener("keydown", (e)=>{ if(e.key==="Enter") chatSend?.click(); });
-
-/* Load saved */
-try{
-  const savedN = localStorage.getItem("memoria_chat_name");
-  const savedR = localStorage.getItem("memoria_chat_room");
-  if(savedN && chatName) chatName.value = savedN;
-  if(savedR && chatRoom) chatRoom.value = savedR;
-}catch{}
-</script>
+    // On load: open hash or home
+    const start = location.hash.replace("#","") || "home";
+    history.replaceState({view:start}, "", "#" + start);
+    showView(start, false);
+  </script>
 
 </body>
 </html>
