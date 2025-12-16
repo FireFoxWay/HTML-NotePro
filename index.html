@@ -14,6 +14,8 @@
       --border: rgba(255,255,255,.12);
       --shadow: 0 18px 70px rgba(0,0,0,.70);
       --accent: rgba(139,92,246,.35);
+
+      /* Wallpapers */
       --wallpaper: radial-gradient(1200px 600px at 20% 10%, #0e1a3a, transparent 60%),
                    radial-gradient(900px 500px at 80% 90%, #101f4a, transparent 55%),
                    linear-gradient(180deg, #050512, #070b1a);
@@ -26,6 +28,8 @@
       overflow:hidden;
       background: var(--wallpaper);
     }
+
+    /* Optional image overlay */
     body::before{
       content:"";
       position:fixed; inset:0;
@@ -37,6 +41,7 @@
       pointer-events:none;
       z-index:-2;
     }
+
     body::after{
       content:"";
       position:fixed; inset:0;
@@ -223,7 +228,7 @@
     }
     .dockItem:hover .dockTip{opacity:1}
 
-    /* Tiny dot notification (for chat) */
+    /* Tiny dot notification */
     .bubble{
       position:absolute;
       top:6px; right:8px;
@@ -286,7 +291,7 @@
 <body>
   <canvas id="matrix"></canvas>
 
-  <!-- HOME (Clock-only + Dock) -->
+  <!-- HOME -->
   <section class="view active" id="home">
     <div class="homeCenter">
       <div>
@@ -296,12 +301,12 @@
     </div>
   </section>
 
-  <!-- STUDY NOTES WINDOW (Key Points) -->
+  <!-- STUDY NOTES -->
   <section class="view" id="studynotes">
     <div class="window">
       <div class="windowHead">
         <h2>Study Notes (Key Points)</h2>
-        <div class="mini">Save quick bullet points • stored in browser</div>
+        <div class="mini">Save bullet points • stored in browser</div>
       </div>
 
       <div class="row">
@@ -330,7 +335,7 @@
     </div>
   </section>
 
-  <!-- CHAT WINDOW -->
+  <!-- CHAT -->
   <section class="view" id="chat">
     <div class="window">
       <div class="windowHead">
@@ -345,7 +350,7 @@
       </div>
 
       <div class="mini" style="margin-top:8px">
-        Share the same <b>Room code</b> with your friend. Both must open this website.
+        Share the same <b>Room code</b> with your friend. Both open this website.
       </div>
 
       <hr>
@@ -359,7 +364,7 @@
     </div>
   </section>
 
-  <!-- VAULT WINDOW -->
+  <!-- VAULT -->
   <section class="view" id="vault">
     <div class="window">
       <div class="windowHead">
@@ -393,7 +398,7 @@
     </div>
   </section>
 
-  <!-- TERMINAL WINDOW -->
+  <!-- TERMINAL -->
   <section class="view" id="terminal">
     <div class="window">
       <div class="windowHead">
@@ -414,7 +419,7 @@
     </div>
   </section>
 
-  <!-- SETTINGS WINDOW (Wallpaper + Matrix) -->
+  <!-- SETTINGS -->
   <section class="view" id="settings">
     <div class="window">
       <div class="windowHead">
@@ -471,7 +476,7 @@
     </div>
   </section>
 
-  <!-- DOCK (always visible) -->
+  <!-- DOCK -->
   <nav class="dock" aria-label="Dock">
     <div class="dockItem">
       <div class="dockTip">Home</div>
@@ -501,7 +506,7 @@
     </div>
   </nav>
 
-  <!-- PREVIEW MODAL -->
+  <!-- MODAL -->
   <div class="modal" id="modal">
     <div class="modalCard">
       <div class="windowHead" style="margin-bottom:10px">
@@ -544,7 +549,6 @@
       for(const v of App.views){
         document.getElementById(v).classList.toggle("active", v===id);
       }
-      // Clear chat bubble when you open chat
       if(id === "chat"){
         App.stats.chatUnread = 0;
         renderChatBubble();
@@ -566,18 +570,31 @@
     history.replaceState({view:start}, "", "#"+start);
     showView(start, false);
 
-    /* ===== CHAT DOCK BUBBLE ===== */
+    /* ===== CHAT BUBBLE ===== */
     const chatBubble = document.getElementById("chatBubble");
     function renderChatBubble(){
       chatBubble.style.display = App.stats.chatUnread > 0 ? "block" : "none";
     }
 
     /* =========================
-       STUDY NOTES (KEY POINTS) - localStorage
+       HELPERS
+    ========================== */
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    /* =========================
+       STUDY NOTES (localStorage)
     ========================== */
     const SN_KEY = "memoria_studynotes_v1";
     const snList = document.getElementById("snList");
     let studyNotes = [];
+
     function loadSN(){
       try{ studyNotes = JSON.parse(localStorage.getItem(SN_KEY) || "[]"); }
       catch{ studyNotes = []; }
@@ -657,14 +674,6 @@
     const modalClose = document.getElementById("modalClose");
     let previewUrl = null;
 
-    function escapeHtml(s){
-      return String(s ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
     function bytesToSize(bytes){
       if(bytes===0) return "0 B";
       const k=1024, sizes=["B","KB","MB","GB"];
@@ -856,7 +865,6 @@
         showModal(name, `<video controls style="width:100%;max-height:70vh;border-radius:14px;border:1px solid rgba(255,255,255,.12)"><source src="${url}" type="${type || "video/mp4"}"></video>`);
         return;
       }
-
       showModal(name, `<div class="mini">Preview not supported here. Use Download.</div>`);
     }
 
@@ -890,11 +898,8 @@
     modalClose.addEventListener("click", closeModal);
     modal.addEventListener("click", (e)=>{ if(e.target === modal) closeModal(); });
 
-    loadVault();
-    loadSN();
-
     /* =========================
-       MATRIX (real falling characters)
+       MATRIX (falling chars)
     ========================== */
     const mx = {
       on: true,
@@ -927,13 +932,13 @@
 
     function drawMatrix(){
       if(!mx.on){
+        ctx.clearRect(0,0,mx.lastW||window.innerWidth,mx.lastH||window.innerHeight);
         requestAnimationFrame(drawMatrix);
         return;
       }
       const w = mx.lastW || window.innerWidth;
       const h = mx.lastH || window.innerHeight;
 
-      // fade background
       ctx.fillStyle = "rgba(0,0,0,0.08)";
       ctx.fillRect(0,0,w,h);
 
@@ -968,7 +973,7 @@
     App.setMatrix = setMatrixSettings;
 
     /* =========================
-       WALLPAPER SETTINGS
+       WALLPAPERS
     ========================== */
     const WALLPAPERS = {
       default: `radial-gradient(1200px 600px at 20% 10%, #0e1a3a, transparent 60%),
@@ -993,7 +998,9 @@
 
     function setWallpaper(preset, imageUrl){
       const root = document.documentElement;
-      const wp = WALLPAPERS[preset] || WALLPAPERS.default;
+
+      // normalize to avoid weird whitespace parsing issues
+      const wp = (WALLPAPERS[preset] || WALLPAPERS.default).replace(/\s+/g," ").trim();
       root.style.setProperty("--wallpaper", wp);
 
       if(imageUrl && imageUrl.trim()){
@@ -1007,7 +1014,7 @@
     App.setWallpaper = setWallpaper;
 
     /* =========================
-       SETTINGS UI wiring
+       SETTINGS UI
     ========================== */
     const wpPreset = document.getElementById("wpPreset");
     const wpUrl = document.getElementById("wpUrl");
@@ -1033,12 +1040,11 @@
     function loadPrefs(){
       try{
         const p = JSON.parse(localStorage.getItem("memoria_prefs_v1") || "{}");
-        // Wallpaper
+
         wpPreset.value = p.wallpaperPreset || "default";
         wpUrl.value = p.wallpaperUrl || "";
         setWallpaper(wpPreset.value, wpUrl.value);
 
-        // Matrix
         mxOn.checked = (p.matrixOn !== false);
         mxSpeed.value = String(p.matrixSpeed ?? 1.0);
         mxColor.value = String(p.matrixColor ?? "#00ff88");
@@ -1072,6 +1078,10 @@
         color: mxColor.value
       });
     });
+
+    // ✅ Make wallpapers change instantly on dropdown change (this fixes your issue)
+    wpPreset.addEventListener("change", ()=> setWallpaper(wpPreset.value, wpUrl.value));
+    wpUrl.addEventListener("change", ()=> setWallpaper(wpPreset.value, wpUrl.value));
 
     loadPrefs();
 
@@ -1118,10 +1128,7 @@
       const main = (parts[0] || "").toLowerCase();
 
       if(main === "help"){ termHelp(); return; }
-      if(main === "time"){
-        termPrint(new Date().toString());
-        return;
-      }
+      if(main === "time"){ termPrint(new Date().toString()); return; }
       if(main === "goto"){
         const v = (parts[1] || "").toLowerCase();
         if(App.views.includes(v)){
@@ -1197,11 +1204,12 @@
     });
 
     termClear();
+    loadVault();
+    loadSN();
   </script>
 
   <!-- =========================
        FIREBASE CHAT (Firestore)
-       (Multi-people chat)
   ========================== -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
@@ -1273,7 +1281,6 @@
       const q = query(msgsRef, orderBy("createdAt","asc"), limit(250));
 
       unsub = onSnapshot(q, (snap)=>{
-        // unread bubble only if you're NOT on chat view
         const isChatOpen = document.getElementById("chat").classList.contains("active");
 
         clearChat();
@@ -1291,14 +1298,11 @@
 
         if(!isChatOpen && count > lastSeenCount){
           window.App.stats.chatUnread += (count - lastSeenCount);
-          // show bubble
-          const bubble = document.getElementById("chatBubble");
-          bubble.style.display = "block";
+          document.getElementById("chatBubble").style.display = "block";
         }
         if(isChatOpen){
           window.App.stats.chatUnread = 0;
-          const bubble = document.getElementById("chatBubble");
-          bubble.style.display = "none";
+          document.getElementById("chatBubble").style.display = "none";
         }
 
         lastSeenCount = count;
