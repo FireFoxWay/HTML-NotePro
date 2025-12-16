@@ -30,7 +30,7 @@
       position:fixed;
       inset:0;
       display:none;
-      padding: 28px 18px 90px; /* bottom room for dock */
+      padding: 22px 16px 92px; /* bottom room for dock */
       overflow:auto;
     }
     .view.active{display:block}
@@ -60,7 +60,7 @@
 
     /* WINDOW CONTENT */
     .window{
-      max-width: 920px;
+      max-width: 980px;
       margin: 0 auto;
       background: var(--panel);
       border: 1px solid var(--border);
@@ -70,8 +70,66 @@
       -webkit-backdrop-filter: blur(14px);
       padding: 16px;
     }
-    .window h2{margin:0 0 8px;font-size:18px}
-    .window p{margin:0;color:var(--muted);line-height:1.5}
+    .windowHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:12px;
+    }
+    .windowHead h2{margin:0;font-size:18px}
+    .mini{font-size:12px;color:var(--muted)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .spacer{flex:1}
+    hr{border:none;border-top:1px solid rgba(255,255,255,.10);margin:12px 0}
+
+    input, select, textarea, button{
+      font: inherit;
+    }
+    input, select, textarea{
+      background: rgba(0,0,0,.30);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: var(--text);
+      outline: none;
+    }
+    textarea{width:100%;resize:none}
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(139,92,246,.55);
+      box-shadow: 0 0 0 4px rgba(139,92,246,.12);
+    }
+    button{
+      cursor:pointer;
+      border-radius: 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      transition: transform .12s ease, filter .12s ease;
+    }
+    button:hover{filter: brightness(1.12)}
+    button:active{transform: translateY(1px)}
+    .btnGreen{background: rgba(34,197,94,.18)}
+    .btnRed{background: rgba(239,68,68,.16)}
+    .btnPurple{background: rgba(139,92,246,.18)}
+
+    /* LIST CARDS */
+    .list{display:flex;flex-direction:column;gap:10px}
+    .card{
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
+      padding: 12px;
+      position: relative;
+    }
+    .cardTitle{font-weight:800}
+    .cardMeta{margin-top:4px;font-size:12px;color:var(--muted)}
+    .cardActions{
+      position:absolute; top:10px; right:10px;
+      display:flex; gap:8px;
+    }
+    .smallBtn{padding:7px 9px;border-radius:10px;font-size:12px}
 
     /* DOCK */
     .dock{
@@ -91,6 +149,7 @@
       -webkit-backdrop-filter: blur(14px);
       user-select:none;
     }
+    .dockItem{position:relative}
     .dockBtn{
       width:52px;height:52px;
       border-radius:16px;
@@ -103,6 +162,7 @@
       color: var(--text);
       font-size:20px;
       transition: transform .16s ease, filter .16s ease, background .16s ease;
+      padding:0;
     }
     .dockBtn:hover{
       transform: translateY(-6px) scale(1.10);
@@ -125,8 +185,39 @@
       pointer-events:none;
       transition: opacity .15s ease;
     }
-    .dockItem{position:relative}
     .dockItem:hover .dockTip{opacity:1}
+
+    /* CHAT LOG */
+    .chatLog{
+      height: 320px;
+      overflow:auto;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.30);
+      border: 1px solid rgba(255,255,255,.10);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    /* MODAL PREVIEW */
+    .modal{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center; justify-content:center;
+      padding:16px;
+      z-index: 99999;
+    }
+    .modal.show{display:flex}
+    .modalCard{
+      width:min(980px, 100%);
+      background: rgba(18,20,35,.92);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+      box-shadow: 0 22px 90px rgba(0,0,0,.75);
+      padding: 14px;
+    }
   </style>
 </head>
 
@@ -142,25 +233,66 @@
     </div>
   </section>
 
-  <!-- “Windows” (same page) -->
-  <section class="view" id="notes">
+  <!-- CHAT WINDOW -->
+  <section class="view" id="chat">
     <div class="window">
-      <h2>Notes</h2>
-      <p>This is a new window (same page). Press Back or tap 🏠 to return to the clock.</p>
+      <div class="windowHead">
+        <h2>Chat</h2>
+        <div class="mini" id="chatStatus">Not connected</div>
+      </div>
+
+      <div class="row">
+        <input id="chatName" placeholder="Your name (e.g., Umesh)" />
+        <input id="chatRoom" placeholder="Room code (e.g., memoria)" />
+        <button class="btnGreen" id="chatConnect">Connect</button>
+      </div>
+
+      <div class="mini" style="margin-top:8px">
+        Share the same <b>Room code</b> with your friend. Both must open this website.
+      </div>
+
+      <hr>
+
+      <div class="chatLog" id="chatLog"></div>
+
+      <div class="row" style="margin-top:12px">
+        <input id="chatMsg" style="flex:1" placeholder="Type a message..." />
+        <button class="btnPurple" id="chatSend">Send</button>
+      </div>
     </div>
   </section>
 
+  <!-- VAULT WINDOW -->
   <section class="view" id="vault">
     <div class="window">
-      <h2>Vault</h2>
-      <p>This is another window. Put your vault UI here later.</p>
-    </div>
-  </section>
+      <div class="windowHead">
+        <h2>File Vault</h2>
+        <div class="mini">Saved in your browser (IndexedDB)</div>
+      </div>
 
-  <section class="view" id="settings">
-    <div class="window">
-      <h2>Settings</h2>
-      <p>This is settings window. Press Back or 🏠 to return home.</p>
+      <div class="row">
+        <input id="fileTitle" placeholder="Title (optional)" style="flex:1" />
+        <select id="fileTag">
+          <option>General</option>
+          <option>School</option>
+          <option>Media</option>
+          <option>Projects</option>
+        </select>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <input id="filePick" type="file" />
+        <button class="btnGreen" id="btnSaveFile">Save</button>
+        <button class="btnRed" id="btnClearVault">Clear Vault</button>
+      </div>
+
+      <div class="mini" style="margin-top:10px">
+        Preview: PDF / MP3 / MP4. Word/PPT will be download-only.
+      </div>
+
+      <hr>
+
+      <div class="list" id="vaultList"></div>
     </div>
   </section>
 
@@ -171,21 +303,29 @@
       <button class="dockBtn" data-go="home" aria-label="Home">🏠</button>
     </div>
     <div class="dockItem">
-      <div class="dockTip">Notes</div>
-      <button class="dockBtn" data-go="notes" aria-label="Notes">📝</button>
+      <div class="dockTip">Chat</div>
+      <button class="dockBtn" data-go="chat" aria-label="Chat">💬</button>
     </div>
     <div class="dockItem">
       <div class="dockTip">Vault</div>
       <button class="dockBtn" data-go="vault" aria-label="Vault">🗂️</button>
     </div>
-    <div class="dockItem">
-      <div class="dockTip">Settings</div>
-      <button class="dockBtn" data-go="settings" aria-label="Settings">⚙️</button>
-    </div>
   </nav>
 
+  <!-- PREVIEW MODAL -->
+  <div class="modal" id="modal">
+    <div class="modalCard">
+      <div class="windowHead" style="margin-bottom:10px">
+        <h2 id="modalTitle" style="font-size:16px">Preview</h2>
+        <div class="spacer"></div>
+        <button id="modalClose">Close</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
   <script>
-    /* Clock */
+    /* ===== CLOCK ===== */
     function updateClock(){
       const now = new Date();
       document.getElementById("t").textContent =
@@ -198,34 +338,374 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    /* View switching + browser back support */
-    const views = ["home","notes","vault","settings"];
-
+    /* ===== VIEW SWITCH + BACK BUTTON ===== */
+    const views = ["home","chat","vault"];
     function showView(id, push=true){
-      if(!views.includes(id)) id = "home";
+      if(!views.includes(id)) id="home";
       for(const v of views){
         document.getElementById(v).classList.toggle("active", v===id);
       }
-      if(push){
-        history.pushState({view:id}, "", "#" + id);
-      }
+      if(push) history.pushState({view:id}, "", "#"+id);
     }
 
-    // Dock click
     document.querySelectorAll("[data-go]").forEach(btn=>{
-      btn.addEventListener("click", () => showView(btn.dataset.go, true));
+      btn.addEventListener("click", ()=>showView(btn.dataset.go, true));
     });
 
-    // Back/Forward buttons
     window.addEventListener("popstate", (e)=>{
       const id = (e.state && e.state.view) ? e.state.view : (location.hash.replace("#","") || "home");
       showView(id, false);
     });
 
-    // On load: open hash or home
     const start = location.hash.replace("#","") || "home";
-    history.replaceState({view:start}, "", "#" + start);
+    history.replaceState({view:start}, "", "#"+start);
     showView(start, false);
+
+    /* ===== VAULT (IndexedDB) ===== */
+    const vaultList = document.getElementById("vaultList");
+    const modal = document.getElementById("modal");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalClose = document.getElementById("modalClose");
+
+    let previewUrl = null;
+
+    function bytesToSize(bytes){
+      if(bytes===0) return "0 B";
+      const k=1024, sizes=["B","KB","MB","GB"];
+      const i=Math.floor(Math.log(bytes)/Math.log(k));
+      return `${(bytes/Math.pow(k,i)).toFixed(i?2:0)} ${sizes[i]}`;
+    }
+
+    const IDB = (() => {
+      const DBNAME="clockdock_vault_v1";
+      const VERSION=1;
+      let db=null;
+
+      function open(){
+        if(db) return Promise.resolve(db);
+        return new Promise((resolve,reject)=>{
+          const req = indexedDB.open(DBNAME, VERSION);
+          req.onupgradeneeded = () => {
+            const d = req.result;
+            if(!d.objectStoreNames.contains("files")){
+              d.createObjectStore("files", { keyPath:"id" });
+            }
+          };
+          req.onsuccess = () => { db=req.result; resolve(db); };
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function put(val){
+        const d = await open();
+        return new Promise((res,rej)=>{
+          const tx = d.transaction("files","readwrite");
+          tx.objectStore("files").put(val);
+          tx.oncomplete = ()=>res(true);
+          tx.onerror = ()=>rej(tx.error);
+        });
+      }
+
+      async function getAll(){
+        const d = await open();
+        return new Promise((res,rej)=>{
+          const tx = d.transaction("files","readonly");
+          const r = tx.objectStore("files").getAll();
+          r.onsuccess = ()=>res(r.result || []);
+          r.onerror = ()=>rej(r.error);
+        });
+      }
+
+      async function get(id){
+        const d = await open();
+        return new Promise((res,rej)=>{
+          const tx = d.transaction("files","readonly");
+          const r = tx.objectStore("files").get(id);
+          r.onsuccess = ()=>res(r.result || null);
+          r.onerror = ()=>rej(r.error);
+        });
+      }
+
+      async function del(id){
+        const d = await open();
+        return new Promise((res,rej)=>{
+          const tx = d.transaction("files","readwrite");
+          tx.objectStore("files").delete(id);
+          tx.oncomplete = ()=>res(true);
+          tx.onerror = ()=>rej(tx.error);
+        });
+      }
+
+      async function clear(){
+        const d = await open();
+        return new Promise((res,rej)=>{
+          const tx = d.transaction("files","readwrite");
+          tx.objectStore("files").clear();
+          tx.oncomplete = ()=>res(true);
+          tx.onerror = ()=>rej(tx.error);
+        });
+      }
+
+      return { put,getAll,get,del,clear };
+    })();
+
+    let vaultFiles = [];
+
+    function esc(s){
+      return String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+
+    async function loadVault(){
+      vaultFiles = await IDB.getAll();
+      vaultFiles.sort((a,b)=> (b.savedAt||0) - (a.savedAt||0));
+      renderVault();
+    }
+
+    function renderVault(){
+      if(!vaultFiles.length){
+        vaultList.innerHTML = `<div class="mini">No files saved yet.</div>`;
+        return;
+      }
+
+      vaultList.innerHTML = vaultFiles.map(f=>{
+        const when = new Date(f.savedAt||Date.now()).toLocaleString();
+        const size = bytesToSize(f.size||0);
+        const title = f.title || f.name || "Untitled";
+        const tag = f.tag || "General";
+        return `
+          <div class="card" data-id="${esc(f.id)}">
+            <div class="cardActions">
+              <button class="smallBtn btnPurple" data-act="preview">Preview</button>
+              <button class="smallBtn" data-act="download">Download</button>
+              <button class="smallBtn btnRed" data-act="delete">Delete</button>
+            </div>
+            <div class="cardTitle">${esc(title)}</div>
+            <div class="cardMeta">📁 ${esc(tag)} • ${esc(when)} • ${esc(size)} • ${esc(f.name || "")}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function saveFile(){
+      const file = document.getElementById("filePick").files?.[0];
+      if(!file){ alert("Choose a file first"); return; }
+
+      const title = (document.getElementById("fileTitle").value||"").trim();
+      const tag = document.getElementById("fileTag").value || "General";
+
+      const rec = {
+        id: crypto.randomUUID(),
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: file.size,
+        title,
+        tag,
+        savedAt: Date.now(),
+        blob: file
+      };
+
+      try{
+        await IDB.put(rec);
+        document.getElementById("filePick").value="";
+        document.getElementById("fileTitle").value="";
+        await loadVault();
+        alert("Saved to vault ✅");
+      }catch(e){
+        alert("Save failed (storage limit?)");
+      }
+    }
+
+    async function downloadFile(id){
+      const rec = await IDB.get(id);
+      if(!rec?.blob){ alert("File not found"); return; }
+      const url = URL.createObjectURL(rec.blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = rec.name || "download";
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 1200);
+    }
+
+    function showModal(title, html){
+      modalTitle.textContent = title;
+      modalBody.innerHTML = html;
+      modal.classList.add("show");
+    }
+
+    function closeModal(){
+      if(previewUrl){
+        try{ URL.revokeObjectURL(previewUrl); }catch{}
+        previewUrl = null;
+      }
+      modal.classList.remove("show");
+      modalBody.innerHTML = "";
+    }
+
+    async function previewFile(id){
+      const rec = await IDB.get(id);
+      if(!rec?.blob){ alert("File not found"); return; }
+
+      const name = rec.name || "Preview";
+      const type = rec.type || "";
+      const url = URL.createObjectURL(rec.blob);
+      previewUrl = url;
+
+      const lower = name.toLowerCase();
+      if(type === "application/pdf" || lower.endsWith(".pdf")){
+        showModal(name, `<iframe src="${url}" style="width:100%;height:70vh;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:#000"></iframe>`);
+        return;
+      }
+      if(type.startsWith("audio") || lower.endsWith(".mp3")){
+        showModal(name, `<audio controls style="width:100%"><source src="${url}" type="${type || "audio/mpeg"}"></audio>`);
+        return;
+      }
+      if(type.startsWith("video") || lower.endsWith(".mp4")){
+        showModal(name, `<video controls style="width:100%;max-height:70vh;border-radius:14px;border:1px solid rgba(255,255,255,.12)"><source src="${url}" type="${type || "video/mp4"}"></video>`);
+        return;
+      }
+
+      showModal(name, `<div class="mini">Preview not supported here. Use Download.</div>`);
+    }
+
+    async function deleteFile(id){
+      await IDB.del(id);
+      await loadVault();
+    }
+
+    async function clearVault(){
+      if(!confirm("Clear ALL vault files?")) return;
+      await IDB.clear();
+      await loadVault();
+    }
+
+    document.getElementById("btnSaveFile").addEventListener("click", saveFile);
+    document.getElementById("btnClearVault").addEventListener("click", clearVault);
+
+    vaultList.addEventListener("click", async (e)=>{
+      const btn = e.target.closest("button[data-act]");
+      if(!btn) return;
+      const card = e.target.closest(".card");
+      if(!card) return;
+      const id = card.getAttribute("data-id");
+      const act = btn.getAttribute("data-act");
+
+      if(act==="preview") await previewFile(id);
+      if(act==="download") await downloadFile(id);
+      if(act==="delete") await deleteFile(id);
+    });
+
+    modalClose.addEventListener("click", closeModal);
+    modal.addEventListener("click", (e)=>{ if(e.target === modal) closeModal(); });
+
+    loadVault();
+  </script>
+
+  <!-- ===== FIREBASE CHAT (Firestore) ===== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, serverTimestamp,
+      query, orderBy, limit, onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    // ✅ Your config (already yours)
+    const firebaseConfig = {
+      apiKey: "AIzaSyB7AhWd_9tt33c2mvGBMMaFFzBFjxk8svc",
+      authDomain: "notepro-3194d.firebaseapp.com",
+      projectId: "notepro-3194d",
+      storageBucket: "notepro-3194d.firebasestorage.app",
+      messagingSenderId: "748657045336",
+      appId: "1:748657045336:web:1a10be8e3aec289933ff2d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const chatStatus  = document.getElementById("chatStatus");
+    const chatLog     = document.getElementById("chatLog");
+    const chatName    = document.getElementById("chatName");
+    const chatRoom    = document.getElementById("chatRoom");
+    const chatConnect = document.getElementById("chatConnect");
+    const chatMsg     = document.getElementById("chatMsg");
+    const chatSend    = document.getElementById("chatSend");
+
+    let unsub = null;
+    let connectedRoom = null;
+
+    function safeText(s){ return (s ?? "").toString().slice(0, 500); }
+    function showStatus(t){ chatStatus.textContent = t; }
+    function clearChat(){ chatLog.innerHTML = ""; }
+    function esc(s){
+      return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+    function addLine(html){
+      const div = document.createElement("div");
+      div.innerHTML = html;
+      chatLog.appendChild(div);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    // Restore saved
+    try{
+      const n = localStorage.getItem("cd_chat_name");
+      const r = localStorage.getItem("cd_chat_room");
+      if(n) chatName.value = n;
+      if(r) chatRoom.value = r;
+    }catch{}
+
+    chatConnect.addEventListener("click", ()=>{
+      const name = safeText(chatName.value.trim()) || "Anonymous";
+      const room = safeText(chatRoom.value.trim()).replace(/\s+/g,"-").toLowerCase();
+      if(!room){ showStatus("Enter a room code first."); return; }
+
+      // save
+      try{
+        localStorage.setItem("cd_chat_name", name);
+        localStorage.setItem("cd_chat_room", room);
+      }catch{}
+
+      if(unsub){ unsub(); unsub=null; }
+      connectedRoom = room;
+      clearChat();
+      showStatus(`Connected: ${room}`);
+
+      const msgsRef = collection(db, "rooms", room, "messages");
+      const q = query(msgsRef, orderBy("createdAt","asc"), limit(250));
+
+      unsub = onSnapshot(q, (snap)=>{
+        clearChat();
+        snap.forEach(doc=>{
+          const m = doc.data() || {};
+          const who  = safeText(m.name || "Anon");
+          const text = safeText(m.text || "");
+          const time = m.createdAt?.toDate
+            ? m.createdAt.toDate().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+            : "--:--";
+          addLine(`<span style="color:rgba(255,255,255,.65)">[${esc(time)}]</span> <b>${esc(who)}:</b> ${esc(text)}`);
+        });
+      }, (err)=>{
+        showStatus("Chat error: " + err.message);
+      });
+    });
+
+    async function send(){
+      const name = safeText(chatName.value.trim()) || "Anonymous";
+      const text = safeText(chatMsg.value.trim());
+      if(!connectedRoom){ showStatus("Connect to a room first."); return; }
+      if(!text) return;
+
+      chatMsg.value = "";
+      try{
+        const msgsRef = collection(db, "rooms", connectedRoom, "messages");
+        await addDoc(msgsRef, { name, text, createdAt: serverTimestamp() });
+      }catch(e){
+        showStatus("Send failed: " + e.message);
+      }
+    }
+
+    chatSend.addEventListener("click", send);
+    chatMsg.addEventListener("keydown", (e)=>{ if(e.key==="Enter") send(); });
   </script>
 
 </body>
