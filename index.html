@@ -1,176 +1,1333 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>NoteSwap — Study Notes Exchange Platform</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Memoria NotePro — Clock + Dock</title>
 
-<style>
-body{margin:0;font-family:system-ui;background:#0b1020;color:#fff}
-header{padding:14px 18px;background:#11173a;font-weight:800}
-section{padding:16px}
-input,textarea,button,select{
-  width:100%;margin:6px 0;padding:10px;border-radius:8px;
-  border:1px solid #333;background:#0e1538;color:#fff
-}
-button{cursor:pointer;background:#5b5bf7}
-.card{background:#141b44;padding:12px;border-radius:10px;margin:8px 0}
-.small{font-size:12px;opacity:.8}
-.chat{height:260px;overflow:auto;background:#05081f;padding:10px;border-radius:8px}
-img.chatImg{max-width:180px;border-radius:8px;margin-top:6px}
-</style>
+  <style>
+    :root{
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+      --panel: rgba(18,20,35,.70);
+      --border: rgba(255,255,255,.12);
+      --shadow: 0 18px 70px rgba(0,0,0,.70);
+      --accent: rgba(139,92,246,.35);
+
+      /* Wallpapers */
+      --wallpaper: radial-gradient(1200px 600px at 20% 10%, #0e1a3a, transparent 60%),
+                   radial-gradient(900px 500px at 80% 90%, #101f4a, transparent 55%),
+                   linear-gradient(180deg, #050512, #070b1a);
+      --wallpaperImg: none; /* optional url(...) */
+    }
+
+    html,body{height:100%;margin:0}
+    body{
+      color: var(--text);
+      overflow:hidden;
+      background: var(--wallpaper);
+    }
+
+    /* Optional image overlay */
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      background-image: var(--wallpaperImg);
+      background-size: cover;
+      background-position: center;
+      filter: saturate(1.1) contrast(1.05);
+      opacity: .35;
+      pointer-events:none;
+      z-index:-2;
+    }
+
+    body::after{
+      content:"";
+      position:fixed; inset:0;
+      background: radial-gradient(900px 500px at 50% 40%, rgba(139,92,246,.10), transparent 60%);
+      pointer-events:none;
+      z-index:-1;
+    }
+
+    /* Matrix canvas */
+    #matrix{
+      position:fixed; inset:0;
+      width:100vw; height:100vh;
+      pointer-events:none;
+      z-index:-1;
+      opacity: .85;
+    }
+
+    /* VIEWS */
+    .view{
+      position:fixed;
+      inset:0;
+      display:none;
+      padding: 22px 16px 92px; /* bottom room for dock */
+      overflow:auto;
+    }
+    .view.active{display:block}
+
+    /* HOME CLOCK */
+    .homeCenter{
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      user-select:none;
+    }
+    .time{
+      font-size: clamp(56px, 10vw, 110px);
+      font-weight: 900;
+      letter-spacing: 1px;
+      line-height: 1;
+      text-shadow: 0 18px 70px rgba(0,0,0,.6);
+    }
+    .sub{
+      margin-top: 14px;
+      font-size: clamp(14px, 2.5vw, 20px);
+      color: var(--muted);
+      letter-spacing: .2px;
+    }
+
+    /* WINDOW CONTENT */
+    .window{
+      max-width: 1040px;
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      padding: 16px;
+    }
+    .windowHead{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:12px;
+    }
+    .windowHead h2{margin:0;font-size:18px}
+    .mini{font-size:12px;color:var(--muted)}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .spacer{flex:1}
+    hr{border:none;border-top:1px solid rgba(255,255,255,.10);margin:12px 0}
+
+    input, select, textarea, button{font: inherit;}
+    input, select, textarea{
+      background: rgba(0,0,0,.30);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 10px 12px;
+      color: var(--text);
+      outline: none;
+    }
+    textarea{width:100%;resize:none}
+    input:focus, select:focus, textarea:focus{
+      border-color: rgba(139,92,246,.55);
+      box-shadow: 0 0 0 4px rgba(139,92,246,.12);
+    }
+    button{
+      cursor:pointer;
+      border-radius: 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      transition: transform .12s ease, filter .12s ease;
+    }
+    button:hover{filter: brightness(1.12)}
+    button:active{transform: translateY(1px)}
+    .btnGreen{background: rgba(34,197,94,.18)}
+    .btnRed{background: rgba(239,68,68,.16)}
+    .btnPurple{background: rgba(139,92,246,.18)}
+
+    /* LIST CARDS */
+    .list{display:flex;flex-direction:column;gap:10px}
+    .card{
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
+      padding: 12px;
+      position: relative;
+    }
+    .cardTitle{font-weight:800}
+    .cardMeta{margin-top:4px;font-size:12px;color:var(--muted)}
+    .cardActions{
+      position:absolute; top:10px; right:10px;
+      display:flex; gap:8px;
+    }
+    .smallBtn{padding:7px 9px;border-radius:10px;font-size:12px}
+
+    /* Key points list */
+    .kp{
+      margin: 10px 0 0;
+      padding-left: 18px;
+      color: rgba(255,255,255,.82);
+    }
+    .kp li{margin: 6px 0}
+
+    /* DOCK */
+    .dock{
+      position:fixed;
+      left:50%;
+      bottom:14px;
+      transform:translateX(-50%);
+      z-index:9999;
+      display:flex;
+      gap:10px;
+      padding:10px 12px;
+      border-radius:22px;
+      background: rgba(18,20,35,.55);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      user-select:none;
+    }
+    .dockItem{position:relative}
+    .dockBtn{
+      width:52px;height:52px;
+      border-radius:16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      color: var(--text);
+      font-size:20px;
+      transition: transform .16s ease, filter .16s ease, background .16s ease;
+      padding:0;
+      position: relative;
+    }
+    .dockBtn:hover{
+      transform: translateY(-6px) scale(1.10);
+      filter: brightness(1.15);
+      background: rgba(255,255,255,.10);
+    }
+    .dockTip{
+      position:absolute;
+      bottom:62px;
+      left:50%;
+      transform:translateX(-50%);
+      font-size:11px;
+      padding:6px 8px;
+      border-radius:10px;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(255,255,255,.85);
+      white-space:nowrap;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .15s ease;
+    }
+    .dockItem:hover .dockTip{opacity:1}
+
+    /* Tiny dot notification */
+    .bubble{
+      position:absolute;
+      top:6px; right:8px;
+      width:10px; height:10px;
+      border-radius:999px;
+      background: rgba(239,68,68,.95);
+      box-shadow: 0 0 0 3px rgba(0,0,0,.25), 0 0 18px rgba(239,68,68,.45);
+      display:none;
+    }
+
+    /* CHAT LOG */
+    .chatLog{
+      height: 320px;
+      overflow:auto;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.30);
+      border: 1px solid rgba(255,255,255,.10);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    /* TERMINAL */
+    .termOut{
+      height: 320px;
+      overflow:auto;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.35);
+      border: 1px solid rgba(255,255,255,.10);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .termLine{color: rgba(255,255,255,.86)}
+    .termDim{color: rgba(255,255,255,.55)}
+
+    /* MODAL PREVIEW */
+    .modal{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center; justify-content:center;
+      padding:16px;
+      z-index: 99999;
+    }
+    .modal.show{display:flex}
+    .modalCard{
+      width:min(980px, 100%);
+      background: rgba(18,20,35,.92);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 18px;
+      box-shadow: 0 22px 90px rgba(0,0,0,.75);
+      padding: 14px;
+    }
+  </style>
 </head>
 
 <body>
+  <canvas id="matrix"></canvas>
 
-<header>📘 NoteSwap — Study Notes Exchange</header>
+  <!-- HOME -->
+  <section class="view active" id="home">
+    <div class="homeCenter">
+      <div>
+        <div class="time" id="t">--:--</div>
+        <div class="sub" id="d">—</div>
+      </div>
+    </div>
+  </section>
 
-<section>
-<h3>👤 Your Name</h3>
-<input id="userName" placeholder="Enter your name"/>
-<div class="small">Points: <b id="pointsBox">0</b></div>
-</section>
+  <!-- STUDY NOTES -->
+  <section class="view" id="studynotes">
+    <div class="window">
+      <div class="windowHead">
+        <h2>Study Notes (Key Points)</h2>
+        <div class="mini">Save bullet points • stored in browser</div>
+      </div>
 
-<section>
-<h3>📚 Share Study Notes</h3>
-<select id="snSubject">
-<option>Math</option><option>Science</option>
-<option>Social</option><option>English</option>
-<option>AI</option>
-</select>
-<input id="snTitle" placeholder="Topic"/>
-<textarea id="snPoints" rows="4" placeholder="One point per line"></textarea>
-<button onclick="shareNote()">Share Note (+points)</button>
-</section>
+      <div class="row">
+        <select id="snSubject">
+          <option>Math</option>
+          <option>Science</option>
+          <option>Social</option>
+          <option>English</option>
+          <option>AI</option>
+        </select>
+        <input id="snTitle" placeholder="Topic (e.g., Number Systems)" style="flex:1" />
+      </div>
 
-<section>
-<h3>🔁 Community Notes (Use 1 Point)</h3>
-<div id="notesFeed"></div>
-</section>
+      <div class="row" style="margin-top:10px; align-items:stretch;">
+        <textarea id="snPoints" rows="5" placeholder="Write key points, one per line..."></textarea>
+      </div>
 
-<section>
-<h3>💬 Study Room Chat</h3>
-<input id="room" placeholder="Room code (eg: math-9)"/>
-<div class="chat" id="chatBox"></div>
-<input id="chatText" placeholder="Message"/>
-<input type="file" id="chatImage" accept="image/*"/>
-<button onclick="sendChat()">Send</button>
-</section>
+      <div class="row" style="margin-top:10px">
+        <button class="btnGreen" id="snSave">Save Key Points</button>
+        <button class="btnRed" id="snClearAll">Clear All Notes</button>
+      </div>
 
-<!-- FIREBASE -->
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
-import {
-  getFirestore, collection, addDoc, query, orderBy,
-  onSnapshot, serverTimestamp, doc, updateDoc, increment
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
-import {
-  getStorage, ref, uploadBytes, getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.12.4/firebase-storage.js";
+      <hr>
 
-const firebaseConfig = {
-  apiKey: "AIzaSyB7AhWd_9tt33c2mvGBMMaFFzBFjxk8svc",
-  authDomain: "notepro-3194d.firebaseapp.com",
-  projectId: "notepro-3194d",
-  storageBucket: "notepro-3194d.appspot.com",
-  messagingSenderId: "748657045336",
-  appId: "1:748657045336:web:1a10be8e3aec289933ff2d"
-};
+      <div class="list" id="snList"></div>
+    </div>
+  </section>
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
+  <!-- CHAT -->
+  <section class="view" id="chat">
+    <div class="window">
+      <div class="windowHead">
+        <h2>Chat</h2>
+        <div class="mini" id="chatStatus">Not connected</div>
+      </div>
 
-// ---- POINTS ----
-let points = Number(localStorage.getItem("points") || 0);
-document.getElementById("pointsBox").textContent = points;
+      <div class="row">
+        <input id="chatName" placeholder="Your name (e.g., Umesh)" />
+        <input id="chatRoom" placeholder="Room code (e.g., memoria)" />
+        <button class="btnGreen" id="chatConnect">Connect</button>
+      </div>
 
-// ---- NOTES (Partition: notes) ----
-const notesRef = collection(db, "notes");
+      <div class="mini" style="margin-top:8px">
+        Share the same <b>Room code</b> with your friend. Both open this website.
+      </div>
 
-window.shareNote = async ()=>{
-  const subject = snSubject.value;
-  const title = snTitle.value;
-  const raw = snPoints.value.trim();
-  const author = userName.value || "Anonymous";
-  if(!raw) return alert("Write points");
+      <hr>
 
-  const pts = raw.split("\n").filter(Boolean);
-  await addDoc(notesRef,{
-    subject,title,points:pts,author,
-    createdAt:serverTimestamp(),
-    downloads:0
-  });
+      <div class="chatLog" id="chatLog"></div>
 
-  points += pts.length;
-  localStorage.setItem("points",points);
-  pointsBox.textContent = points;
+      <div class="row" style="margin-top:12px">
+        <input id="chatMsg" style="flex:1" placeholder="Type a message..." />
+        <button class="btnPurple" id="chatSend">Send</button>
+      </div>
+    </div>
+  </section>
 
-  snTitle.value=""; snPoints.value="";
-};
+  <!-- VAULT -->
+  <section class="view" id="vault">
+    <div class="window">
+      <div class="windowHead">
+        <h2>File Vault</h2>
+        <div class="mini">Saved in your browser (IndexedDB)</div>
+      </div>
 
-onSnapshot(query(notesRef,orderBy("createdAt","desc")),snap=>{
-  notesFeed.innerHTML="";
-  snap.forEach(d=>{
-    const n=d.data();
-    notesFeed.innerHTML+=`
-      <div class="card">
-        <b>${n.subject} • ${n.title}</b><br/>
-        <span class="small">By ${n.author}</span>
-        <ul>${n.points.map(p=>`<li>${p}</li>`).join("")}</ul>
-        <button onclick="useNote('${d.id}')">Use Note (−1)</button>
-      </div>`;
-  });
-});
+      <div class="row">
+        <input id="fileTitle" placeholder="Title (optional)" style="flex:1" />
+        <select id="fileTag">
+          <option>General</option>
+          <option>School</option>
+          <option>Media</option>
+          <option>Projects</option>
+        </select>
+      </div>
 
-window.useNote = async(id)=>{
-  if(points<=0) return alert("No points");
-  points--; localStorage.setItem("points",points);
-  pointsBox.textContent=points;
-  await updateDoc(doc(db,"notes",id),{downloads:increment(1)});
-};
+      <div class="row" style="margin-top:10px">
+        <input id="filePick" type="file" />
+        <button class="btnGreen" id="btnSaveFile">Save</button>
+        <button class="btnRed" id="btnClearVault">Clear Vault</button>
+      </div>
 
-// ---- CHAT (Partition: rooms/{room}/messages) ----
-let unsub=null;
+      <div class="mini" style="margin-top:10px">
+        Preview: PDF / MP3 / MP4. Word/PPT will be download-only.
+      </div>
 
-room.onchange=()=>{
-  if(unsub)unsub();
-  chatBox.innerHTML="";
-  const msgs=collection(db,"rooms",room.value,"messages");
-  unsub=onSnapshot(query(msgs,orderBy("createdAt")),snap=>{
-    chatBox.innerHTML="";
-    snap.forEach(d=>{
-      const m=d.data();
-      chatBox.innerHTML+=`
-        <div>
-          <b>${m.name}:</b> ${m.text||""}
-          ${m.image?`<br/><img class="chatImg" src="${m.image}"/>`:""}
-        </div>`;
+      <hr>
+
+      <div class="list" id="vaultList"></div>
+    </div>
+  </section>
+
+  <!-- TERMINAL -->
+  <section class="view" id="terminal">
+    <div class="window">
+      <div class="windowHead">
+        <h2>Terminal</h2>
+        <div class="mini">Commands + quick navigation</div>
+      </div>
+
+      <div class="termOut" id="termOut"></div>
+
+      <div class="row" style="margin-top:12px">
+        <input id="termIn" style="flex:1" placeholder="Type: help" />
+        <button class="btnPurple" id="termRun">Run</button>
+      </div>
+
+      <div class="mini" style="margin-top:8px">
+        Example: <b>goto chat</b>, <b>matrix on</b>, <b>matrix speed 1.2</b>, <b>matrix color #00ff88</b>, <b>wallpaper neon</b>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="view" id="settings">
+    <div class="window">
+      <div class="windowHead">
+        <h2>Settings</h2>
+        <div class="mini">Wallpaper + Matrix</div>
+      </div>
+
+      <div class="row">
+        <div style="min-width:180px">
+          <div class="mini">Wallpaper (preset)</div>
+          <select id="wpPreset">
+            <option value="default">Default</option>
+            <option value="neon">Neon Bloom</option>
+            <option value="midnight">Midnight</option>
+            <option value="sunset">Sunset</option>
+            <option value="ocean">Ocean</option>
+            <option value="mono">Mono Dark</option>
+          </select>
+        </div>
+
+        <div style="flex:1; min-width:240px">
+          <div class="mini">Wallpaper image URL (optional)</div>
+          <input id="wpUrl" placeholder="https://.../image.jpg" />
+        </div>
+
+        <button class="btnGreen" id="wpApply">Apply</button>
+        <button class="btnRed" id="wpReset">Reset</button>
+      </div>
+
+      <hr>
+
+      <div class="row">
+        <label class="mini" style="display:flex;gap:8px;align-items:center">
+          <input type="checkbox" id="mxOn" />
+          Matrix ON
+        </label>
+
+        <div style="min-width:160px">
+          <div class="mini">Matrix speed</div>
+          <input id="mxSpeed" type="number" step="0.1" min="0.1" max="6" />
+        </div>
+
+        <div style="min-width:180px">
+          <div class="mini">Matrix color</div>
+          <input id="mxColor" type="text" placeholder="#00ff88" />
+        </div>
+
+        <button class="btnPurple" id="mxApply">Apply Matrix</button>
+      </div>
+
+      <div class="mini" style="margin-top:10px">
+        Tip: keep speed around <b>0.7–1.5</b>.
+      </div>
+    </div>
+  </section>
+
+  <!-- DOCK -->
+  <nav class="dock" aria-label="Dock">
+    <div class="dockItem">
+      <div class="dockTip">Home</div>
+      <button class="dockBtn" data-go="home" aria-label="Home">🏠</button>
+    </div>
+    <div class="dockItem">
+      <div class="dockTip">Study Notes</div>
+      <button class="dockBtn" data-go="studynotes" aria-label="Study Notes">📚</button>
+    </div>
+    <div class="dockItem">
+      <div class="dockTip">Chat</div>
+      <button class="dockBtn" id="dockChat" data-go="chat" aria-label="Chat">
+        💬 <span class="bubble" id="chatBubble"></span>
+      </button>
+    </div>
+    <div class="dockItem">
+      <div class="dockTip">Vault</div>
+      <button class="dockBtn" data-go="vault" aria-label="Vault">🗂️</button>
+    </div>
+    <div class="dockItem">
+      <div class="dockTip">Terminal</div>
+      <button class="dockBtn" data-go="terminal" aria-label="Terminal">⌘</button>
+    </div>
+    <div class="dockItem">
+      <div class="dockTip">Settings</div>
+      <button class="dockBtn" data-go="settings" aria-label="Settings">⚙️</button>
+    </div>
+  </nav>
+
+  <!-- MODAL -->
+  <div class="modal" id="modal">
+    <div class="modalCard">
+      <div class="windowHead" style="margin-bottom:10px">
+        <h2 id="modalTitle" style="font-size:16px">Preview</h2>
+        <div class="spacer"></div>
+        <button id="modalClose">Close</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    /* =========================
+       APP GLOBALS
+    ========================== */
+    const App = window.App = {
+      views: ["home","studynotes","chat","vault","terminal","settings"],
+      showView: null,
+      setMatrix: null,
+      setWallpaper: null,
+      stats: { vaultCount: 0, notesCount: 0, chatUnread: 0 }
+    };
+
+    /* ===== CLOCK ===== */
+    function updateClock(){
+      const now = new Date();
+      document.getElementById("t").textContent =
+        now.toLocaleTimeString([], { hour:"2-digit", minute:"2-digit" });
+
+      const day  = now.toLocaleDateString([], { weekday:"long" });
+      const date = now.toLocaleDateString([], { year:"numeric", month:"long", day:"numeric" });
+      document.getElementById("d").textContent = `${day} • ${date}`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    /* ===== VIEW SWITCH + BACK BUTTON ===== */
+    function showView(id, push=true){
+      if(!App.views.includes(id)) id="home";
+      for(const v of App.views){
+        document.getElementById(v).classList.toggle("active", v===id);
+      }
+      if(id === "chat"){
+        App.stats.chatUnread = 0;
+        renderChatBubble();
+      }
+      if(push) history.pushState({view:id}, "", "#"+id);
+    }
+    App.showView = showView;
+
+    document.querySelectorAll("[data-go]").forEach(btn=>{
+      btn.addEventListener("click", ()=>showView(btn.dataset.go, true));
     });
-    chatBox.scrollTop=chatBox.scrollHeight;
-  });
-};
 
-window.sendChat = async()=>{
-  if(!room.value)return alert("Enter room");
-  const name=userName.value||"Anon";
-  let imgUrl=null;
+    window.addEventListener("popstate", (e)=>{
+      const id = (e.state && e.state.view) ? e.state.view : (location.hash.replace("#","") || "home");
+      showView(id, false);
+    });
 
-  if(chatImage.files[0]){
-    const f=chatImage.files[0];
-    const r=ref(storage,"chat/"+Date.now()+"_"+f.name);
-    await uploadBytes(r,f);
-    imgUrl=await getDownloadURL(r);
-  }
+    const start = location.hash.replace("#","") || "home";
+    history.replaceState({view:start}, "", "#"+start);
+    showView(start, false);
 
-  await addDoc(collection(db,"rooms",room.value,"messages"),{
-    name,text:chatText.value,image:imgUrl,
-    createdAt:serverTimestamp()
-  });
+    /* ===== CHAT BUBBLE ===== */
+    const chatBubble = document.getElementById("chatBubble");
+    function renderChatBubble(){
+      chatBubble.style.display = App.stats.chatUnread > 0 ? "block" : "none";
+    }
 
-  chatText.value=""; chatImage.value="";
-};
-</script>
+    /* =========================
+       HELPERS
+    ========================== */
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
 
+    /* =========================
+       STUDY NOTES (localStorage)
+    ========================== */
+    const SN_KEY = "memoria_studynotes_v1";
+    const snList = document.getElementById("snList");
+    let studyNotes = [];
+
+    function loadSN(){
+      try{ studyNotes = JSON.parse(localStorage.getItem(SN_KEY) || "[]"); }
+      catch{ studyNotes = []; }
+      App.stats.notesCount = studyNotes.length;
+      renderSN();
+    }
+    function saveSN(){
+      localStorage.setItem(SN_KEY, JSON.stringify(studyNotes));
+      App.stats.notesCount = studyNotes.length;
+    }
+    function renderSN(){
+      if(!studyNotes.length){
+        snList.innerHTML = `<div class="mini">No study notes yet.</div>`;
+        return;
+      }
+      snList.innerHTML = studyNotes.map(n=>{
+        const when = new Date(n.ts).toLocaleString();
+        const points = (n.points || []).map(p=>`<li>${escapeHtml(p)}</li>`).join("");
+        return `
+          <div class="card" data-id="${escapeHtml(n.id)}">
+            <div class="cardActions">
+              <button class="smallBtn btnRed" data-act="del">Delete</button>
+            </div>
+            <div class="cardTitle">${escapeHtml(n.subject)} • ${escapeHtml(n.title || "Untitled")}</div>
+            <div class="cardMeta">${escapeHtml(when)}</div>
+            <ul class="kp">${points}</ul>
+          </div>
+        `;
+      }).join("");
+    }
+    function addSN(){
+      const subject = document.getElementById("snSubject").value;
+      const title = document.getElementById("snTitle").value.trim();
+      const raw = document.getElementById("snPoints").value.trim();
+      if(!raw){ alert("Write at least 1 key point (one per line)."); return; }
+      const points = raw.split("\n").map(s=>s.trim()).filter(Boolean).slice(0, 30);
+
+      studyNotes.unshift({
+        id: crypto.randomUUID(),
+        subject, title,
+        points,
+        ts: Date.now()
+      });
+      saveSN();
+      renderSN();
+      document.getElementById("snTitle").value = "";
+      document.getElementById("snPoints").value = "";
+    }
+    function delSN(id){
+      studyNotes = studyNotes.filter(n=>n.id !== id);
+      saveSN();
+      renderSN();
+    }
+    document.getElementById("snSave").addEventListener("click", addSN);
+    document.getElementById("snClearAll").addEventListener("click", ()=>{
+      if(!confirm("Clear all study notes?")) return;
+      studyNotes = [];
+      saveSN();
+      renderSN();
+    });
+    snList.addEventListener("click", (e)=>{
+      const btn = e.target.closest("button[data-act]");
+      if(!btn) return;
+      const card = e.target.closest(".card");
+      if(!card) return;
+      const id = card.getAttribute("data-id");
+      if(btn.getAttribute("data-act")==="del") delSN(id);
+    });
+
+    /* =========================
+       VAULT (IndexedDB)
+    ========================== */
+    const vaultList = document.getElementById("vaultList");
+    const modal = document.getElementById("modal");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalBody = document.getElementById("modalBody");
+    const modalClose = document.getElementById("modalClose");
+    let previewUrl = null;
+
+    function bytesToSize(bytes){
+      if(bytes===0) return "0 B";
+      const k=1024, sizes=["B","KB","MB","GB"];
+      const i=Math.floor(Math.log(bytes)/Math.log(k));
+      return `${(bytes/Math.pow(k,i)).toFixed(i?2:0)} ${sizes[i]}`;
+    }
+
+    const IDB = (() => {
+      const DBNAME="memoria_vault_v2";
+      const VERSION=1;
+      let db=null;
+
+      function open(){
+        if(db) return Promise.resolve(db);
+        return new Promise((resolve,reject)=>{
+          const req = indexedDB.open(DBNAME, VERSION);
+          req.onupgradeneeded = () => {
+            const d = req.result;
+            if(!d.objectStoreNames.contains("files")){
+              d.createObjectStore("files", { keyPath:"id" });
+            }
+          };
+          req.onsuccess = () => { db=req.result; resolve(db); };
+          req.onerror = () => reject(req.error);
+        });
+      }
+
+      async function put(val){
+        const d = await open();
+        return new Promise((res,rej)=>{
+          const tx = d.transaction("files","readwrite");
+          tx.objectStore("files").put(val);
+          tx.oncomplete = ()=>res(true);
+          tx.onerror = ()=>rej(tx.error);
+        });
+      }
+
+      async function getAll(){
+        const d = await open();
+        return new Promise((res,rej)=>{
+          const tx = d.transaction("files","readonly");
+          const r = tx.objectStore("files").getAll();
+          r.onsuccess = ()=>res(r.result || []);
+          r.onerror = ()=>rej(r.error);
+        });
+      }
+
+      async function get(id){
+        const d = await open();
+        return new Promise((res,rej)=>{
+          const tx = d.transaction("files","readonly");
+          const r = tx.objectStore("files").get(id);
+          r.onsuccess = ()=>res(r.result || null);
+          r.onerror = ()=>rej(r.error);
+        });
+      }
+
+      async function del(id){
+        const d = await open();
+        return new Promise((res,rej)=>{
+          const tx = d.transaction("files","readwrite");
+          tx.objectStore("files").delete(id);
+          tx.oncomplete = ()=>res(true);
+          tx.onerror = ()=>rej(tx.error);
+        });
+      }
+
+      async function clear(){
+        const d = await open();
+        return new Promise((res,rej)=>{
+          const tx = d.transaction("files","readwrite");
+          tx.objectStore("files").clear();
+          tx.oncomplete = ()=>res(true);
+          tx.onerror = ()=>rej(tx.error);
+        });
+      }
+
+      return { put,getAll,get,del,clear };
+    })();
+
+    let vaultFiles = [];
+
+    async function loadVault(){
+      vaultFiles = await IDB.getAll();
+      vaultFiles.sort((a,b)=> (b.savedAt||0) - (a.savedAt||0));
+      App.stats.vaultCount = vaultFiles.length;
+      renderVault();
+    }
+
+    function renderVault(){
+      if(!vaultFiles.length){
+        vaultList.innerHTML = `<div class="mini">No files saved yet.</div>`;
+        return;
+      }
+
+      vaultList.innerHTML = vaultFiles.map(f=>{
+        const when = new Date(f.savedAt||Date.now()).toLocaleString();
+        const size = bytesToSize(f.size||0);
+        const title = f.title || f.name || "Untitled";
+        const tag = f.tag || "General";
+        return `
+          <div class="card" data-id="${escapeHtml(f.id)}">
+            <div class="cardActions">
+              <button class="smallBtn btnPurple" data-act="preview">Preview</button>
+              <button class="smallBtn" data-act="download">Download</button>
+              <button class="smallBtn btnRed" data-act="delete">Delete</button>
+            </div>
+            <div class="cardTitle">${escapeHtml(title)}</div>
+            <div class="cardMeta">📁 ${escapeHtml(tag)} • ${escapeHtml(when)} • ${escapeHtml(size)} • ${escapeHtml(f.name || "")}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    async function saveFile(){
+      const file = document.getElementById("filePick").files?.[0];
+      if(!file){ alert("Choose a file first"); return; }
+
+      const title = (document.getElementById("fileTitle").value||"").trim();
+      const tag = document.getElementById("fileTag").value || "General";
+
+      const rec = {
+        id: crypto.randomUUID(),
+        name: file.name,
+        type: file.type || "application/octet-stream",
+        size: file.size,
+        title,
+        tag,
+        savedAt: Date.now(),
+        blob: file
+      };
+
+      try{
+        await IDB.put(rec);
+        document.getElementById("filePick").value="";
+        document.getElementById("fileTitle").value="";
+        await loadVault();
+        alert("Saved to vault ✅");
+      }catch(e){
+        alert("Save failed (storage limit?)");
+      }
+    }
+
+    async function downloadFile(id){
+      const rec = await IDB.get(id);
+      if(!rec?.blob){ alert("File not found"); return; }
+      const url = URL.createObjectURL(rec.blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = rec.name || "download";
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 1200);
+    }
+
+    function showModal(title, html){
+      modalTitle.textContent = title;
+      modalBody.innerHTML = html;
+      modal.classList.add("show");
+    }
+
+    function closeModal(){
+      if(previewUrl){
+        try{ URL.revokeObjectURL(previewUrl); }catch{}
+        previewUrl = null;
+      }
+      modal.classList.remove("show");
+      modalBody.innerHTML = "";
+    }
+
+    async function previewFile(id){
+      const rec = await IDB.get(id);
+      if(!rec?.blob){ alert("File not found"); return; }
+
+      const name = rec.name || "Preview";
+      const type = rec.type || "";
+      const url = URL.createObjectURL(rec.blob);
+      previewUrl = url;
+
+      const lower = name.toLowerCase();
+      if(type === "application/pdf" || lower.endsWith(".pdf")){
+        showModal(name, `<iframe src="${url}" style="width:100%;height:70vh;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:#000"></iframe>`);
+        return;
+      }
+      if(type.startsWith("audio") || lower.endsWith(".mp3")){
+        showModal(name, `<audio controls style="width:100%"><source src="${url}" type="${type || "audio/mpeg"}"></audio>`);
+        return;
+      }
+      if(type.startsWith("video") || lower.endsWith(".mp4")){
+        showModal(name, `<video controls style="width:100%;max-height:70vh;border-radius:14px;border:1px solid rgba(255,255,255,.12)"><source src="${url}" type="${type || "video/mp4"}"></video>`);
+        return;
+      }
+      showModal(name, `<div class="mini">Preview not supported here. Use Download.</div>`);
+    }
+
+    async function deleteFile(id){
+      await IDB.del(id);
+      await loadVault();
+    }
+
+    async function clearVault(){
+      if(!confirm("Clear ALL vault files?")) return;
+      await IDB.clear();
+      await loadVault();
+    }
+
+    document.getElementById("btnSaveFile").addEventListener("click", saveFile);
+    document.getElementById("btnClearVault").addEventListener("click", clearVault);
+
+    vaultList.addEventListener("click", async (e)=>{
+      const btn = e.target.closest("button[data-act]");
+      if(!btn) return;
+      const card = e.target.closest(".card");
+      if(!card) return;
+      const id = card.getAttribute("data-id");
+      const act = btn.getAttribute("data-act");
+
+      if(act==="preview") await previewFile(id);
+      if(act==="download") await downloadFile(id);
+      if(act==="delete") await deleteFile(id);
+    });
+
+    modalClose.addEventListener("click", closeModal);
+    modal.addEventListener("click", (e)=>{ if(e.target === modal) closeModal(); });
+
+    /* =========================
+       MATRIX (falling chars)
+    ========================== */
+    const mx = {
+      on: true,
+      speed: 1.0,
+      color: "#00ff88",
+      chars: "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+      fontSize: 16,
+      columns: [],
+      lastW: 0,
+      lastH: 0
+    };
+
+    const canvas = document.getElementById("matrix");
+    const ctx = canvas.getContext("2d");
+
+    function resizeMatrix(){
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const w = Math.floor(window.innerWidth);
+      const h = Math.floor(window.innerHeight);
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+
+      mx.lastW = w; mx.lastH = h;
+      const cols = Math.floor(w / mx.fontSize);
+      mx.columns = new Array(cols).fill(0).map(()=> Math.random() * h);
+    }
+
+    function drawMatrix(){
+      if(!mx.on){
+        ctx.clearRect(0,0,mx.lastW||window.innerWidth,mx.lastH||window.innerHeight);
+        requestAnimationFrame(drawMatrix);
+        return;
+      }
+      const w = mx.lastW || window.innerWidth;
+      const h = mx.lastH || window.innerHeight;
+
+      ctx.fillStyle = "rgba(0,0,0,0.08)";
+      ctx.fillRect(0,0,w,h);
+
+      ctx.font = `${mx.fontSize}px ui-monospace, Menlo, Consolas, monospace`;
+      ctx.fillStyle = mx.color;
+
+      for(let i=0; i<mx.columns.length; i++){
+        const x = i * mx.fontSize;
+        const y = mx.columns[i];
+        const ch = mx.chars[Math.floor(Math.random()*mx.chars.length)];
+        ctx.fillText(ch, x, y);
+
+        mx.columns[i] += (mx.fontSize * (0.65 + Math.random()*0.65)) * mx.speed;
+
+        if(mx.columns[i] > h + 40 && Math.random() > 0.965){
+          mx.columns[i] = -Math.random()*200;
+        }
+      }
+      requestAnimationFrame(drawMatrix);
+    }
+
+    window.addEventListener("resize", resizeMatrix);
+    resizeMatrix();
+    requestAnimationFrame(drawMatrix);
+
+    function setMatrixSettings({on, speed, color}){
+      if(typeof on === "boolean") mx.on = on;
+      if(typeof speed === "number" && isFinite(speed)) mx.speed = Math.min(6, Math.max(0.1, speed));
+      if(typeof color === "string" && color.trim()) mx.color = color.trim();
+      savePrefs();
+    }
+    App.setMatrix = setMatrixSettings;
+
+    /* =========================
+       WALLPAPERS
+    ========================== */
+    const WALLPAPERS = {
+      default: `radial-gradient(1200px 600px at 20% 10%, #0e1a3a, transparent 60%),
+                radial-gradient(900px 500px at 80% 90%, #101f4a, transparent 55%),
+                linear-gradient(180deg, #050512, #070b1a)`,
+      neon: `radial-gradient(1200px 600px at 20% 10%, rgba(139,92,246,.65), transparent 60%),
+             radial-gradient(900px 500px at 80% 90%, rgba(34,197,94,.35), transparent 55%),
+             linear-gradient(180deg, #050512, #070b1a)`,
+      midnight: `radial-gradient(900px 600px at 30% 20%, rgba(59,130,246,.35), transparent 60%),
+                 radial-gradient(900px 600px at 70% 80%, rgba(168,85,247,.25), transparent 55%),
+                 linear-gradient(180deg, #02020a, #040818)`,
+      sunset: `radial-gradient(900px 600px at 20% 25%, rgba(244,63,94,.28), transparent 60%),
+               radial-gradient(900px 600px at 80% 75%, rgba(250,204,21,.20), transparent 55%),
+               linear-gradient(180deg, #09040d, #14051a)`,
+      ocean: `radial-gradient(900px 600px at 20% 25%, rgba(14,165,233,.30), transparent 60%),
+              radial-gradient(900px 600px at 80% 75%, rgba(16,185,129,.18), transparent 55%),
+              linear-gradient(180deg, #020a12, #03101b)`,
+      mono: `radial-gradient(900px 600px at 35% 25%, rgba(255,255,255,.10), transparent 60%),
+             radial-gradient(900px 600px at 75% 75%, rgba(255,255,255,.06), transparent 55%),
+             linear-gradient(180deg, #050509, #08080f)`
+    };
+
+    function setWallpaper(preset, imageUrl){
+      const root = document.documentElement;
+
+      // normalize to avoid weird whitespace parsing issues
+      const wp = (WALLPAPERS[preset] || WALLPAPERS.default).replace(/\s+/g," ").trim();
+      root.style.setProperty("--wallpaper", wp);
+
+      if(imageUrl && imageUrl.trim()){
+        root.style.setProperty("--wallpaperImg", `url("${imageUrl.trim()}")`);
+      }else{
+        root.style.setProperty("--wallpaperImg", "none");
+      }
+
+      savePrefs();
+    }
+    App.setWallpaper = setWallpaper;
+
+    /* =========================
+       SETTINGS UI
+    ========================== */
+    const wpPreset = document.getElementById("wpPreset");
+    const wpUrl = document.getElementById("wpUrl");
+    const wpApply = document.getElementById("wpApply");
+    const wpReset = document.getElementById("wpReset");
+
+    const mxOn = document.getElementById("mxOn");
+    const mxSpeed = document.getElementById("mxSpeed");
+    const mxColor = document.getElementById("mxColor");
+    const mxApply = document.getElementById("mxApply");
+
+    function savePrefs(){
+      const prefs = {
+        wallpaperPreset: wpPreset.value || "default",
+        wallpaperUrl: wpUrl.value || "",
+        matrixOn: mx.on,
+        matrixSpeed: mx.speed,
+        matrixColor: mx.color
+      };
+      localStorage.setItem("memoria_prefs_v1", JSON.stringify(prefs));
+    }
+
+    function loadPrefs(){
+      try{
+        const p = JSON.parse(localStorage.getItem("memoria_prefs_v1") || "{}");
+
+        wpPreset.value = p.wallpaperPreset || "default";
+        wpUrl.value = p.wallpaperUrl || "";
+        setWallpaper(wpPreset.value, wpUrl.value);
+
+        mxOn.checked = (p.matrixOn !== false);
+        mxSpeed.value = String(p.matrixSpeed ?? 1.0);
+        mxColor.value = String(p.matrixColor ?? "#00ff88");
+        setMatrixSettings({
+          on: mxOn.checked,
+          speed: parseFloat(mxSpeed.value),
+          color: mxColor.value
+        });
+      }catch{
+        wpPreset.value = "default";
+        wpUrl.value = "";
+        mxOn.checked = true;
+        mxSpeed.value = "1.0";
+        mxColor.value = "#00ff88";
+        setWallpaper("default", "");
+        setMatrixSettings({on:true, speed:1.0, color:"#00ff88"});
+      }
+    }
+
+    wpApply.addEventListener("click", ()=> setWallpaper(wpPreset.value, wpUrl.value));
+    wpReset.addEventListener("click", ()=>{
+      wpPreset.value = "default";
+      wpUrl.value = "";
+      setWallpaper("default", "");
+    });
+
+    mxApply.addEventListener("click", ()=>{
+      setMatrixSettings({
+        on: mxOn.checked,
+        speed: parseFloat(mxSpeed.value),
+        color: mxColor.value
+      });
+    });
+
+    // ✅ Make wallpapers change instantly on dropdown change (this fixes your issue)
+    wpPreset.addEventListener("change", ()=> setWallpaper(wpPreset.value, wpUrl.value));
+    wpUrl.addEventListener("change", ()=> setWallpaper(wpPreset.value, wpUrl.value));
+
+    loadPrefs();
+
+    /* =========================
+       TERMINAL (Commands)
+    ========================== */
+    const termOut = document.getElementById("termOut");
+    const termIn = document.getElementById("termIn");
+    const termRun = document.getElementById("termRun");
+
+    function termPrint(line, dim=false){
+      const div = document.createElement("div");
+      div.className = dim ? "termLine termDim" : "termLine";
+      div.textContent = line;
+      termOut.appendChild(div);
+      termOut.scrollTop = termOut.scrollHeight;
+    }
+
+    function termHelp(){
+      termPrint("Commands:", true);
+      termPrint("help");
+      termPrint("time");
+      termPrint("goto home | studynotes | chat | vault | terminal | settings");
+      termPrint("clear");
+      termPrint("stats");
+      termPrint("matrix on | off");
+      termPrint("matrix speed <number>");
+      termPrint("matrix color <#hex>");
+      termPrint("wallpaper default|neon|midnight|sunset|ocean|mono");
+      termPrint("wallpaper url <https://...image>");
+    }
+
+    function termClear(){
+      termOut.innerHTML = "";
+      termPrint("Memoria Terminal • type 'help'", true);
+    }
+
+    function runTerminal(cmdRaw){
+      const cmd = (cmdRaw || "").trim();
+      if(!cmd) return;
+      termPrint("> " + cmd, true);
+
+      const parts = cmd.split(" ").filter(Boolean);
+      const main = (parts[0] || "").toLowerCase();
+
+      if(main === "help"){ termHelp(); return; }
+      if(main === "time"){ termPrint(new Date().toString()); return; }
+      if(main === "goto"){
+        const v = (parts[1] || "").toLowerCase();
+        if(App.views.includes(v)){
+          App.showView(v, true);
+          termPrint("Opened: " + v);
+        } else {
+          termPrint("Unknown view. Try: home, studynotes, chat, vault, terminal, settings");
+        }
+        return;
+      }
+      if(main === "clear"){ termClear(); return; }
+      if(main === "stats"){
+        termPrint(`Vault files: ${App.stats.vaultCount}`);
+        termPrint(`Study notes: ${App.stats.notesCount}`);
+        termPrint(`Chat unread: ${App.stats.chatUnread}`);
+        return;
+      }
+      if(main === "matrix"){
+        const sub = (parts[1] || "").toLowerCase();
+        if(sub === "on"){ mxOn.checked = true; App.setMatrix({on:true}); termPrint("Matrix: ON"); return; }
+        if(sub === "off"){ mxOn.checked = false; App.setMatrix({on:false}); termPrint("Matrix: OFF"); return; }
+        if(sub === "speed"){
+          const n = parseFloat(parts[2]);
+          if(!isFinite(n)){ termPrint("Usage: matrix speed 1.2"); return; }
+          mxSpeed.value = String(n);
+          App.setMatrix({speed:n});
+          termPrint("Matrix speed set to " + mx.speed);
+          return;
+        }
+        if(sub === "color"){
+          const c = parts[2] || "";
+          if(!c){ termPrint("Usage: matrix color #00ff88"); return; }
+          mxColor.value = c;
+          App.setMatrix({color:c});
+          termPrint("Matrix color set to " + mx.color);
+          return;
+        }
+        termPrint("Usage: matrix on/off | matrix speed <n> | matrix color <hex>");
+        return;
+      }
+      if(main === "wallpaper"){
+        const sub = (parts[1] || "").toLowerCase();
+        if(sub === "url"){
+          const url = parts.slice(2).join(" ");
+          wpUrl.value = url;
+          App.setWallpaper(wpPreset.value, url);
+          termPrint("Wallpaper image URL applied.");
+          return;
+        }
+        if(WALLPAPERS[sub]){
+          wpPreset.value = sub;
+          App.setWallpaper(sub, wpUrl.value);
+          termPrint("Wallpaper preset set to " + sub);
+          return;
+        }
+        termPrint("Usage: wallpaper default|neon|midnight|sunset|ocean|mono OR wallpaper url <image>");
+        return;
+      }
+
+      termPrint("Unknown command. Type: help");
+    }
+
+    termRun.addEventListener("click", ()=>{
+      runTerminal(termIn.value);
+      termIn.value = "";
+      termIn.focus();
+    });
+    termIn.addEventListener("keydown", (e)=>{
+      if(e.key === "Enter"){
+        runTerminal(termIn.value);
+        termIn.value = "";
+      }
+    });
+
+    termClear();
+    loadVault();
+    loadSN();
+  </script>
+
+  <!-- =========================
+       FIREBASE CHAT (Firestore)
+  ========================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, serverTimestamp,
+      query, orderBy, limit, onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB7AhWd_9tt33c2mvGBMMaFFzBFjxk8svc",
+      authDomain: "notepro-3194d.firebaseapp.com",
+      projectId: "notepro-3194d",
+      storageBucket: "notepro-3194d.firebasestorage.app",
+      messagingSenderId: "748657045336",
+      appId: "1:748657045336:web:1a10be8e3aec289933ff2d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const chatStatus  = document.getElementById("chatStatus");
+    const chatLog     = document.getElementById("chatLog");
+    const chatName    = document.getElementById("chatName");
+    const chatRoom    = document.getElementById("chatRoom");
+    const chatConnect = document.getElementById("chatConnect");
+    const chatMsg     = document.getElementById("chatMsg");
+    const chatSend    = document.getElementById("chatSend");
+
+    let unsub = null;
+    let connectedRoom = null;
+    let lastSeenCount = 0;
+
+    function safeText(s){ return (s ?? "").toString().slice(0, 800); }
+    function showStatus(t){ chatStatus.textContent = t; }
+    function clearChat(){ chatLog.innerHTML = ""; }
+    function esc(s){
+      return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+    function addLine(html){
+      const div = document.createElement("div");
+      div.innerHTML = html;
+      chatLog.appendChild(div);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    try{
+      const n = localStorage.getItem("cd_chat_name");
+      const r = localStorage.getItem("cd_chat_room");
+      if(n) chatName.value = n;
+      if(r) chatRoom.value = r;
+    }catch{}
+
+    chatConnect.addEventListener("click", ()=>{
+      const name = safeText(chatName.value.trim()) || "Anonymous";
+      const room = safeText(chatRoom.value.trim()).replace(/\s+/g,"-").toLowerCase();
+      if(!room){ showStatus("Enter a room code first."); return; }
+
+      try{
+        localStorage.setItem("cd_chat_name", name);
+        localStorage.setItem("cd_chat_room", room);
+      }catch{}
+
+      if(unsub){ unsub(); unsub=null; }
+      connectedRoom = room;
+      clearChat();
+      showStatus(`Connected: ${room}`);
+
+      const msgsRef = collection(db, "rooms", room, "messages");
+      const q = query(msgsRef, orderBy("createdAt","asc"), limit(250));
+
+      unsub = onSnapshot(q, (snap)=>{
+        const isChatOpen = document.getElementById("chat").classList.contains("active");
+
+        clearChat();
+        let count = 0;
+        snap.forEach(doc=>{
+          count++;
+          const m = doc.data() || {};
+          const who  = safeText(m.name || "Anon");
+          const text = safeText(m.text || "");
+          const time = m.createdAt?.toDate
+            ? m.createdAt.toDate().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+            : "--:--";
+          addLine(`<span style="color:rgba(255,255,255,.65)">[${esc(time)}]</span> <b>${esc(who)}:</b> ${esc(text)}`);
+        });
+
+        if(!isChatOpen && count > lastSeenCount){
+          window.App.stats.chatUnread += (count - lastSeenCount);
+          document.getElementById("chatBubble").style.display = "block";
+        }
+        if(isChatOpen){
+          window.App.stats.chatUnread = 0;
+          document.getElementById("chatBubble").style.display = "none";
+        }
+
+        lastSeenCount = count;
+      }, (err)=>{
+        showStatus("Chat error: " + err.message);
+      });
+    });
+
+    async function send(){
+      const name = safeText(chatName.value.trim()) || "Anonymous";
+      const text = safeText(chatMsg.value.trim());
+      if(!connectedRoom){ showStatus("Connect to a room first."); return; }
+      if(!text) return;
+
+      chatMsg.value = "";
+      try{
+        const msgsRef = collection(db, "rooms", connectedRoom, "messages");
+        await addDoc(msgsRef, { name, text, createdAt: serverTimestamp() });
+      }catch(e){
+        showStatus("Send failed: " + e.message);
+      }
+    }
+
+    chatSend.addEventListener("click", send);
+    chatMsg.addEventListener("keydown", (e)=>{ if(e.key==="Enter") send(); });
+  </script>
 </body>
 </html>
