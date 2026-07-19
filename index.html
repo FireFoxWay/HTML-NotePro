@@ -3,31 +3,49 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Memoria NotePro — Clock + Dock</title>
+  <title>Memoria NotePro — Workspace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     :root{
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.70);
-      --panel: rgba(18,20,35,.70);
-      --border: rgba(255,255,255,.12);
-      --shadow: 0 18px 70px rgba(0,0,0,.70);
-      --accent: rgba(139,92,246,.35);
+      --sans: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      --serif: 'Cormorant Garamond', Georgia, serif;
+      font-family: var(--sans);
 
-      /* Wallpapers */
-      --wallpaper: radial-gradient(1200px 600px at 20% 10%, #0e1a3a, transparent 60%),
-                   radial-gradient(900px 500px at 80% 90%, #101f4a, transparent 55%),
-                   linear-gradient(180deg, #050512, #070b1a);
+      --ink: rgba(255,255,255,.94);
+      --ink-dim: rgba(255,255,255,.68);
+      --ink-faint: rgba(255,255,255,.44);
+      --text: var(--ink);
+      --muted: var(--ink-dim);
+
+      --paper: rgba(16,17,26,.70);
+      --panel: var(--paper);
+      --line: rgba(255,255,255,.10);
+      --border: var(--line);
+      --shadow: 0 10px 32px rgba(0,0,0,.40);
+      --accent: #a78bfa;
+      --accent-glow: rgba(167,139,250,.28);
+
       --wallpaperImg: none; /* optional url(...) */
     }
 
-    html,body{height:100%;margin:0}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    html,body{margin:0; overflow-anchor:none}
     body{
+      font-family: var(--sans);
+      font-weight:300;
       color: var(--text);
-      overflow:hidden;
-      background: var(--wallpaper);
+      background: #050512;
     }
+
+    ::selection{background:var(--accent);color:#0a0a14}
+
+    ::-webkit-scrollbar{width:8px;height:8px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:99px}
+    ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.22)}
 
     /* Optional image overlay */
     body::before{
@@ -39,126 +57,252 @@
       filter: saturate(1.1) contrast(1.05);
       opacity: .35;
       pointer-events:none;
-      z-index:-2;
+      z-index:-3;
     }
 
     body::after{
       content:"";
       position:fixed; inset:0;
-      background: radial-gradient(900px 500px at 50% 40%, rgba(139,92,246,.10), transparent 60%);
+      background: radial-gradient(900px 500px at 50% 40%, rgba(167,139,250,.10), transparent 60%);
       pointer-events:none;
-      z-index:-1;
+      z-index:-2;
     }
 
-    /* Matrix canvas */
-    #matrix{
+    /* Depth vignette above everything else in the background stack */
+    #vignette{
       position:fixed; inset:0;
-      width:100vw; height:100vh;
-      pointer-events:none;
       z-index:-1;
-      opacity: .85;
+      pointer-events:none;
+      background:
+        radial-gradient(ellipse 120% 90% at 50% 45%, transparent 55%, rgba(0,0,0,.5) 100%),
+        linear-gradient(to bottom, rgba(0,0,0,.30), transparent 18%, transparent 82%, rgba(0,0,0,.35));
     }
 
-    /* VIEWS */
-    .view{
-      position:fixed;
-      inset:0;
-      display:none;
-      padding: 22px 16px 92px; /* bottom room for dock */
-      overflow:auto;
+    /* Background scenes — only one is display:block at a time */
+    #forest, #galaxy{position:fixed; inset:0; z-index:-5}
+    #forest{display:block}
+    #galaxy{display:none}
+
+    /* Right-edge scroll indicator (from CURRENT.html) */
+    #rail{
+      position:fixed; right:1.4rem; top:50%; transform:translateY(-50%);
+      z-index:50; display:flex; flex-direction:column; gap:.6rem;
+      max-height:88vh; overflow:hidden;
     }
-    .view.active{display:block}
+    #rail a{
+      width:7px; height:7px; border-radius:50%;
+      background:rgba(255,255,255,.25); display:block; position:relative;
+      transition: background .3s, transform .3s;
+      cursor:pointer;
+    }
+    #rail a.active{background:var(--accent); transform:scale(1.6)}
+    #rail a.hasUnread{background:#ef4444}
+    #rail a::after{
+      content:attr(data-label); position:absolute; right:1.2rem; top:50%;
+      transform:translateY(-50%);
+      font-size:.62rem; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-dim);
+      white-space:nowrap; opacity:0; transition:opacity .25s; pointer-events:none;
+      background: rgba(0,0,0,.6); padding:5px 8px; border-radius:8px; border:1px solid rgba(255,255,255,.10);
+    }
+    #rail a:hover::after{opacity:1}
+
+    /* Scroll progress hairline */
+    #progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:20;background:var(--accent);transition:width .1s linear}
+
+    /* ACCOUNT (top-right) */
+    #account{position:fixed; top:1rem; right:1.4rem; z-index:60}
+    .acctBtn{
+      width:40px; height:40px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:600; font-size:15px; padding:0;
+      background: rgba(16,17,26,.75);
+      border:1px solid var(--line);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: var(--text);
+    }
+    .acctBtn.signedIn{background: var(--accent); color:#161225; border-color: var(--accent)}
+    .acctMenu{
+      position:absolute; top:48px; right:0; width:264px;
+      background: rgba(15,16,24,.96);
+      border:1px solid var(--line);
+      border-radius:12px;
+      box-shadow: var(--shadow);
+      padding:14px;
+      display:none;
+    }
+    .acctMenu.open{display:block}
+    .acctName{font-weight:600; font-size:14px}
+    .acctEmail{font-size:12px; color:var(--muted); margin-top:2px; word-break:break-all}
+
+    /* TO-DO */
+    .todoItem{display:flex; align-items:center; gap:12px; padding:12px 14px}
+    .todoItem input[type="checkbox"]{width:16px; height:16px; accent-color:var(--accent); cursor:pointer; flex-shrink:0; margin:0}
+    .todoText{flex:1; font-size:14px; min-width:0; overflow-wrap:anywhere}
+    .todoItem.done .todoText{color:var(--ink-faint); text-decoration:line-through}
+
+    main{position:relative; z-index:1}
+
+    /* PANELS (scrollable sections, replacing the old click-to-switch views) */
+    .panel{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 90px 16px;
+      position:relative;
+      scroll-margin-top: 24px;
+    }
 
     /* HOME CLOCK */
     .homeCenter{
-      height:100%;
       display:flex;
       align-items:center;
       justify-content:center;
       text-align:center;
       user-select:none;
     }
+    .homeKicker{
+      font-family:var(--sans);
+      font-size:.68rem;
+      letter-spacing:.26em;
+      text-transform:uppercase;
+      color: var(--ink-faint);
+      margin-bottom: 1.4rem;
+      font-weight:500;
+      opacity:0; animation: rise .9s .1s forwards;
+    }
     .time{
-      font-size: clamp(56px, 10vw, 110px);
-      font-weight: 900;
-      letter-spacing: 1px;
+      font-family: var(--serif);
+      font-size: clamp(52px, 9vw, 104px);
+      font-weight: 600;
+      letter-spacing: .01em;
       line-height: 1;
-      text-shadow: 0 18px 70px rgba(0,0,0,.6);
+      text-shadow: 0 10px 40px rgba(0,0,0,.5);
+      opacity:0; animation: rise .9s .2s forwards;
     }
     .sub{
-      margin-top: 14px;
-      font-size: clamp(14px, 2.5vw, 20px);
+      margin-top: 16px;
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(14px, 2.5vw, 19px);
       color: var(--muted);
       letter-spacing: .2px;
+      opacity:0; animation: rise .9s .32s forwards;
     }
+    .scrollcue{
+      margin-top:3rem;
+      font-size:.62rem;
+      letter-spacing:.22em;
+      text-transform:uppercase;
+      color: var(--ink-faint);
+      opacity:0; animation: rise .9s .5s forwards;
+    }
+    .scrollcue::after{
+      content:'';display:block;width:1px;height:32px;margin:.8rem auto 0;
+      background:linear-gradient(var(--ink-faint), transparent);
+      animation: drip 2.2s ease-in-out infinite;
+    }
+    @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes drip{0%,100%{transform:scaleY(.4);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}}
 
     /* WINDOW CONTENT */
     .window{
       max-width: 1040px;
+      width:100%;
       margin: 0 auto;
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 18px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 14px;
       box-shadow: var(--shadow);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      padding: 16px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 26px;
+      opacity:0;
+      transform:translateY(14px);
+      transition: opacity .5s cubic-bezier(.2,.6,.2,1), transform .5s cubic-bezier(.2,.6,.2,1);
+    }
+    .window.visible{opacity:1; transform:translateY(0)}
+    @media (prefers-reduced-motion: reduce){
+      .window, .homeKicker, .time, .sub, .scrollcue, .card{animation:none !important; transition:none !important; opacity:1 !important; transform:none !important}
+    }
+
+    .kicker{
+      font-size:.68rem;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      color: var(--accent);
+      font-weight:600;
+      margin-bottom: .5rem;
     }
     .windowHead{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      margin-bottom:12px;
+      margin-bottom:18px;
+      padding-bottom:16px;
+      border-bottom: 1px solid var(--line);
     }
-    .windowHead h2{margin:0;font-size:18px}
-    .mini{font-size:12px;color:var(--muted)}
+    .windowHead h2{margin:0;font-family:var(--serif);font-weight:600;font-size:25px;letter-spacing:.01em}
+    .mini{font-size:12px;color:var(--muted);letter-spacing:.01em}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .spacer{flex:1}
-    hr{border:none;border-top:1px solid rgba(255,255,255,.10);margin:12px 0}
+    hr{border:none;border-top:1px solid var(--line);margin:16px 0}
 
     input, select, textarea, button{font: inherit;}
     input, select, textarea{
-      background: rgba(0,0,0,.30);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 12px;
+      font-family: var(--sans);
+      background: rgba(0,0,0,.28);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 10px;
       padding: 10px 12px;
       color: var(--text);
       outline: none;
+      transition: border-color .15s ease, box-shadow .15s ease;
     }
+    input[type="date"], input[type="time"]{color-scheme: dark}
     textarea{width:100%;resize:none}
     input:focus, select:focus, textarea:focus{
-      border-color: rgba(139,92,246,.55);
-      box-shadow: 0 0 0 4px rgba(139,92,246,.12);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
     }
     button{
       cursor:pointer;
-      border-radius: 12px;
-      padding: 10px 12px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.08);
+      border-radius: 10px;
+      padding: 10px 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
       color: var(--text);
-      transition: transform .12s ease, filter .12s ease;
+      transition: filter .14s ease, border-color .14s ease, background .14s ease;
     }
-    button:hover{filter: brightness(1.12)}
-    button:active{transform: translateY(1px)}
-    .btnGreen{background: rgba(34,197,94,.18)}
-    .btnRed{background: rgba(239,68,68,.16)}
-    .btnPurple{background: rgba(139,92,246,.18)}
+    button:hover{filter: brightness(1.12); border-color: rgba(255,255,255,.18)}
+    button:active{filter: brightness(0.96)}
+
+    /* Primary: the one confident action per row. Danger: quiet, outline-only, pushed away from primary. */
+    .btnPrimary{background: var(--accent); border-color: var(--accent); color:#161225; font-weight:600}
+    .btnPrimary:hover{filter:brightness(1.08); border-color: var(--accent)}
+    .btnDanger{background: transparent; border-color: rgba(239,68,68,.32); color:#f2a7a7}
+    .btnDanger:hover{background: rgba(239,68,68,.10); border-color: rgba(239,68,68,.5); filter:none}
+    .btnAway{margin-left:auto}
 
     /* LIST CARDS */
-    .list{display:flex;flex-direction:column;gap:10px}
+    .list{display:flex;flex-direction:column;gap:8px}
     .card{
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.10);
-      border-radius: 14px;
-      padding: 12px;
+      background: rgba(255,255,255,.035);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
       position: relative;
+      transition: border-color .2s ease, background .2s ease;
+      animation: cardIn .35s cubic-bezier(.2,.6,.2,1) both;
     }
-    .cardTitle{font-weight:800}
+    @keyframes cardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .card:hover{background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.16)}
+    .cardTitle{font-family:var(--serif);font-weight:600;font-size:1.08rem;letter-spacing:.01em}
     .cardMeta{margin-top:4px;font-size:12px;color:var(--muted)}
     .cardActions{
-      position:absolute; top:10px; right:10px;
+      position:absolute; top:12px; right:12px;
       display:flex; gap:8px;
     }
     .smallBtn{padding:7px 9px;border-radius:10px;font-size:12px}
@@ -171,98 +315,56 @@
     }
     .kp li{margin: 6px 0}
 
-    /* DOCK */
-    .dock{
-      position:fixed;
-      left:50%;
-      bottom:14px;
-      transform:translateX(-50%);
-      z-index:9999;
-      display:flex;
-      gap:10px;
-      padding:10px 12px;
-      border-radius:22px;
-      background: rgba(18,20,35,.55);
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      user-select:none;
+    /* CALENDAR */
+    .calWrap{display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start}
+    .calGrid{flex:1 1 320px; min-width:280px}
+    .calHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .calHead .calTitle{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:.01em}
+    .calNavBtn{width:34px;height:34px;border-radius:8px;padding:0;display:flex;align-items:center;justify-content:center}
+    .calDays{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;text-align:center}
+    .calDow{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);padding-bottom:4px}
+    .calCell{
+      aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+      cursor:pointer;border:1px solid transparent;background:rgba(255,255,255,.025);font-size:13px;position:relative;
+      transition:background .15s ease,border-color .15s ease;
     }
-    .dockItem{position:relative}
-    .dockBtn{
-      width:52px;height:52px;
-      border-radius:16px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-      background: rgba(255,255,255,.06);
-      border: 1px solid rgba(255,255,255,.10);
-      color: var(--text);
-      font-size:20px;
-      transition: transform .16s ease, filter .16s ease, background .16s ease;
-      padding:0;
-      position: relative;
-    }
-    .dockBtn:hover{
-      transform: translateY(-6px) scale(1.10);
-      filter: brightness(1.15);
-      background: rgba(255,255,255,.10);
-    }
-    .dockTip{
-      position:absolute;
-      bottom:62px;
-      left:50%;
-      transform:translateX(-50%);
-      font-size:11px;
-      padding:6px 8px;
-      border-radius:10px;
-      background: rgba(0,0,0,.55);
-      border: 1px solid rgba(255,255,255,.12);
-      color: rgba(255,255,255,.85);
-      white-space:nowrap;
-      opacity:0;
-      pointer-events:none;
-      transition: opacity .15s ease;
-    }
-    .dockItem:hover .dockTip{opacity:1}
-
-    /* Tiny dot notification */
-    .bubble{
-      position:absolute;
-      top:6px; right:8px;
-      width:10px; height:10px;
-      border-radius:999px;
-      background: rgba(239,68,68,.95);
-      box-shadow: 0 0 0 3px rgba(0,0,0,.25), 0 0 18px rgba(239,68,68,.45);
-      display:none;
-    }
+    .calCell:hover{background:rgba(255,255,255,.08)}
+    .calCell.blank{visibility:hidden;cursor:default}
+    .calCell.today{border-color:var(--accent)}
+    .calCell.selected{background:var(--accent-glow);border-color:var(--accent)}
+    .calDot{width:5px;height:5px;border-radius:99px;background:var(--accent);margin-top:3px}
+    .calSide{flex:1 1 280px; min-width:260px}
+    .eventForm{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+    .eventCard .evTitle{font-family:var(--serif);font-weight:600;font-size:1.05rem}
+    .eventCard .evMeta{font-size:12px;color:var(--muted);margin-top:2px}
+    .eventCard .evLinks{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+    .eventCard .evLinks a{font-size:12px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.08);border:1px solid var(--line);color:var(--ink-dim);text-decoration:none;transition:background .15s ease}
+    .eventCard .evLinks a:hover{background:rgba(255,255,255,.16)}
 
     /* CHAT LOG */
     .chatLog{
       height: 320px;
       overflow:auto;
-      padding: 12px;
+      padding: 14px;
       border-radius: 14px;
       background: rgba(0,0,0,.30);
-      border: 1px solid rgba(255,255,255,.10);
+      border: 1px solid var(--line);
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       font-size: 13px;
-      line-height: 1.45;
+      line-height: 1.5;
     }
 
     /* TERMINAL */
     .termOut{
       height: 320px;
       overflow:auto;
-      padding: 12px;
+      padding: 14px;
       border-radius: 14px;
       background: rgba(0,0,0,.35);
-      border: 1px solid rgba(255,255,255,.10);
+      border: 1px solid var(--line);
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       font-size: 13px;
-      line-height: 1.5;
+      line-height: 1.55;
     }
     .termLine{color: rgba(255,255,255,.86)}
     .termDim{color: rgba(255,255,255,.55)}
@@ -270,7 +372,9 @@
     /* MODAL PREVIEW */
     .modal{
       position:fixed; inset:0;
-      background: rgba(0,0,0,.55);
+      background: rgba(0,0,0,.6);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
       display:none;
       align-items:center; justify-content:center;
       padding:16px;
@@ -279,232 +383,253 @@
     .modal.show{display:flex}
     .modalCard{
       width:min(980px, 100%);
-      background: rgba(18,20,35,.92);
-      border: 1px solid rgba(255,255,255,.12);
-      border-radius: 18px;
-      box-shadow: 0 22px 90px rgba(0,0,0,.75);
-      padding: 14px;
+      background: rgba(15,16,24,.96);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.5);
+      padding: 16px;
+      animation: cardIn .3s cubic-bezier(.2,.6,.2,1);
     }
   </style>
 </head>
 
 <body>
-  <canvas id="matrix"></canvas>
+  <canvas id="forest"></canvas>
+  <canvas id="galaxy"></canvas>
+  <div id="vignette"></div>
+  <div id="progress"></div>
+  <nav id="rail" aria-label="Sections"></nav>
 
-  <!-- HOME -->
-  <section class="view active" id="home">
-    <div class="homeCenter">
-      <div>
-        <div class="time" id="t">--:--</div>
-        <div class="sub" id="d">—</div>
+  <main>
+    <!-- HOME -->
+    <section class="panel" id="home">
+      <div class="homeCenter">
+        <div>
+          <div class="homeKicker">Memoria NotePro · Local-First Workspace</div>
+          <div class="time" id="t">--:--</div>
+          <div class="sub" id="d">—</div>
+          <div class="scrollcue">Scroll for calendar, notes &amp; more</div>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- STUDY NOTES -->
-  <section class="view" id="studynotes">
-    <div class="window">
-      <div class="windowHead">
-        <h2>Study Notes (Key Points)</h2>
-        <div class="mini">Save bullet points • stored in browser</div>
+    <!-- CALENDAR -->
+    <section class="panel" id="calendar">
+      <div class="window">
+        <div class="kicker">Calendar</div>
+        <div class="windowHead">
+          <h2>Calendar</h2>
+          <div class="mini">Events • links • Google Maps locations</div>
+        </div>
+
+        <div class="calWrap">
+          <div class="calGrid">
+            <div class="calHead">
+              <button class="calNavBtn" id="calPrev" aria-label="Previous month">‹</button>
+              <div class="calTitle" id="calTitle">Month Year</div>
+              <button class="calNavBtn" id="calNext" aria-label="Next month">›</button>
+            </div>
+            <div class="calDays" id="calDow"></div>
+            <div class="calDays" id="calDays" style="margin-top:6px"></div>
+          </div>
+
+          <div class="calSide">
+            <div class="mini" id="calSelectedLabel" style="margin-bottom:8px">Today</div>
+
+            <div class="eventForm">
+              <input id="evTitle" placeholder="Event title" />
+              <div class="row">
+                <input id="evDate" type="date" style="flex:1" />
+                <input id="evTime" type="time" style="flex:1" />
+              </div>
+              <input id="evLink" placeholder="Link (optional) — https://..." />
+              <input id="evLocation" placeholder="Location (optional) — e.g., Central Park, NYC" />
+              <button class="btnPrimary" id="evAdd">Add Event</button>
+            </div>
+
+            <hr>
+
+            <div class="list" id="evList"></div>
+          </div>
+        </div>
       </div>
+    </section>
 
-      <div class="row">
-        <select id="snSubject">
-          <option>Math</option>
-          <option>Science</option>
-          <option>Social</option>
-          <option>English</option>
-          <option>AI</option>
-        </select>
-        <input id="snTitle" placeholder="Topic (e.g., Number Systems)" style="flex:1" />
+    <!-- STUDY NOTES -->
+    <section class="panel" id="studynotes">
+      <div class="window">
+        <div class="kicker">Study</div>
+        <div class="windowHead">
+          <h2>Study Notes (Key Points)</h2>
+          <div class="mini">Save bullet points • stored in browser</div>
+        </div>
+
+        <div class="row">
+          <select id="snSubject">
+            <option>Math</option>
+            <option>Science</option>
+            <option>Social</option>
+            <option>English</option>
+            <option>AI</option>
+          </select>
+          <input id="snTitle" placeholder="Topic (e.g., Number Systems)" style="flex:1" />
+        </div>
+
+        <div class="row" style="margin-top:10px; align-items:stretch;">
+          <textarea id="snPoints" rows="5" placeholder="Write key points, one per line..."></textarea>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <button class="btnPrimary" id="snSave">Save Key Points</button>
+          <button class="btnDanger btnAway" id="snClearAll">Clear All Notes</button>
+        </div>
+
+        <hr>
+
+        <div class="list" id="snList"></div>
       </div>
+    </section>
 
-      <div class="row" style="margin-top:10px; align-items:stretch;">
-        <textarea id="snPoints" rows="5" placeholder="Write key points, one per line..."></textarea>
+    <!-- CHAT -->
+    <section class="panel" id="chat">
+      <div class="window">
+        <div class="kicker">Chat</div>
+        <div class="windowHead">
+          <h2>Chat</h2>
+          <div class="mini" id="chatStatus">Not connected</div>
+        </div>
+
+        <div class="row">
+          <input id="chatName" placeholder="Your name (e.g., Umesh)" />
+          <input id="chatRoom" placeholder="Room code (e.g., memoria)" />
+          <button class="btnPrimary" id="chatConnect">Connect</button>
+        </div>
+
+        <div class="mini" style="margin-top:8px">
+          Share the same <b>Room code</b> with your friend. Both open this website.
+        </div>
+
+        <hr>
+
+        <div class="chatLog" id="chatLog"></div>
+
+        <div class="row" style="margin-top:12px">
+          <input id="chatMsg" style="flex:1" placeholder="Type a message..." />
+          <button class="btnPrimary" id="chatSend">Send</button>
+        </div>
       </div>
+    </section>
 
-      <div class="row" style="margin-top:10px">
-        <button class="btnGreen" id="snSave">Save Key Points</button>
-        <button class="btnRed" id="snClearAll">Clear All Notes</button>
-      </div>
+    <!-- VAULT -->
+    <section class="panel" id="vault">
+      <div class="window">
+        <div class="kicker">Vault</div>
+        <div class="windowHead">
+          <h2>File Vault</h2>
+          <div class="mini">Saved in your browser (IndexedDB)</div>
+        </div>
 
-      <hr>
-
-      <div class="list" id="snList"></div>
-    </div>
-  </section>
-
-  <!-- CHAT -->
-  <section class="view" id="chat">
-    <div class="window">
-      <div class="windowHead">
-        <h2>Chat</h2>
-        <div class="mini" id="chatStatus">Not connected</div>
-      </div>
-
-      <div class="row">
-        <input id="chatName" placeholder="Your name (e.g., Umesh)" />
-        <input id="chatRoom" placeholder="Room code (e.g., memoria)" />
-        <button class="btnGreen" id="chatConnect">Connect</button>
-      </div>
-
-      <div class="mini" style="margin-top:8px">
-        Share the same <b>Room code</b> with your friend. Both open this website.
-      </div>
-
-      <hr>
-
-      <div class="chatLog" id="chatLog"></div>
-
-      <div class="row" style="margin-top:12px">
-        <input id="chatMsg" style="flex:1" placeholder="Type a message..." />
-        <button class="btnPurple" id="chatSend">Send</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- VAULT -->
-  <section class="view" id="vault">
-    <div class="window">
-      <div class="windowHead">
-        <h2>File Vault</h2>
-        <div class="mini">Saved in your browser (IndexedDB)</div>
-      </div>
-
-      <div class="row">
-        <input id="fileTitle" placeholder="Title (optional)" style="flex:1" />
-        <select id="fileTag">
-          <option>General</option>
-          <option>School</option>
-          <option>Media</option>
-          <option>Projects</option>
-        </select>
-      </div>
-
-      <div class="row" style="margin-top:10px">
-        <input id="filePick" type="file" />
-        <button class="btnGreen" id="btnSaveFile">Save</button>
-        <button class="btnRed" id="btnClearVault">Clear Vault</button>
-      </div>
-
-      <div class="mini" style="margin-top:10px">
-        Preview: PDF / MP3 / MP4. Word/PPT will be download-only.
-      </div>
-
-      <hr>
-
-      <div class="list" id="vaultList"></div>
-    </div>
-  </section>
-
-  <!-- TERMINAL -->
-  <section class="view" id="terminal">
-    <div class="window">
-      <div class="windowHead">
-        <h2>Terminal</h2>
-        <div class="mini">Commands + quick navigation</div>
-      </div>
-
-      <div class="termOut" id="termOut"></div>
-
-      <div class="row" style="margin-top:12px">
-        <input id="termIn" style="flex:1" placeholder="Type: help" />
-        <button class="btnPurple" id="termRun">Run</button>
-      </div>
-
-      <div class="mini" style="margin-top:8px">
-        Example: <b>goto chat</b>, <b>matrix on</b>, <b>matrix speed 1.2</b>, <b>matrix color #00ff88</b>, <b>wallpaper neon</b>
-      </div>
-    </div>
-  </section>
-
-  <!-- SETTINGS -->
-  <section class="view" id="settings">
-    <div class="window">
-      <div class="windowHead">
-        <h2>Settings</h2>
-        <div class="mini">Wallpaper + Matrix</div>
-      </div>
-
-      <div class="row">
-        <div style="min-width:180px">
-          <div class="mini">Wallpaper (preset)</div>
-          <select id="wpPreset">
-            <option value="default">Default</option>
-            <option value="neon">Neon Bloom</option>
-            <option value="midnight">Midnight</option>
-            <option value="sunset">Sunset</option>
-            <option value="ocean">Ocean</option>
-            <option value="mono">Mono Dark</option>
+        <div class="row">
+          <input id="fileTitle" placeholder="Title (optional)" style="flex:1" />
+          <select id="fileTag">
+            <option>General</option>
+            <option>School</option>
+            <option>Media</option>
+            <option>Projects</option>
           </select>
         </div>
 
-        <div style="flex:1; min-width:240px">
-          <div class="mini">Wallpaper image URL (optional)</div>
-          <input id="wpUrl" placeholder="https://.../image.jpg" />
+        <div class="row" style="margin-top:10px">
+          <input id="filePick" type="file" />
+          <button class="btnPrimary" id="btnSaveFile">Save</button>
+          <button class="btnDanger btnAway" id="btnClearVault">Clear Vault</button>
         </div>
 
-        <button class="btnGreen" id="wpApply">Apply</button>
-        <button class="btnRed" id="wpReset">Reset</button>
-      </div>
-
-      <hr>
-
-      <div class="row">
-        <label class="mini" style="display:flex;gap:8px;align-items:center">
-          <input type="checkbox" id="mxOn" />
-          Matrix ON
-        </label>
-
-        <div style="min-width:160px">
-          <div class="mini">Matrix speed</div>
-          <input id="mxSpeed" type="number" step="0.1" min="0.1" max="6" />
+        <div class="mini" style="margin-top:10px">
+          Preview: PDF / MP3 / MP4. Word/PPT will be download-only.
         </div>
 
-        <div style="min-width:180px">
-          <div class="mini">Matrix color</div>
-          <input id="mxColor" type="text" placeholder="#00ff88" />
+        <hr>
+
+        <div class="list" id="vaultList"></div>
+      </div>
+    </section>
+
+    <!-- TERMINAL -->
+    <section class="panel" id="terminal">
+      <div class="window">
+        <div class="kicker">Terminal</div>
+        <div class="windowHead">
+          <h2>Terminal</h2>
+          <div class="mini">Commands + quick navigation</div>
         </div>
 
-        <button class="btnPurple" id="mxApply">Apply Matrix</button>
-      </div>
+        <div class="termOut" id="termOut"></div>
 
-      <div class="mini" style="margin-top:10px">
-        Tip: keep speed around <b>0.7–1.5</b>.
-      </div>
-    </div>
-  </section>
+        <div class="row" style="margin-top:12px">
+          <input id="termIn" style="flex:1" placeholder="Type: help" />
+          <button class="btnPrimary" id="termRun">Run</button>
+        </div>
 
-  <!-- DOCK -->
-  <nav class="dock" aria-label="Dock">
-    <div class="dockItem">
-      <div class="dockTip">Home</div>
-      <button class="dockBtn" data-go="home" aria-label="Home">🏠</button>
-    </div>
-    <div class="dockItem">
-      <div class="dockTip">Study Notes</div>
-      <button class="dockBtn" data-go="studynotes" aria-label="Study Notes">📚</button>
-    </div>
-    <div class="dockItem">
-      <div class="dockTip">Chat</div>
-      <button class="dockBtn" id="dockChat" data-go="chat" aria-label="Chat">
-        💬 <span class="bubble" id="chatBubble"></span>
-      </button>
-    </div>
-    <div class="dockItem">
-      <div class="dockTip">Vault</div>
-      <button class="dockBtn" data-go="vault" aria-label="Vault">🗂️</button>
-    </div>
-    <div class="dockItem">
-      <div class="dockTip">Terminal</div>
-      <button class="dockBtn" data-go="terminal" aria-label="Terminal">⌘</button>
-    </div>
-    <div class="dockItem">
-      <div class="dockTip">Settings</div>
-      <button class="dockBtn" data-go="settings" aria-label="Settings">⚙️</button>
-    </div>
-  </nav>
+        <div class="mini" style="margin-top:8px">
+          Example: <b>goto chat</b>, <b>goto calendar</b>, <b>wallpaper neon</b>, <b>wallpaper url https://...</b>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="panel" id="settings">
+      <div class="window">
+        <div class="kicker">Settings</div>
+        <div class="windowHead">
+          <h2>Settings</h2>
+          <div class="mini">Background scene + theme</div>
+        </div>
+
+        <div class="row">
+          <div style="min-width:180px">
+            <div class="mini">Background scene</div>
+            <select id="bgScene">
+              <option value="forest">Forest</option>
+              <option value="galaxy">Galaxy</option>
+            </select>
+          </div>
+          <div class="mini" style="flex:1; min-width:220px">
+            Forest: scroll winds a camera through a lit-up tree line.<br>
+            Galaxy: scroll flies a camera through a spiral of stars.
+          </div>
+        </div>
+
+        <hr>
+
+        <div class="row">
+          <div style="min-width:180px">
+            <div class="mini">Background theme</div>
+            <select id="wpPreset">
+              <option value="default">Default</option>
+              <option value="neon">Neon Bloom</option>
+              <option value="midnight">Midnight</option>
+              <option value="sunset">Sunset</option>
+              <option value="ocean">Ocean</option>
+              <option value="mono">Mono Dark</option>
+            </select>
+          </div>
+
+          <div style="flex:1; min-width:240px">
+            <div class="mini">Wallpaper image URL (optional overlay)</div>
+            <input id="wpUrl" placeholder="https://.../image.jpg" />
+          </div>
+
+          <button class="btnPrimary" id="wpApply">Apply</button>
+          <button class="btnDanger btnAway" id="wpReset">Reset</button>
+        </div>
+
+        <div class="mini" style="margin-top:10px">
+          Theme tints the Forest scene's fog and color. The Galaxy scene keeps its own fixed palette.
+        </div>
+      </div>
+    </section>
+  </main>
 
   <!-- MODAL -->
   <div class="modal" id="modal">
@@ -523,10 +648,11 @@
        APP GLOBALS
     ========================== */
     const App = window.App = {
-      views: ["home","studynotes","chat","vault","terminal","settings"],
+      views: ["home","calendar","studynotes","chat","vault","terminal","settings"],
       showView: null,
-      setMatrix: null,
       setWallpaper: null,
+      setChatUnread: null,
+      currentSection: "home",
       stats: { vaultCount: 0, notesCount: 0, chatUnread: 0 }
     };
 
@@ -543,38 +669,81 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    /* ===== VIEW SWITCH + BACK BUTTON ===== */
-    function showView(id, push=true){
+    /* ===== SCROLL NAVIGATION (replaces the old show/hide view switcher) ===== */
+    function showView(id, smooth=true){
       if(!App.views.includes(id)) id="home";
-      for(const v of App.views){
-        document.getElementById(v).classList.toggle("active", v===id);
-      }
-      if(id === "chat"){
-        App.stats.chatUnread = 0;
-        renderChatBubble();
-      }
-      if(push) history.pushState({view:id}, "", "#"+id);
+      const el = document.getElementById(id);
+      if(el) el.scrollIntoView({behavior: smooth ? "smooth" : "auto", block:"start"});
     }
     App.showView = showView;
 
-    document.querySelectorAll("[data-go]").forEach(btn=>{
-      btn.addEventListener("click", ()=>showView(btn.dataset.go, true));
-    });
-
-    window.addEventListener("popstate", (e)=>{
-      const id = (e.state && e.state.view) ? e.state.view : (location.hash.replace("#","") || "home");
-      showView(id, false);
-    });
-
-    const start = location.hash.replace("#","") || "home";
-    history.replaceState({view:start}, "", "#"+start);
-    showView(start, false);
-
-    /* ===== CHAT BUBBLE ===== */
-    const chatBubble = document.getElementById("chatBubble");
-    function renderChatBubble(){
-      chatBubble.style.display = App.stats.chatUnread > 0 ? "block" : "none";
+    /* Wait for webfonts before the initial hash-jump, otherwise a late
+       font swap reflows section heights and the browser's scroll
+       anchoring can leave the viewport resting between two sections. */
+    function jumpToInitialHash(){
+      const start = location.hash.replace("#","");
+      if(start && App.views.includes(start)) showView(start, false);
     }
+    if(document.fonts && document.fonts.ready){
+      document.fonts.ready.then(()=> requestAnimationFrame(jumpToInitialHash));
+    }else{
+      window.addEventListener("load", jumpToInitialHash);
+    }
+
+    /* ===== RIGHT-EDGE SCROLL RAIL (from CURRENT.html) ===== */
+    const RAIL_LABELS = {
+      home: "Home", calendar: "Calendar", studynotes: "Study Notes",
+      chat: "Chat", vault: "Vault", terminal: "Terminal", settings: "Settings"
+    };
+    const rail = document.getElementById("rail");
+    const railDots = {};
+    App.views.forEach(id=>{
+      const a = document.createElement("a");
+      a.href = "#" + id;
+      a.setAttribute("data-label", RAIL_LABELS[id] || id);
+      a.addEventListener("click", (ev)=>{ ev.preventDefault(); showView(id, true); });
+      rail.appendChild(a);
+      railDots[id] = a;
+    });
+
+    function setChatUnread(active){
+      if(railDots.chat) railDots.chat.classList.toggle("hasUnread", !!active);
+    }
+    App.setChatUnread = setChatUnread;
+
+    /* ===== SECTION TRACKING (rail highlight, chat-open detection) ===== */
+    const sectionObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(en=>{
+        if(en.isIntersecting){
+          App.currentSection = en.target.id;
+          Object.entries(railDots).forEach(([id,dot])=>{
+            dot.classList.toggle("active", id === App.currentSection);
+          });
+          if(App.currentSection === "chat"){
+            App.stats.chatUnread = 0;
+            setChatUnread(false);
+          }
+        }
+      });
+    }, {threshold:0.5});
+    App.views.forEach(v=>{
+      const el = document.getElementById(v);
+      if(el) sectionObserver.observe(el);
+    });
+
+    function updateProgress(){
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = max > 0 ? (window.scrollY / max) * 100 : 0;
+      document.getElementById("progress").style.width = pct + "%";
+    }
+    window.addEventListener("scroll", updateProgress, {passive:true});
+    updateProgress();
+
+    const revealTargets = document.querySelectorAll(".window");
+    const revealObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(en=>{ if(en.isIntersecting) en.target.classList.add("visible"); });
+    }, {threshold:0.15});
+    revealTargets.forEach(w=>revealObserver.observe(w));
 
     /* =========================
        HELPERS
@@ -587,6 +756,142 @@
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
+
+    /* =========================
+       CALENDAR (localStorage)
+    ========================== */
+    const CAL_KEY = "memoria_calendar_v1";
+    let calEvents = [];
+    let calViewDate = new Date(); calViewDate.setDate(1);
+
+    function fmtDate(d){
+      const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
+      return `${y}-${m}-${day}`;
+    }
+    let calSelected = fmtDate(new Date());
+
+    function isUrl(s){ return /^https?:\/\//i.test(s.trim()); }
+    function mapsLinkFor(loc){
+      const t = loc.trim();
+      if(!t) return "";
+      return isUrl(t) ? t : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(t)}`;
+    }
+
+    const calTitleEl = document.getElementById("calTitle");
+    const calDowEl = document.getElementById("calDow");
+    const calDaysEl = document.getElementById("calDays");
+    const calSelectedLabel = document.getElementById("calSelectedLabel");
+    const evList = document.getElementById("evList");
+
+    const DOW = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+    calDowEl.innerHTML = DOW.map(d=>`<div class="calDow">${d}</div>`).join("");
+
+    function loadEvents(){
+      try{ calEvents = JSON.parse(localStorage.getItem(CAL_KEY) || "[]"); }
+      catch{ calEvents = []; }
+      renderCalendar();
+    }
+    function saveEvents(){
+      localStorage.setItem(CAL_KEY, JSON.stringify(calEvents));
+    }
+
+    function renderCalendar(){
+      const y = calViewDate.getFullYear(), m = calViewDate.getMonth();
+      calTitleEl.textContent = calViewDate.toLocaleDateString([], {month:"long", year:"numeric"});
+
+      const firstDow = new Date(y,m,1).getDay();
+      const daysInMonth = new Date(y,m+1,0).getDate();
+      const todayStr = fmtDate(new Date());
+
+      let html = "";
+      for(let i=0;i<firstDow;i++) html += `<div class="calCell blank"></div>`;
+      for(let d=1; d<=daysInMonth; d++){
+        const dateStr = fmtDate(new Date(y,m,d));
+        const has = calEvents.some(e=>e.date===dateStr);
+        const cls = ["calCell"];
+        if(dateStr===todayStr) cls.push("today");
+        if(dateStr===calSelected) cls.push("selected");
+        html += `<div class="${cls.join(" ")}" data-date="${dateStr}">${d}${has?'<div class="calDot"></div>':''}</div>`;
+      }
+      calDaysEl.innerHTML = html;
+      renderEventsForSelected();
+    }
+
+    calDaysEl.addEventListener("click", (e)=>{
+      const cell = e.target.closest(".calCell[data-date]");
+      if(!cell) return;
+      calSelected = cell.getAttribute("data-date");
+      document.getElementById("evDate").value = calSelected;
+      renderCalendar();
+    });
+
+    document.getElementById("calPrev").addEventListener("click", ()=>{
+      calViewDate.setMonth(calViewDate.getMonth()-1);
+      renderCalendar();
+    });
+    document.getElementById("calNext").addEventListener("click", ()=>{
+      calViewDate.setMonth(calViewDate.getMonth()+1);
+      renderCalendar();
+    });
+
+    function renderEventsForSelected(){
+      const d = new Date(calSelected+"T00:00:00");
+      calSelectedLabel.textContent = d.toLocaleDateString([], {weekday:"long", month:"long", day:"numeric", year:"numeric"});
+
+      const items = calEvents.filter(e=>e.date===calSelected).sort((a,b)=> (a.time||"").localeCompare(b.time||""));
+      if(!items.length){
+        evList.innerHTML = `<div class="mini">No events on this day.</div>`;
+        return;
+      }
+      evList.innerHTML = items.map(e=>{
+        const links = [];
+        if(e.link) links.push(`<a href="${escapeHtml(e.link)}" target="_blank" rel="noopener">🔗 Link</a>`);
+        if(e.location) links.push(`<a href="${escapeHtml(mapsLinkFor(e.location))}" target="_blank" rel="noopener">📍 ${escapeHtml(e.location)}</a>`);
+        return `
+          <div class="card eventCard" data-id="${escapeHtml(e.id)}">
+            <div class="cardActions">
+              <button class="smallBtn btnDanger" data-act="delEvent">Delete</button>
+            </div>
+            <div class="evTitle">${escapeHtml(e.title)}</div>
+            <div class="evMeta">${e.time ? escapeHtml(e.time) + " · " : ""}${escapeHtml(d.toLocaleDateString())}</div>
+            ${links.length ? `<div class="evLinks">${links.join("")}</div>` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    evList.addEventListener("click", (e)=>{
+      const btn = e.target.closest("button[data-act='delEvent']");
+      if(!btn) return;
+      const card = e.target.closest(".eventCard");
+      if(!card) return;
+      const id = card.getAttribute("data-id");
+      calEvents = calEvents.filter(ev=>ev.id!==id);
+      saveEvents();
+      renderCalendar();
+    });
+
+    document.getElementById("evAdd").addEventListener("click", ()=>{
+      const title = document.getElementById("evTitle").value.trim();
+      const date = document.getElementById("evDate").value || calSelected;
+      const time = document.getElementById("evTime").value;
+      const link = document.getElementById("evLink").value.trim();
+      const location = document.getElementById("evLocation").value.trim();
+      if(!title){ alert("Give the event a title."); return; }
+
+      calEvents.push({ id: crypto.randomUUID(), title, date, time, link, location, ts: Date.now() });
+      saveEvents();
+      calSelected = date;
+      renderCalendar();
+
+      document.getElementById("evTitle").value = "";
+      document.getElementById("evTime").value = "";
+      document.getElementById("evLink").value = "";
+      document.getElementById("evLocation").value = "";
+    });
+
+    document.getElementById("evDate").value = calSelected;
+    loadEvents();
 
     /* =========================
        STUDY NOTES (localStorage)
@@ -616,7 +921,7 @@
         return `
           <div class="card" data-id="${escapeHtml(n.id)}">
             <div class="cardActions">
-              <button class="smallBtn btnRed" data-act="del">Delete</button>
+              <button class="smallBtn btnDanger" data-act="del">Delete</button>
             </div>
             <div class="cardTitle">${escapeHtml(n.subject)} • ${escapeHtml(n.title || "Untitled")}</div>
             <div class="cardMeta">${escapeHtml(when)}</div>
@@ -777,9 +1082,9 @@
         return `
           <div class="card" data-id="${escapeHtml(f.id)}">
             <div class="cardActions">
-              <button class="smallBtn btnPurple" data-act="preview">Preview</button>
+              <button class="smallBtn" data-act="preview">Preview</button>
               <button class="smallBtn" data-act="download">Download</button>
-              <button class="smallBtn btnRed" data-act="delete">Delete</button>
+              <button class="smallBtn btnDanger" data-act="delete">Delete</button>
             </div>
             <div class="cardTitle">${escapeHtml(title)}</div>
             <div class="cardMeta">📁 ${escapeHtml(tag)} • ${escapeHtml(when)} • ${escapeHtml(size)} • ${escapeHtml(f.name || "")}</div>
@@ -899,109 +1204,22 @@
     modal.addEventListener("click", (e)=>{ if(e.target === modal) closeModal(); });
 
     /* =========================
-       MATRIX (falling chars)
+       BACKGROUND THEME (tints the 3D forest instead of a CSS gradient)
     ========================== */
-    const mx = {
-      on: true,
-      speed: 1.0,
-      color: "#00ff88",
-      chars: "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-      fontSize: 16,
-      columns: [],
-      lastW: 0,
-      lastH: 0
-    };
-
-    const canvas = document.getElementById("matrix");
-    const ctx = canvas.getContext("2d");
-
-    function resizeMatrix(){
-      const dpr = Math.max(1, window.devicePixelRatio || 1);
-      const w = Math.floor(window.innerWidth);
-      const h = Math.floor(window.innerHeight);
-      canvas.style.width = w + "px";
-      canvas.style.height = h + "px";
-      canvas.width = Math.floor(w * dpr);
-      canvas.height = Math.floor(h * dpr);
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-
-      mx.lastW = w; mx.lastH = h;
-      const cols = Math.floor(w / mx.fontSize);
-      mx.columns = new Array(cols).fill(0).map(()=> Math.random() * h);
-    }
-
-    function drawMatrix(){
-      if(!mx.on){
-        ctx.clearRect(0,0,mx.lastW||window.innerWidth,mx.lastH||window.innerHeight);
-        requestAnimationFrame(drawMatrix);
-        return;
-      }
-      const w = mx.lastW || window.innerWidth;
-      const h = mx.lastH || window.innerHeight;
-
-      ctx.fillStyle = "rgba(0,0,0,0.08)";
-      ctx.fillRect(0,0,w,h);
-
-      ctx.font = `${mx.fontSize}px ui-monospace, Menlo, Consolas, monospace`;
-      ctx.fillStyle = mx.color;
-
-      for(let i=0; i<mx.columns.length; i++){
-        const x = i * mx.fontSize;
-        const y = mx.columns[i];
-        const ch = mx.chars[Math.floor(Math.random()*mx.chars.length)];
-        ctx.fillText(ch, x, y);
-
-        mx.columns[i] += (mx.fontSize * (0.65 + Math.random()*0.65)) * mx.speed;
-
-        if(mx.columns[i] > h + 40 && Math.random() > 0.965){
-          mx.columns[i] = -Math.random()*200;
-        }
-      }
-      requestAnimationFrame(drawMatrix);
-    }
-
-    window.addEventListener("resize", resizeMatrix);
-    resizeMatrix();
-    requestAnimationFrame(drawMatrix);
-
-    function setMatrixSettings({on, speed, color}){
-      if(typeof on === "boolean") mx.on = on;
-      if(typeof speed === "number" && isFinite(speed)) mx.speed = Math.min(6, Math.max(0.1, speed));
-      if(typeof color === "string" && color.trim()) mx.color = color.trim();
-      savePrefs();
-    }
-    App.setMatrix = setMatrixSettings;
-
-    /* =========================
-       WALLPAPERS
-    ========================== */
-    const WALLPAPERS = {
-      default: `radial-gradient(1200px 600px at 20% 10%, #0e1a3a, transparent 60%),
-                radial-gradient(900px 500px at 80% 90%, #101f4a, transparent 55%),
-                linear-gradient(180deg, #050512, #070b1a)`,
-      neon: `radial-gradient(1200px 600px at 20% 10%, rgba(139,92,246,.65), transparent 60%),
-             radial-gradient(900px 500px at 80% 90%, rgba(34,197,94,.35), transparent 55%),
-             linear-gradient(180deg, #050512, #070b1a)`,
-      midnight: `radial-gradient(900px 600px at 30% 20%, rgba(59,130,246,.35), transparent 60%),
-                 radial-gradient(900px 600px at 70% 80%, rgba(168,85,247,.25), transparent 55%),
-                 linear-gradient(180deg, #02020a, #040818)`,
-      sunset: `radial-gradient(900px 600px at 20% 25%, rgba(244,63,94,.28), transparent 60%),
-               radial-gradient(900px 600px at 80% 75%, rgba(250,204,21,.20), transparent 55%),
-               linear-gradient(180deg, #09040d, #14051a)`,
-      ocean: `radial-gradient(900px 600px at 20% 25%, rgba(14,165,233,.30), transparent 60%),
-              radial-gradient(900px 600px at 80% 75%, rgba(16,185,129,.18), transparent 55%),
-              linear-gradient(180deg, #020a12, #03101b)`,
-      mono: `radial-gradient(900px 600px at 35% 25%, rgba(255,255,255,.10), transparent 60%),
-             radial-gradient(900px 600px at 75% 75%, rgba(255,255,255,.06), transparent 55%),
-             linear-gradient(180deg, #050509, #08080f)`
+    const WALLPAPER_THEMES = {
+      default:  { bg:"#050512", fog:0x08060f },
+      neon:     { bg:"#0c0620", fog:0x0e0a1f },
+      midnight: { bg:"#02020a", fog:0x03040c },
+      sunset:   { bg:"#0d0410", fog:0x140714 },
+      ocean:    { bg:"#020a12", fog:0x021018 },
+      mono:     { bg:"#08080c", fog:0x0a0a0e }
     };
 
     function setWallpaper(preset, imageUrl){
       const root = document.documentElement;
+      const theme = WALLPAPER_THEMES[preset] || WALLPAPER_THEMES.default;
 
-      // normalize to avoid weird whitespace parsing issues
-      const wp = (WALLPAPERS[preset] || WALLPAPERS.default).replace(/\s+/g," ").trim();
-      root.style.setProperty("--wallpaper", wp);
+      document.body.style.background = theme.bg;
 
       if(imageUrl && imageUrl.trim()){
         root.style.setProperty("--wallpaperImg", `url("${imageUrl.trim()}")`);
@@ -1009,6 +1227,7 @@
         root.style.setProperty("--wallpaperImg", "none");
       }
 
+      if(window.App.setForestTheme) window.App.setForestTheme(theme);
       savePrefs();
     }
     App.setWallpaper = setWallpaper;
@@ -1020,19 +1239,25 @@
     const wpUrl = document.getElementById("wpUrl");
     const wpApply = document.getElementById("wpApply");
     const wpReset = document.getElementById("wpReset");
+    const bgScene = document.getElementById("bgScene");
 
-    const mxOn = document.getElementById("mxOn");
-    const mxSpeed = document.getElementById("mxSpeed");
-    const mxColor = document.getElementById("mxColor");
-    const mxApply = document.getElementById("mxApply");
+    function setBackgroundScene(name){
+      const forestCanvas = document.getElementById("forest");
+      const galaxyCanvas = document.getElementById("galaxy");
+      const isGalaxy = name === "galaxy";
+      forestCanvas.style.display = isGalaxy ? "none" : "block";
+      galaxyCanvas.style.display = isGalaxy ? "block" : "none";
+      if(isGalaxy && window.App.startGalaxy) window.App.startGalaxy();
+      if(!isGalaxy && window.App.startForest) window.App.startForest();
+      savePrefs();
+    }
+    App.setBackgroundScene = setBackgroundScene;
 
     function savePrefs(){
       const prefs = {
         wallpaperPreset: wpPreset.value || "default",
         wallpaperUrl: wpUrl.value || "",
-        matrixOn: mx.on,
-        matrixSpeed: mx.speed,
-        matrixColor: mx.color
+        bgScene: bgScene.value || "forest"
       };
       localStorage.setItem("memoria_prefs_v1", JSON.stringify(prefs));
     }
@@ -1043,24 +1268,15 @@
 
         wpPreset.value = p.wallpaperPreset || "default";
         wpUrl.value = p.wallpaperUrl || "";
+        bgScene.value = p.bgScene || "forest";
         setWallpaper(wpPreset.value, wpUrl.value);
-
-        mxOn.checked = (p.matrixOn !== false);
-        mxSpeed.value = String(p.matrixSpeed ?? 1.0);
-        mxColor.value = String(p.matrixColor ?? "#00ff88");
-        setMatrixSettings({
-          on: mxOn.checked,
-          speed: parseFloat(mxSpeed.value),
-          color: mxColor.value
-        });
+        setBackgroundScene(bgScene.value);
       }catch{
         wpPreset.value = "default";
         wpUrl.value = "";
-        mxOn.checked = true;
-        mxSpeed.value = "1.0";
-        mxColor.value = "#00ff88";
+        bgScene.value = "forest";
         setWallpaper("default", "");
-        setMatrixSettings({on:true, speed:1.0, color:"#00ff88"});
+        setBackgroundScene("forest");
       }
     }
 
@@ -1071,17 +1287,9 @@
       setWallpaper("default", "");
     });
 
-    mxApply.addEventListener("click", ()=>{
-      setMatrixSettings({
-        on: mxOn.checked,
-        speed: parseFloat(mxSpeed.value),
-        color: mxColor.value
-      });
-    });
-
-    // ✅ Make wallpapers change instantly on dropdown change (this fixes your issue)
     wpPreset.addEventListener("change", ()=> setWallpaper(wpPreset.value, wpUrl.value));
     wpUrl.addEventListener("change", ()=> setWallpaper(wpPreset.value, wpUrl.value));
+    bgScene.addEventListener("change", ()=> setBackgroundScene(bgScene.value));
 
     loadPrefs();
 
@@ -1104,12 +1312,9 @@
       termPrint("Commands:", true);
       termPrint("help");
       termPrint("time");
-      termPrint("goto home | studynotes | chat | vault | terminal | settings");
+      termPrint("goto home | calendar | studynotes | chat | vault | terminal | settings");
       termPrint("clear");
       termPrint("stats");
-      termPrint("matrix on | off");
-      termPrint("matrix speed <number>");
-      termPrint("matrix color <#hex>");
       termPrint("wallpaper default|neon|midnight|sunset|ocean|mono");
       termPrint("wallpaper url <https://...image>");
     }
@@ -1135,7 +1340,7 @@
           App.showView(v, true);
           termPrint("Opened: " + v);
         } else {
-          termPrint("Unknown view. Try: home, studynotes, chat, vault, terminal, settings");
+          termPrint("Unknown view. Try: home, calendar, studynotes, chat, vault, terminal, settings");
         }
         return;
       }
@@ -1144,29 +1349,6 @@
         termPrint(`Vault files: ${App.stats.vaultCount}`);
         termPrint(`Study notes: ${App.stats.notesCount}`);
         termPrint(`Chat unread: ${App.stats.chatUnread}`);
-        return;
-      }
-      if(main === "matrix"){
-        const sub = (parts[1] || "").toLowerCase();
-        if(sub === "on"){ mxOn.checked = true; App.setMatrix({on:true}); termPrint("Matrix: ON"); return; }
-        if(sub === "off"){ mxOn.checked = false; App.setMatrix({on:false}); termPrint("Matrix: OFF"); return; }
-        if(sub === "speed"){
-          const n = parseFloat(parts[2]);
-          if(!isFinite(n)){ termPrint("Usage: matrix speed 1.2"); return; }
-          mxSpeed.value = String(n);
-          App.setMatrix({speed:n});
-          termPrint("Matrix speed set to " + mx.speed);
-          return;
-        }
-        if(sub === "color"){
-          const c = parts[2] || "";
-          if(!c){ termPrint("Usage: matrix color #00ff88"); return; }
-          mxColor.value = c;
-          App.setMatrix({color:c});
-          termPrint("Matrix color set to " + mx.color);
-          return;
-        }
-        termPrint("Usage: matrix on/off | matrix speed <n> | matrix color <hex>");
         return;
       }
       if(main === "wallpaper"){
@@ -1178,10 +1360,10 @@
           termPrint("Wallpaper image URL applied.");
           return;
         }
-        if(WALLPAPERS[sub]){
+        if(WALLPAPER_THEMES[sub]){
           wpPreset.value = sub;
           App.setWallpaper(sub, wpUrl.value);
-          termPrint("Wallpaper preset set to " + sub);
+          termPrint("Background theme set to " + sub);
           return;
         }
         termPrint("Usage: wallpaper default|neon|midnight|sunset|ocean|mono OR wallpaper url <image>");
@@ -1206,6 +1388,327 @@
     termClear();
     loadVault();
     loadSN();
+  </script>
+
+  <!-- =========================
+       3D PARTICLE FOREST BACKGROUND (from CURRENT.html)
+  ========================== -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+  (function(){
+    'use strict';
+    var canvas = document.getElementById('forest');
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var renderer;
+    try{
+      renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true, powerPreference:'high-performance'});
+    }catch(e){ canvas.style.background='radial-gradient(#0a0a18,#03030a)'; return; }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    var scene = new THREE.Scene();
+    var FOG = 0x08060f;
+    scene.background = new THREE.Color(FOG);
+    scene.fog = new THREE.FogExp2(FOG, 0.030);
+
+    var camera = new THREE.PerspectiveCamera(62, window.innerWidth/window.innerHeight, 0.1, 340);
+
+    /* ---------- Camera path : winds through the whole app ---------- */
+    var Z_START = 10, Z_END = -390, SPAN = Z_START - Z_END;
+    function pathX(z){
+      var t = (Z_START - z)/SPAN;
+      return Math.sin(t*Math.PI*7)*8.5
+           + Math.sin(t*Math.PI*16 + 1.3)*2.6
+           + Math.cos(t*Math.PI*3.1)*4.8
+           + Math.sin(t*Math.PI*23 + 0.7)*1.1;
+    }
+    function groundY(x,z){ return Math.sin(x*0.18)*Math.cos(z*0.11)*1.2 + Math.sin(x*0.71+z*0.53)*0.3; }
+
+    /* ---------- Dotted world ---------- */
+    var verts = [], cols = [];
+    function dot(x,y,z,b){
+      verts.push(x,y,z);
+      if(Math.random() < 0.04) cols.push(b*1.0, b*0.82, b*0.42);   // warm gold sparks
+      else                     cols.push(b*0.55, b*0.42, b*1.0);   // cool violet ramp
+    }
+    var G = Math.round(SPAN*70);
+    for(var g=0; g<G; g++){
+      var gz = Z_START + 40 - Math.random()*(SPAN+90);
+      var gx = (Math.random()*2-1)*90;
+      dot(gx, groundY(gx,gz) + Math.random()*0.22, gz, 0.16 + Math.random()*0.22);
+    }
+    var U = Math.round(SPAN*17);
+    for(var u=0; u<U; u++){
+      var uz = Z_START + 30 - Math.random()*(SPAN+80);
+      var ux = (Math.random()*2-1)*60;
+      dot(ux, groundY(ux,uz) + Math.random()*Math.random()*1.7, uz, 0.22 + Math.random()*0.28);
+    }
+    var TREES = Math.round(SPAN*0.95), made = 0, guard = 0;
+    while(made < TREES && guard++ < TREES*30){
+      var tz = Z_START + 30 - Math.random()*(SPAN+80);
+      var tx = (Math.random()*2-1)*75;
+      if(Math.abs(tx - pathX(tz)) < 5.5) continue;
+      made++;
+      var h = 10 + Math.random()*14, ty0 = groundY(tx,tz);
+      var lean = (Math.random()-0.5)*0.12, leanZ = (Math.random()-0.5)*0.12;
+      var tn = (50 + h*4)|0;
+      for(var k=0;k<tn;k++){
+        var uu=Math.random(), r=0.30*(1-uu)+0.04, a=Math.random()*Math.PI*2;
+        dot(tx+uu*h*lean+Math.cos(a)*r, ty0+uu*h, tz+uu*h*leanZ+Math.sin(a)*r, 0.35+Math.random()*0.40);
+      }
+      var nb=(3+Math.random()*4)|0;
+      for(var bb=0;bb<nb;bb++){
+        var bu=0.45+Math.random()*0.5, bx0=tx+bu*h*lean, by0=ty0+bu*h, bz0=tz+bu*h*leanZ;
+        var ba=Math.random()*Math.PI*2, bl=1+Math.random()*2.5;
+        var dx=Math.cos(ba), dz=Math.sin(ba), dy=0.15+Math.random()*0.4;
+        for(var m=0;m<14;m++){
+          var w=Math.random();
+          dot(bx0+dx*bl*w+(Math.random()-0.5)*0.12, by0+dy*bl*w, bz0+dz*bl*w+(Math.random()-0.5)*0.12, 0.30+Math.random()*0.35);
+        }
+      }
+      var cr=1.6+Math.random()*2.4, cx0=tx+h*0.8*lean, cy0=ty0+h*0.8, cz0=tz+h*0.8*leanZ;
+      var cn=(130+Math.random()*120)|0;
+      for(var c=0;c<cn;c++){
+        var th=Math.random()*Math.PI*2, ph=Math.acos(2*Math.random()-1), rr=cr*Math.cbrt(Math.random());
+        dot(cx0+rr*Math.sin(ph)*Math.cos(th)*1.15, cy0+rr*Math.cos(ph)*1.35, cz0+rr*Math.sin(ph)*Math.sin(th)*1.15, 0.45+Math.random()*0.55);
+      }
+    }
+    var cloudGeo = new THREE.BufferGeometry();
+    cloudGeo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+    cloudGeo.setAttribute('color',    new THREE.Float32BufferAttribute(cols, 3));
+    verts = null; cols = null;
+    var cloud = new THREE.Points(cloudGeo, new THREE.PointsMaterial({
+      size:0.078, vertexColors:true, sizeAttenuation:true, transparent:true, opacity:0.75, depthWrite:false
+    }));
+    scene.add(cloud);
+
+    /* ---------- Mist particles ---------- */
+    var P=1100, pGeo=new THREE.BufferGeometry(), pPos=new Float32Array(P*3), pSeed=new Float32Array(P);
+    for(var p=0;p<P;p++){ pPos[p*3]=(Math.random()*2-1)*40; pPos[p*3+1]=Math.random()*18; pPos[p*3+2]=-Math.random()*90; pSeed[p]=Math.random()*Math.PI*2; }
+    pGeo.setAttribute('position', new THREE.BufferAttribute(pPos,3));
+    var particles=new THREE.Points(pGeo, new THREE.PointsMaterial({color:0xb9a6ff, size:0.18, transparent:true, opacity:0.26, sizeAttenuation:true, depthWrite:false}));
+    scene.add(particles);
+
+    /* ---------- Fireflies / sparks ---------- */
+    var F=36, fGeo=new THREE.BufferGeometry(), fPos=new Float32Array(F*3);
+    for(var f=0;f<F;f++){ fPos[f*3]=(Math.random()*2-1)*30; fPos[f*3+1]=1+Math.random()*6; fPos[f*3+2]=-Math.random()*80; }
+    fGeo.setAttribute('position', new THREE.BufferAttribute(fPos,3));
+    var fireflies=new THREE.Points(fGeo, new THREE.PointsMaterial({color:0xffd27a, size:0.4, transparent:true, opacity:0.5, sizeAttenuation:true, blending:THREE.AdditiveBlending, depthWrite:false}));
+    scene.add(fireflies);
+
+    /* ---------- Scroll → camera ---------- */
+    var target=0, current=0, lastCurrent=0, mouseX=0, mouseY=0, smx=0, smy=0;
+    function readScroll(){
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      target = max > 0 ? window.scrollY / max : 0;
+    }
+    window.addEventListener('scroll', readScroll, {passive:true});
+    window.addEventListener('mousemove', function(ev){ mouseX=(ev.clientX/window.innerWidth-0.5); mouseY=(ev.clientY/window.innerHeight-0.5); }, {passive:true});
+    readScroll();
+
+    var clock = new THREE.Clock();
+    function animate(){
+      requestAnimationFrame(animate);
+      if(canvas.style.display === "none") return;
+      var t = clock.getElapsedTime();
+      var d = target - current;
+      current += d * (prefersReduced ? 1 : Math.min(0.16, 0.026 + Math.abs(d)*0.22));
+      var vel = current - lastCurrent; lastCurrent = current;
+      var te = current + 0.010*Math.sin(current*Math.PI*11);
+      var cz = Z_START - te*SPAN;
+      var cx = pathX(cz);
+      var sway = Math.sin(t*0.35)*0.9 + Math.sin(te*Math.PI*5)*0.6;
+      var rise = 2.6 + (Math.sin(te*Math.PI*4 - Math.PI/2)+1)*1.05 + groundY(cx,cz)*0.5;
+      camera.position.set(cx + sway + smx*1.6, rise + Math.sin(t*0.9)*0.06, cz);
+      smx += (mouseX - smx)*0.03; smy += (mouseY - smy)*0.03;
+      var lookZ = cz - 14;
+      camera.lookAt(pathX(lookZ) + Math.sin(t*0.5)*1.4 + smx*4, rise - 0.45 - smy*2.2, lookZ);
+      var curve = pathX(cz - 8) - pathX(cz + 8);
+      camera.rotation.z += curve*0.024 + vel*SPAN*0.0011 + Math.sin(t*0.28)*0.02;
+      var fovT = 62 + Math.min(Math.abs(vel)*SPAN*0.9, 11);
+      if(Math.abs(camera.fov - fovT) > 0.05){ camera.fov += (fovT - camera.fov)*0.08; camera.updateProjectionMatrix(); }
+
+      var pp = particles.geometry.attributes.position.array;
+      for(var i=0;i<P;i++){
+        pp[i*3+1] -= 0.008 + 0.004*Math.sin(pSeed[i]);
+        pp[i*3]   += Math.sin(t*0.4 + pSeed[i])*0.006;
+        if(pp[i*3+1] < 0) pp[i*3+1] = 18;
+      }
+      particles.geometry.attributes.position.needsUpdate = true;
+      particles.position.z = cz - 45; particles.position.x = cx;
+
+      var fp = fireflies.geometry.attributes.position.array;
+      for(var j=0;j<F;j++){ fp[j*3]+=Math.sin(t*0.7+j)*0.01; fp[j*3+1]+=Math.cos(t*0.5+j*2)*0.008; }
+      fireflies.geometry.attributes.position.needsUpdate = true;
+      fireflies.position.z = cz - 40; fireflies.position.x = cx;
+      fireflies.material.opacity = 0.5 + Math.sin(t*3)*0.35;
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', function(){
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    window.App = window.App || {};
+    window.App.setForestTheme = function(theme){
+      var c = new THREE.Color(theme.fog);
+      scene.background = c;
+      scene.fog.color = c;
+    };
+    window.App.startForest = function(){ current = target; lastCurrent = target; };
+  })();
+  </script>
+
+  <!-- =========================
+       GALAXY BACKGROUND (scroll-to-move alternative scene)
+  ========================== -->
+  <script>
+  (function(){
+    'use strict';
+    var canvas = document.getElementById('galaxy');
+    var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    var renderer;
+    try{
+      renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true, powerPreference:'high-performance'});
+    }catch(e){ canvas.style.background='radial-gradient(#0a0a18,#020207)'; return; }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    var scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x03030a);
+    scene.fog = new THREE.FogExp2(0x03030a, 0.010);
+
+    var camera = new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, 0.1, 220);
+    camera.position.set(0, 11, 24);
+
+    /* ---------- Soft core glow (canvas-generated sprite, no external asset) ---------- */
+    function makeGlowTexture(){
+      var size = 128;
+      var c = document.createElement('canvas');
+      c.width = c.height = size;
+      var gctx = c.getContext('2d');
+      var g = gctx.createRadialGradient(size/2,size/2,0, size/2,size/2,size/2);
+      g.addColorStop(0, 'rgba(255,248,222,1)');
+      g.addColorStop(0.28, 'rgba(255,193,110,.78)');
+      g.addColorStop(0.55, 'rgba(255,120,70,.42)');
+      g.addColorStop(0.8, 'rgba(230,70,60,.16)');
+      g.addColorStop(1, 'rgba(230,70,60,0)');
+      gctx.fillStyle = g;
+      gctx.fillRect(0,0,size,size);
+      return new THREE.CanvasTexture(c);
+    }
+    var coreGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: makeGlowTexture(), color:0xffffff, transparent:true, opacity:0.85,
+      depthWrite:false, blending:THREE.AdditiveBlending
+    }));
+    coreGlow.scale.set(9,9,1);
+    scene.add(coreGlow);
+
+    /* ---------- Spiral galaxy ---------- */
+    var COUNT = 16000, RADIUS = 10, BRANCHES = 4, SPIN = 1.35, RAND = 0.55, RAND_POW = 3;
+    var gPos = new Float32Array(COUNT*3), gCol = new Float32Array(COUNT*3);
+    var mixed = new THREE.Color();
+    var GRAD_STOPS = [
+      { t:0.00, c:new THREE.Color(0xfff3d0) },  // hot yellow-white core
+      { t:0.24, c:new THREE.Color(0xffb15c) },  // orange
+      { t:0.48, c:new THREE.Color(0xff6a45) },  // red-orange
+      { t:0.72, c:new THREE.Color(0xc84a5a) },  // red fading toward violet
+      { t:1.00, c:new THREE.Color(0x6a4fe0) }   // violet at the rim
+    ];
+    function galaxyColorAt(t){
+      t = Math.min(Math.max(t, 0), 1);
+      for(var s=0; s<GRAD_STOPS.length-1; s++){
+        var a = GRAD_STOPS[s], b = GRAD_STOPS[s+1];
+        if(t >= a.t && t <= b.t){
+          var lt = (t - a.t) / (b.t - a.t || 1);
+          return mixed.copy(a.c).lerp(b.c, lt);
+        }
+      }
+      return mixed.copy(GRAD_STOPS[GRAD_STOPS.length-1].c);
+    }
+    for(var i=0;i<COUNT;i++){
+      var i3 = i*3;
+      var r = Math.pow(Math.random(), 1.5)*RADIUS;
+      var branchAngle = ((i % BRANCHES) / BRANCHES) * Math.PI*2;
+      var spinAngle = r * SPIN;
+
+      var rx = Math.pow(Math.random(), RAND_POW) * (Math.random()<0.5?1:-1) * RAND * r;
+      var ry = Math.pow(Math.random(), RAND_POW) * (Math.random()<0.5?1:-1) * RAND * r * 0.25;
+      var rz = Math.pow(Math.random(), RAND_POW) * (Math.random()<0.5?1:-1) * RAND * r;
+
+      gPos[i3]   = Math.cos(branchAngle+spinAngle)*r + rx;
+      gPos[i3+1] = ry;
+      gPos[i3+2] = Math.sin(branchAngle+spinAngle)*r + rz;
+
+      galaxyColorAt(r/RADIUS);
+      gCol[i3]=mixed.r; gCol[i3+1]=mixed.g; gCol[i3+2]=mixed.b;
+    }
+    var gGeo = new THREE.BufferGeometry();
+    gGeo.setAttribute('position', new THREE.BufferAttribute(gPos,3));
+    gGeo.setAttribute('color', new THREE.BufferAttribute(gCol,3));
+    var galaxy = new THREE.Points(gGeo, new THREE.PointsMaterial({
+      size:0.065, sizeAttenuation:true, vertexColors:true, transparent:true, opacity:0.9,
+      blending:THREE.AdditiveBlending, depthWrite:false
+    }));
+    scene.add(galaxy);
+
+    /* ---------- Distant starfield shell ---------- */
+    var S=1600, sGeo=new THREE.BufferGeometry(), sPos=new Float32Array(S*3);
+    for(var s=0;s<S;s++){
+      var theta=Math.random()*Math.PI*2, phi=Math.acos(2*Math.random()-1), rad=60+Math.random()*90;
+      sPos[s*3]  = rad*Math.sin(phi)*Math.cos(theta);
+      sPos[s*3+1]= rad*Math.sin(phi)*Math.sin(theta);
+      sPos[s*3+2]= rad*Math.cos(phi);
+    }
+    sGeo.setAttribute('position', new THREE.BufferAttribute(sPos,3));
+    var stars = new THREE.Points(sGeo, new THREE.PointsMaterial({
+      color:0xffffff, size:0.075, sizeAttenuation:true, transparent:true, opacity:0.4, depthWrite:false
+    }));
+    scene.add(stars);
+
+    /* ---------- Scroll → camera dolly through the spiral ---------- */
+    var target=0, current=0;
+    function readScroll(){
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      target = max > 0 ? window.scrollY / max : 0;
+    }
+    window.addEventListener('scroll', readScroll, {passive:true});
+    readScroll();
+
+    var clock = new THREE.Clock();
+    function animate(){
+      requestAnimationFrame(animate);
+      if(canvas.style.display === "none") return;
+      var t = clock.getElapsedTime();
+      current += (target - current) * (prefersReduced ? 1 : 0.06);
+
+      galaxy.rotation.y = t * 0.025;
+      stars.rotation.y = -t * 0.004;
+      coreGlow.material.opacity = 0.75 + Math.sin(t*0.6)*0.08;
+
+      var depth = current * 34;
+      camera.position.set(Math.sin(current*Math.PI*2)*1.6, 11 - current*9, 24 - depth);
+      camera.lookAt(0, -1, 0 - depth*0.35);
+
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', function(){
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    window.App = window.App || {};
+    window.App.startGalaxy = function(){ readScroll(); current = target; };
+  })();
   </script>
 
   <!-- =========================
@@ -1281,7 +1784,7 @@
       const q = query(msgsRef, orderBy("createdAt","asc"), limit(250));
 
       unsub = onSnapshot(q, (snap)=>{
-        const isChatOpen = document.getElementById("chat").classList.contains("active");
+        const isChatOpen = window.App.currentSection === "chat";
 
         clearChat();
         let count = 0;
@@ -1298,11 +1801,11 @@
 
         if(!isChatOpen && count > lastSeenCount){
           window.App.stats.chatUnread += (count - lastSeenCount);
-          document.getElementById("chatBubble").style.display = "block";
+          window.App.setChatUnread(true);
         }
         if(isChatOpen){
           window.App.stats.chatUnread = 0;
-          document.getElementById("chatBubble").style.display = "none";
+          window.App.setChatUnread(false);
         }
 
         lastSeenCount = count;
