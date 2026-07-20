@@ -174,18 +174,36 @@
     .ftDur{width:96px; text-align:center}
     .ftHidden{display:none !important}
 
-    /* MUSIC DOCK — immovable CD shelf (bottom-left) */
-    #musicDock{
+    /* LEFT DOCKS — immovable stack: Friends above the CD shelf */
+    #leftDocks{
       position:fixed; left:1.2rem; bottom:1rem; z-index:60;
-      width:236px;
+      width:236px; display:flex; flex-direction:column; gap:10px;
+    }
+    body.gated #leftDocks{display:none}
+    #musicDock, #friendsDock{
       background:rgba(15,16,24,.85); border:1px solid var(--line);
       border-radius:14px; box-shadow:var(--shadow);
       backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
       padding:12px; user-select:none;
     }
-    body.gated #musicDock{display:none}
-    #musicDock.closed{width:auto}
+    #musicDock.closed, #friendsDock.closed{width:auto; align-self:flex-start}
     #musicDock.closed .mdShelf, #musicDock.closed .mdTitle{display:none}
+    #friendsDock.closed .fdBody{display:none}
+
+    /* Friends panel internals */
+    .fdRow{display:flex; gap:6px; margin-top:10px}
+    .fdRow input{flex:1; min-width:0; padding:8px 10px; font-size:12.5px}
+    .fdRow button{padding:8px 12px; font-size:12px}
+    .fdStatus{font-size:11px; color:var(--ink-faint); margin-top:7px; min-height:13px}
+    .fdSection{font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin-top:10px}
+    .fdItem{
+      display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-dim);
+      background:rgba(255,255,255,.04); border:1px solid var(--line);
+      border-radius:8px; padding:7px 9px; margin-top:6px;
+    }
+    .fdItem b{color:var(--ink); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .fdBtns{margin-left:auto; display:flex; gap:4px; flex-shrink:0; align-items:center}
+    .fdBtns button{padding:3px 8px; font-size:11px; border-radius:6px}
     .mdHead{
       display:flex; align-items:center; gap:8px;
       font-size:.66rem; letter-spacing:.14em; text-transform:uppercase;
@@ -643,14 +661,31 @@
     <button class="acctBtn" id="soundBtn" aria-label="Toggle ambient sound">🔇</button>
   </div>
 
-  <!-- MUSIC DOCK (immovable CD shelf) -->
-  <div id="musicDock">
-    <div class="mdHead">
-      <span>♫ Music</span>
-      <button class="mdToggle" id="mdToggle" aria-label="Collapse music dock">—</button>
+  <!-- LEFT DOCKS (immovable): Friends above the CD shelf -->
+  <div id="leftDocks">
+    <div id="friendsDock">
+      <div class="mdHead">
+        <span>👥 Friends</span>
+        <button class="mdToggle" id="fdToggle" aria-label="Collapse friends panel">—</button>
+      </div>
+      <div class="fdBody">
+        <div class="fdRow">
+          <input id="fdEmail" type="email" placeholder="friend@email.com" autocomplete="off" />
+          <button class="btnPrimary" id="fdAdd">Add</button>
+        </div>
+        <div class="fdStatus" id="fdStatus"></div>
+        <div id="fdRequests"></div>
+        <div id="fdFriends"></div>
+      </div>
     </div>
-    <div class="mdShelf" id="mdShelf"></div>
-    <div class="mdTitle" id="mdTitle">—</div>
+    <div id="musicDock">
+      <div class="mdHead">
+        <span>♫ Music</span>
+        <button class="mdToggle" id="mdToggle" aria-label="Collapse music dock">—</button>
+      </div>
+      <div class="mdShelf" id="mdShelf"></div>
+      <div class="mdTitle" id="mdTitle">—</div>
+    </div>
   </div>
 
   <!-- DOCUMENTS OVERLAY (Notion-style pages) -->
@@ -658,11 +693,17 @@
     <div class="docsBar">
       <b>Documents</b>
       <div class="mini">Pages autosave · synced to your account</div>
+      <button id="docShare">📤 Share</button>
+      <button id="docExport">Export</button>
+      <button id="docImport">Import</button>
+      <input id="docImportFile" type="file" accept=".html,.htm,.txt,.md" style="display:none" />
       <button id="docsClose">Close</button>
     </div>
     <div class="docsBody">
       <aside class="docsSide">
         <button class="btnPrimary" id="docNew">+ New page</button>
+        <div class="fdSection" id="docSharedHead" style="display:none; margin-top:4px">Shared with you</div>
+        <div id="docShared"></div>
         <div id="docList"></div>
       </aside>
       <div class="docsScroll">
@@ -2077,6 +2118,62 @@
       }
     });
 
+    /* Bridges for sharing + import (used by the Firebase module and file import) */
+    App.getCurrentDoc = ()=>{
+      const p = docsPages.find(x=>x.id===currentDocId);
+      return p ? { title: p.title || "Untitled", html: p.html || "" } : null;
+    };
+    App.importDocPage = (title, html)=>{
+      const clean = String(html || "").replace(/<script[\s\S]*?<\/script>/gi, "");
+      const p = { id: crypto.randomUUID(), title: String(title || "Untitled").slice(0,120), html: clean, ts: Date.now() };
+      docsPages.unshift(p);
+      saveDocs();
+      docsEl.classList.add("open");
+      openDocPage(p.id);
+    };
+
+    /* Export the open page as a standalone .html file */
+    document.getElementById("docExport").addEventListener("click", ()=>{
+      const d = App.getCurrentDoc();
+      if(!d){ alert("Open a page first."); return; }
+      const out = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(d.title)}</title></head><body><h1>${escapeHtml(d.title)}</h1>${d.html}</body></html>`;
+      const blob = new Blob([out], { type:"text/html" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${d.title.replace(/[^\w\- ]+/g,"").trim() || "page"}.html`;
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 1200);
+    });
+
+    /* Import an .html / .txt / .md file as a new page */
+    const docImportFile = document.getElementById("docImportFile");
+    document.getElementById("docImport").addEventListener("click", ()=> docImportFile.click());
+    docImportFile.addEventListener("change", ()=>{
+      const f = docImportFile.files?.[0];
+      if(!f) return;
+      const rd = new FileReader();
+      rd.onload = ()=>{
+        const txt = String(rd.result || "");
+        let html;
+        if(/^\s*</.test(txt)){
+          const m = txt.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+          html = m ? m[1] : txt;
+        }else{
+          html = txt.split(/\n{2,}/).map(p=>`<p>${escapeHtml(p.trim()).replaceAll("\n","<br>")}</p>`).join("");
+        }
+        App.importDocPage(f.name.replace(/\.(html?|txt|md)$/i,""), html);
+      };
+      rd.readAsText(f);
+      docImportFile.value = "";
+    });
+
+    /* Friends panel collapse */
+    document.getElementById("fdToggle").addEventListener("click", ()=>{
+      const dock = document.getElementById("friendsDock");
+      dock.classList.toggle("closed");
+      document.getElementById("fdToggle").textContent = dock.classList.contains("closed") ? "+" : "—";
+    });
+
     App.dataProviders.docs = {
       get: ()=>docsPages,
       apply: (arr)=>{
@@ -3291,7 +3388,8 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import {
       getFirestore, collection, addDoc, serverTimestamp,
-      query, orderBy, limit, onSnapshot, doc, setDoc, deleteDoc
+      query, orderBy, limit, onSnapshot, doc, setDoc, deleteDoc,
+      where, getDocs
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
     import {
       getAuth, onAuthStateChanged, createUserWithEmailAndPassword,
@@ -3498,6 +3596,189 @@
     };
 
     /* =========================
+       FRIENDS — search by email; requests live in a shared "friendships" collection
+    ========================== */
+    const fdEmail = document.getElementById("fdEmail");
+    const fdAdd = document.getElementById("fdAdd");
+    const fdStatusEl = document.getElementById("fdStatus");
+    const fdRequests = document.getElementById("fdRequests");
+    const fdFriends = document.getElementById("fdFriends");
+    let friendships = [];
+    let friendsUnsub = null, sharedUnsub = null;
+
+    function fdSet(msg){ fdStatusEl.textContent = msg || ""; }
+    function pairId(a,b){ return a < b ? `${a}_${b}` : `${b}_${a}`; }
+    function myFriends(){
+      if(!currentUser) return [];
+      return friendships.filter(f=>f.data.status === "accepted").map(f=>{
+        const other = f.data.uids.find(u=>u !== currentUser.uid);
+        return {
+          uid: other, fid: f.id,
+          name: f.data.names?.[other] || "Friend",
+          email: f.data.emails?.[other] || ""
+        };
+      });
+    }
+
+    function renderFriends(){
+      if(!currentUser){ fdRequests.innerHTML = ""; fdFriends.innerHTML = ""; return; }
+      const incoming = friendships.filter(f=>f.data.status === "pending" && f.data.requestedBy !== currentUser.uid);
+      const outgoing = friendships.filter(f=>f.data.status === "pending" && f.data.requestedBy === currentUser.uid);
+      const friends = myFriends();
+
+      let rq = "";
+      if(incoming.length){
+        rq += `<div class="fdSection">Requests</div>`;
+        incoming.forEach(f=>{
+          const other = f.data.uids.find(u=>u !== currentUser.uid);
+          rq += `<div class="fdItem"><b>${esc(f.data.names?.[other] || "Someone")}</b>
+            <span class="fdBtns">
+              <button class="btnPrimary" data-accept="${esc(f.id)}" title="Accept">✓</button>
+              <button class="btnDanger" data-decline="${esc(f.id)}" title="Decline">✕</button>
+            </span></div>`;
+        });
+      }
+      fdRequests.innerHTML = rq;
+
+      let fh = "";
+      if(friends.length || outgoing.length) fh += `<div class="fdSection">Friends</div>`;
+      friends.forEach(fr=>{
+        fh += `<div class="fdItem" title="${esc(fr.email)}"><b>${esc(fr.name)}</b>
+          <span class="fdBtns"><button class="btnDanger" data-remove="${esc(fr.fid)}" title="Remove friend">✕</button></span></div>`;
+      });
+      outgoing.forEach(f=>{
+        const other = f.data.uids.find(u=>u !== currentUser.uid);
+        fh += `<div class="fdItem" style="opacity:.55"><b>${esc(f.data.names?.[other] || f.data.emails?.[other] || "Pending")}</b>
+          <span class="fdBtns" style="font-size:10.5px; color:var(--ink-faint)">sent</span></div>`;
+      });
+      fdFriends.innerHTML = fh || `<div class="fdStatus" style="margin-top:6px">No friends yet — search an email above.</div>`;
+    }
+
+    async function addFriendByEmail(){
+      if(!currentUser){ fdSet("Sign in first."); return; }
+      const email = fdEmail.value.trim().toLowerCase();
+      if(!email || !email.includes("@")){ fdSet("Enter a valid email."); return; }
+      if(email === (currentUser.email || "").toLowerCase()){ fdSet("That's you."); return; }
+      fdSet("Searching…");
+      try{
+        const qs = await getDocs(query(collection(db, "users"), where("email", "==", email)));
+        if(qs.empty){ fdSet("No NotePro account with that email."); return; }
+        const target = qs.docs[0];
+        const tUid = target.id, tData = target.data();
+        const fid = pairId(currentUser.uid, tUid);
+        if(friendships.some(f=>f.id === fid)){ fdSet("Already added or pending."); return; }
+        await setDoc(doc(db, "friendships", fid), {
+          uids: [currentUser.uid, tUid],
+          names: { [currentUser.uid]: currentUser.displayName || "User", [tUid]: tData.name || "Friend" },
+          emails: { [currentUser.uid]: currentUser.email || "", [tUid]: email },
+          status: "pending",
+          requestedBy: currentUser.uid,
+          ts: serverTimestamp()
+        });
+        fdEmail.value = "";
+        fdSet("Request sent ✓");
+      }catch(e){
+        console.error("Friend add failed:", e);
+        fdSet("Search failed — check Firestore rules.");
+      }
+    }
+    fdAdd.addEventListener("click", addFriendByEmail);
+    fdEmail.addEventListener("keydown", (e)=>{ if(e.key === "Enter") addFriendByEmail(); });
+
+    fdRequests.addEventListener("click", async (e)=>{
+      const acc = e.target.closest("[data-accept]");
+      const dec = e.target.closest("[data-decline]");
+      try{
+        if(acc) await setDoc(doc(db, "friendships", acc.dataset.accept), { status:"accepted" }, { merge:true });
+        if(dec) await deleteDoc(doc(db, "friendships", dec.dataset.decline));
+      }catch(err){ fdSet("Action failed: " + err.message); }
+    });
+    fdFriends.addEventListener("click", async (e)=>{
+      const rem = e.target.closest("[data-remove]");
+      if(!rem) return;
+      if(!confirm("Remove this friend?")) return;
+      try{ await deleteDoc(doc(db, "friendships", rem.dataset.remove)); }
+      catch(err){ fdSet("Remove failed: " + err.message); }
+    });
+
+    function startFriends(user){
+      stopFriends();
+      friendsUnsub = onSnapshot(
+        query(collection(db, "friendships"), where("uids", "array-contains", user.uid)),
+        (snap)=>{ friendships = snap.docs.map(d=>({ id:d.id, data:d.data() })); renderFriends(); },
+        (err)=>console.warn("Friends listen failed:", err)
+      );
+    }
+    function stopFriends(){
+      if(friendsUnsub){ friendsUnsub(); friendsUnsub = null; }
+      friendships = [];
+      renderFriends();
+    }
+
+    /* =========================
+       DOC SHARING — send a page to a friend; they get an inbox in Documents
+    ========================== */
+    const docSharedHead = document.getElementById("docSharedHead");
+    const docSharedList = document.getElementById("docShared");
+    let sharedDocsIn = [];
+
+    function renderShared(){
+      docSharedHead.style.display = sharedDocsIn.length ? "block" : "none";
+      docSharedList.innerHTML = sharedDocsIn.map(s=>`
+        <div class="docItem" title="from ${esc(s.data.fromName || "a friend")}">
+          <span>📩 ${esc(s.data.title || "Untitled")}</span>
+          <button class="docDel" data-take="${esc(s.id)}" title="Add to my pages">＋</button>
+          <button class="docDel" data-toss="${esc(s.id)}" title="Dismiss">✕</button>
+        </div>`).join("");
+    }
+    docSharedList.addEventListener("click", async (e)=>{
+      const take = e.target.closest("[data-take]");
+      const toss = e.target.closest("[data-toss]");
+      const id = take?.dataset.take || toss?.dataset.toss;
+      if(!id) return;
+      const s = sharedDocsIn.find(x=>x.id === id);
+      try{
+        if(take && s) window.App.importDocPage(s.data.title || "Untitled", s.data.html || "");
+        await deleteDoc(doc(db, "sharedDocs", id));
+      }catch(err){ alert("Failed: " + err.message); }
+    });
+    function startShared(user){
+      stopShared();
+      sharedUnsub = onSnapshot(
+        query(collection(db, "sharedDocs"), where("to", "==", user.uid)),
+        (snap)=>{ sharedDocsIn = snap.docs.map(d=>({ id:d.id, data:d.data() })); renderShared(); },
+        (err)=>console.warn("Shared docs listen failed:", err)
+      );
+    }
+    function stopShared(){
+      if(sharedUnsub){ sharedUnsub(); sharedUnsub = null; }
+      sharedDocsIn = [];
+      renderShared();
+    }
+
+    document.getElementById("docShare").addEventListener("click", async ()=>{
+      if(!currentUser){ alert("Sign in first."); return; }
+      const d = window.App.getCurrentDoc();
+      if(!d){ alert("Open a page first."); return; }
+      const friends = myFriends();
+      if(!friends.length){ alert("Add a friend first — Friends panel, bottom-left."); return; }
+      const list = friends.map((f,i)=>`${i+1}. ${f.name}`).join("\n");
+      const pick = prompt(`Share "${d.title}" with which friend?\n\n${list}\n\nEnter a number:`);
+      const idx = parseInt(pick, 10) - 1;
+      if(!isFinite(idx) || !friends[idx]) return;
+      try{
+        await addDoc(collection(db, "sharedDocs"), {
+          to: friends[idx].uid,
+          from: currentUser.uid,
+          fromName: currentUser.displayName || "A friend",
+          title: d.title, html: d.html,
+          ts: serverTimestamp()
+        });
+        alert(`Shared with ${friends[idx].name} ✓`);
+      }catch(err){ alert("Share failed: " + err.message); }
+    });
+
+    /* =========================
        ACCOUNT + AUTH (same Firebase project/database as chat)
     ========================== */
     const acctBtn       = document.getElementById("acctBtn");
@@ -3638,10 +3919,14 @@
         acctMenu.classList.remove("open");
         stopSync();
         stopPresence();
+        stopFriends();
+        stopShared();
         if(window.App.applyScene) window.App.applyScene("galaxy");
         window.scrollTo(0, 0);
       }else{
         startSync(user);
+        startFriends(user);
+        startShared(user);
         const scene = document.getElementById("bgScene")?.value || "galaxy";
         if(window.App.applyScene) window.App.applyScene(scene);
       }
