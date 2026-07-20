@@ -1,0 +1,12 @@
+{
+  "name": "Memoria NotePro",
+  "short_name": "NotePro",
+  "description": "Calendar, tasks, notes, files, and chat — one quiet scrolling workspace.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#050512",
+  "theme_color": "#050512",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
