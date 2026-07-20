@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Memoria NotePro — Workspace</title>
+  <meta name="theme-color" content="#050512" />
+  <link rel="manifest" href="manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -78,24 +80,28 @@
         linear-gradient(to bottom, rgba(0,0,0,.30), transparent 18%, transparent 82%, rgba(0,0,0,.35));
     }
 
-    /* Background scenes — only one is display:block at a time */
+    /* Background scenes — only one is display:block at a time (galaxy is the default) */
     #forest, #galaxy{position:fixed; inset:0; z-index:-5}
-    #forest{display:block}
-    #galaxy{display:none}
+    #forest{display:none}
+    #galaxy{display:block}
+
+    /* Ambient sound toggle (bottom-right) */
+    #sound{position:fixed; bottom:1rem; right:1.4rem; z-index:60}
 
     /* Right-edge scroll indicator (from CURRENT.html) */
     #rail{
       position:fixed; right:1.4rem; top:50%; transform:translateY(-50%);
-      z-index:50; display:flex; flex-direction:column; gap:.6rem;
+      z-index:50; display:flex; flex-direction:column; gap:.75rem;
       max-height:88vh; overflow:hidden;
     }
     #rail a{
-      width:7px; height:7px; border-radius:50%;
-      background:rgba(255,255,255,.25); display:block; position:relative;
+      width:12px; height:12px; border-radius:50%;
+      background:rgba(255,255,255,.28); display:block; position:relative;
       transition: background .3s, transform .3s;
       cursor:pointer;
     }
-    #rail a.active{background:var(--accent); transform:scale(1.6)}
+    #rail a:hover{background:rgba(255,255,255,.55)}
+    #rail a.active{background:var(--accent); transform:scale(1.45)}
     #rail a.hasUnread{background:#ef4444}
     #rail a::after{
       content:attr(data-label); position:absolute; right:1.2rem; top:50%;
@@ -134,6 +140,156 @@
     .acctMenu.open{display:block}
     .acctName{font-weight:600; font-size:14px}
     .acctEmail{font-size:12px; color:var(--muted); margin-top:2px; word-break:break-all}
+
+    /* TOP TOOLS (Focus + Documents, left of the account icon) */
+    #topTools{position:fixed; top:1rem; right:calc(1.4rem + 52px); z-index:60; display:flex; gap:8px}
+    #topTools button{
+      height:40px; border-radius:99px; padding:0 16px;
+      display:flex; align-items:center; gap:7px; font-size:13px; font-weight:500;
+      background:rgba(16,17,26,.75); border:1px solid var(--line);
+      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      color:var(--text);
+    }
+    body.gated #topTools{display:none}
+
+    /* FOCUS TAB — full-screen locked session */
+    #focusTab{
+      position:fixed; inset:0; z-index:150000; background:#04050c;
+      display:none; align-items:center; justify-content:center; overflow:hidden;
+    }
+    #focusTab.open{display:flex}
+    #growCanvas{position:absolute; inset:0; width:100%; height:100%}
+    .ftInner{position:relative; z-index:2; text-align:center; padding:20px; max-width:640px}
+    .ftKicker{font-size:.68rem; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); font-weight:600}
+    .ftTitle{font-family:var(--serif); font-size:clamp(26px,4.5vw,38px); font-weight:600; margin:10px 0 6px}
+    .ftTime{
+      font-family:var(--serif); font-size:clamp(70px,14vw,150px); font-weight:600;
+      line-height:1; font-variant-numeric:tabular-nums;
+      text-shadow:0 10px 50px rgba(0,0,0,.6); margin:14px 0 8px;
+    }
+    .ftSub{font-family:var(--serif); font-style:italic; color:var(--ink-dim); font-size:15px}
+    .ftChoices{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:18px 0}
+    .ftChoice{padding:10px 16px; border-radius:10px; font-size:13.5px}
+    .ftChoice.sel{background:var(--accent-glow); border-color:var(--accent); color:var(--ink)}
+    .ftDur{width:96px; text-align:center}
+    .ftHidden{display:none !important}
+
+    /* MUSIC DOCK — immovable CD shelf (bottom-left) */
+    #musicDock{
+      position:fixed; left:1.2rem; bottom:1rem; z-index:60;
+      width:236px;
+      background:rgba(15,16,24,.85); border:1px solid var(--line);
+      border-radius:14px; box-shadow:var(--shadow);
+      backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+      padding:12px; user-select:none;
+    }
+    body.gated #musicDock{display:none}
+    #musicDock.closed{width:auto}
+    #musicDock.closed .mdShelf, #musicDock.closed .mdTitle{display:none}
+    .mdHead{
+      display:flex; align-items:center; gap:8px;
+      font-size:.66rem; letter-spacing:.14em; text-transform:uppercase;
+      color:var(--accent); font-weight:600;
+    }
+    .mdHead .mdToggle{margin-left:auto; border:none; background:transparent; color:var(--ink-faint); cursor:pointer; padding:2px 6px; font-size:12px}
+    .mdShelf{display:flex; gap:10px; overflow-x:auto; padding:10px 2px 4px}
+    .cd{
+      width:48px; height:48px; border-radius:50%; flex-shrink:0; cursor:pointer; position:relative;
+      background: conic-gradient(from 0deg, #c9c9d4, #8f8fa8 12%, #e8e8f2 25%, #9a9ab2 40%, #dcdce8 55%, #8f8fa8 70%, #e0e0ec 85%, #c9c9d4);
+      border:1px solid rgba(255,255,255,.25);
+      transition: box-shadow .2s ease;
+    }
+    .cd::after{content:''; position:absolute; inset:37%; border-radius:50%; background:#0d0e18; border:2px solid rgba(255,255,255,.35)}
+    .cd:hover{box-shadow:0 0 10px rgba(255,255,255,.18)}
+    .cd.playing{animation:cdSpin 2.4s linear infinite; box-shadow:0 0 16px var(--accent-glow)}
+    @keyframes cdSpin{to{transform:rotate(360deg)}}
+    .mdTitle{font-size:11.5px; color:var(--ink-dim); margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+    .mdEmpty{font-size:11.5px; color:var(--ink-faint); line-height:1.55; padding-top:8px}
+
+    /* DOCUMENTS overlay (Notion-style pages) */
+    #docs{position:fixed; inset:0; z-index:20000; background:#0b0c14; display:none; flex-direction:column}
+    #docs.open{display:flex}
+    .docsBar{display:flex; align-items:center; gap:12px; padding:12px 18px; border-bottom:1px solid var(--line)}
+    .docsBar b{font-family:var(--serif); font-size:19px; font-weight:600}
+    .docsBar .mini{margin-right:auto}
+    .docsBody{flex:1; display:flex; min-height:0}
+    .docsSide{width:232px; border-right:1px solid var(--line); padding:12px; display:flex; flex-direction:column; gap:8px; overflow:auto; flex-shrink:0}
+    .docItem{
+      padding:8px 10px; border-radius:8px; cursor:pointer; font-size:13.5px; color:var(--ink-dim);
+      display:flex; gap:8px; align-items:center;
+    }
+    .docItem span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .docItem.sel{background:rgba(167,139,250,.14); color:var(--ink)}
+    .docItem .docDel{margin-left:auto; border:none; background:transparent; color:var(--ink-faint); cursor:pointer; font-size:12px; padding:0 4px; flex-shrink:0}
+    .docItem .docDel:hover{color:#f87171}
+    .docsScroll{flex:1; overflow:auto}
+    .docsMain{max-width:820px; margin:0 auto; width:100%; padding:36px 40px 80px}
+    #docTitle{width:100%; background:transparent; border:none; border-radius:0; font-family:var(--serif); font-size:34px; font-weight:600; color:var(--ink); padding:0 0 8px}
+    #docTitle:focus{box-shadow:none}
+    .docTools{
+      display:flex; gap:6px; flex-wrap:wrap; padding:10px 0 12px;
+      border-bottom:1px solid var(--line); margin-bottom:20px;
+      position:sticky; top:0; background:#0b0c14; z-index:2;
+    }
+    .docTools button{padding:6px 11px; font-size:12px; border-radius:8px}
+    #docEditor{min-height:55vh; outline:none; line-height:1.75; font-size:15px; color:var(--ink); font-weight:300}
+    #docEditor:empty::before{content:'Start writing…'; color:var(--ink-faint)}
+    #docEditor h1{font-family:var(--serif); font-size:28px; font-weight:600; margin:22px 0 8px}
+    #docEditor h2{font-family:var(--serif); font-size:22px; font-weight:600; margin:18px 0 6px}
+    #docEditor blockquote{border-left:3px solid var(--accent); margin:12px 0; padding:4px 14px; color:var(--ink-dim); font-style:italic}
+    #docEditor hr{border:none; border-top:1px solid var(--line); margin:18px 0}
+    #docEditor ul, #docEditor ol{padding-left:24px; margin:8px 0}
+    @media (max-width:720px){
+      .docsSide{width:150px}
+      .docsMain{padding:20px 16px 60px}
+      #docsLaunch{right:calc(1.2rem + 50px)}
+    }
+
+    /* INTRO PAGE (what signed-out visitors see; the workspace unlocks after sign-in) */
+    #intro{display:none; position:relative; z-index:1}
+    body.gated #intro{display:block}
+    body.gated main{display:none}
+    body.gated #rail{display:none}
+
+    .introPanel{min-height:100vh; display:flex; align-items:center; padding:14vh 2rem}
+    .introPanel:nth-of-type(even){justify-content:flex-end}
+    .introPanel:nth-of-type(odd){justify-content:flex-start}
+    .introPanel.introHero{justify-content:center; text-align:center}
+
+    .introCard{
+      max-width:560px; width:100%;
+      background: var(--paper);
+      border:1px solid var(--line);
+      border-radius:14px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding:2.6rem 2.4rem;
+      opacity:0; transform:translateY(16px);
+      transition: opacity .6s cubic-bezier(.2,.6,.2,1), transform .6s cubic-bezier(.2,.6,.2,1);
+    }
+    .introCard.visible{opacity:1; transform:translateY(0)}
+    .introCard h2{margin:0 0 .4rem; font-family:var(--serif); font-weight:600; font-size:26px; letter-spacing:.01em}
+    .introLede{font-family:var(--serif); font-style:italic; color:var(--ink-dim); margin:0 0 1.1rem; font-size:1.05rem}
+    .introCard p{margin:0 0 .9rem; font-size:.92rem; color:var(--ink-dim); line-height:1.7}
+    .introCard p:last-child{margin-bottom:0}
+    .introCard p b{color:var(--ink); font-weight:500}
+
+    .introHero .heroTitle{font-family:var(--serif); font-weight:600; font-size:clamp(44px, 7vw, 84px); line-height:1.05}
+    .introHero .heroTitle em{font-style:italic; color:var(--accent)}
+    .introHero .heroSub{margin:16px auto 0; font-family:var(--serif); font-style:italic; color:var(--muted); font-size:clamp(14px, 2.2vw, 19px); max-width:52ch}
+
+    @media (max-width:720px){
+      .introPanel{padding:10vh 1rem; justify-content:center !important}
+    }
+
+    /* OAuth buttons */
+    .oauthBtn{display:flex; align-items:center; justify-content:center; gap:10px; width:100%; font-size:14px}
+    .authDivider{
+      display:flex; align-items:center; gap:10px;
+      color:var(--ink-faint); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    }
+    .authDivider::before, .authDivider::after{content:''; flex:1; border-top:1px solid var(--line)}
 
     /* TO-DO */
     .todoItem{display:flex; align-items:center; gap:12px; padding:12px 14px}
@@ -369,6 +525,59 @@
     .termLine{color: rgba(255,255,255,.86)}
     .termDim{color: rgba(255,255,255,.55)}
 
+    /* UP NEXT + FOCUS TIMER (home) */
+    .homeExtras{margin-top:2.4rem; display:flex; flex-direction:column; gap:16px; align-items:center; opacity:0; animation: rise .9s .65s forwards}
+    .upNext{display:flex; flex-direction:column; gap:6px; width:min(430px, 86vw)}
+    .upNextRow{
+      display:flex; align-items:center; gap:10px; font-size:13px; color:var(--ink-dim);
+      background:rgba(14,15,26,.45); border:1px solid var(--line); border-radius:10px;
+      padding:8px 12px; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+      text-align:left;
+    }
+    .upNextRow .unTime{color:var(--accent); font-weight:600; font-size:11.5px; min-width:56px; text-transform:uppercase; letter-spacing:.04em}
+    .upNextRow.overdue .unTime{color:#f87171}
+    .upNextEmpty{font-size:12px; color:var(--ink-faint); text-align:center}
+    .focusWrap{display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center}
+    .focusTime{font-family:var(--serif); font-size:28px; font-weight:600; min-width:92px; text-align:center; font-variant-numeric:tabular-nums}
+    .focusWrap button{padding:7px 12px; font-size:12px; border-radius:9px}
+
+    /* TODO due chip */
+    .dueChip{font-size:11px; color:var(--ink-faint); border:1px solid var(--line); padding:3px 9px; border-radius:99px; white-space:nowrap}
+    .todoItem.overdue .dueChip{color:#f87171; border-color:rgba(239,68,68,.4)}
+    .calDot.dueDot{background:#f87171}
+
+    /* COMMAND PALETTE */
+    #palette{
+      position:fixed; inset:0; z-index:100000; display:none;
+      align-items:flex-start; justify-content:center; padding:14vh 16px 16px;
+      background:rgba(0,0,0,.55); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);
+    }
+    #palette.show{display:flex}
+    .palCard{width:min(560px, 100%); background:rgba(15,16,24,.97); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); overflow:hidden}
+    #palInput{width:100%; border:none; border-radius:0; background:transparent; padding:16px 18px; font-size:15px; border-bottom:1px solid var(--line)}
+    #palInput:focus{box-shadow:none; border-color:var(--line)}
+    .palList{max-height:320px; overflow:auto; padding:6px}
+    .palItem{display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:9px; cursor:pointer; font-size:13.5px; color:var(--ink-dim)}
+    .palItem b{color:var(--ink); font-weight:500}
+    .palItem .palKind{margin-left:auto; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint)}
+    .palItem.sel, .palItem:hover{background:rgba(167,139,250,.14); color:var(--ink)}
+    .palEmpty{padding:16px; font-size:13px; color:var(--ink-faint); text-align:center}
+
+    /* FLASHCARDS */
+    .flashCard{
+      min-height:220px; display:flex; align-items:center; justify-content:center; text-align:center;
+      padding:28px; border:1px solid var(--line); border-radius:14px; background:rgba(255,255,255,.04);
+      cursor:pointer; font-size:1.15rem; line-height:1.6; user-select:none;
+    }
+    .flashFront{font-family:var(--serif); font-size:1.5rem; color:var(--ink-dim)}
+    .flashMeta{font-size:12px; color:var(--muted); margin-bottom:10px}
+
+    /* CHAT message rows */
+    .chatMsg{display:flex; gap:6px; align-items:baseline}
+    .chatMsg .msgTxt{flex:1; overflow-wrap:anywhere}
+    .msgDel{border:none; background:transparent; color:var(--ink-faint); cursor:pointer; padding:0 4px; font-size:12px}
+    .msgDel:hover{color:#f87171; filter:none; border:none}
+
     /* MODAL PREVIEW */
     .modal{
       position:fixed; inset:0;
@@ -393,12 +602,251 @@
   </style>
 </head>
 
-<body>
+<body class="gated">
   <canvas id="forest"></canvas>
   <canvas id="galaxy"></canvas>
   <div id="vignette"></div>
   <div id="progress"></div>
   <nav id="rail" aria-label="Sections"></nav>
+
+  <!-- ACCOUNT (top-right) -->
+  <div id="account">
+    <button class="acctBtn" id="acctBtn" aria-label="Account">👤</button>
+    <div class="acctMenu" id="acctMenu">
+      <div id="acctSignedOut">
+        <div class="mini" style="margin-bottom:10px">Not signed in</div>
+        <button class="btnPrimary" id="acctOpenAuth" style="width:100%">Sign in / Create account</button>
+      </div>
+      <div id="acctSignedIn" style="display:none">
+        <div class="acctName" id="acctName">—</div>
+        <div class="acctEmail" id="acctEmail">—</div>
+        <hr>
+        <div class="mini" style="margin-bottom:6px">Display name</div>
+        <div class="row">
+          <input id="acctNewName" style="flex:1; min-width:0" placeholder="New display name" />
+          <button class="smallBtn" id="acctRename">Save</button>
+        </div>
+        <hr>
+        <button class="btnDanger" id="acctSignOut" style="width:100%">Sign out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOP TOOLS (left of the account icon) -->
+  <div id="topTools">
+    <button id="ftLaunch" aria-label="Open Focus session">⏳ Focus</button>
+    <button id="docsBtn" aria-label="Open Documents">📄 Documents</button>
+  </div>
+
+  <!-- AMBIENT SOUND TOGGLE -->
+  <div id="sound">
+    <button class="acctBtn" id="soundBtn" aria-label="Toggle ambient sound">🔇</button>
+  </div>
+
+  <!-- MUSIC DOCK (immovable CD shelf) -->
+  <div id="musicDock">
+    <div class="mdHead">
+      <span>♫ Music</span>
+      <button class="mdToggle" id="mdToggle" aria-label="Collapse music dock">—</button>
+    </div>
+    <div class="mdShelf" id="mdShelf"></div>
+    <div class="mdTitle" id="mdTitle">—</div>
+  </div>
+
+  <!-- DOCUMENTS OVERLAY (Notion-style pages) -->
+  <div id="docs">
+    <div class="docsBar">
+      <b>Documents</b>
+      <div class="mini">Pages autosave · synced to your account</div>
+      <button id="docsClose">Close</button>
+    </div>
+    <div class="docsBody">
+      <aside class="docsSide">
+        <button class="btnPrimary" id="docNew">+ New page</button>
+        <div id="docList"></div>
+      </aside>
+      <div class="docsScroll">
+        <main class="docsMain">
+          <input id="docTitle" placeholder="Untitled" autocomplete="off" />
+          <div class="docTools">
+            <button data-cmd="formatBlock" data-val="h1">H1</button>
+            <button data-cmd="formatBlock" data-val="h2">H2</button>
+            <button data-cmd="formatBlock" data-val="p">Text</button>
+            <button data-cmd="bold"><b>B</b></button>
+            <button data-cmd="italic"><i>I</i></button>
+            <button data-cmd="underline"><u>U</u></button>
+            <button data-cmd="insertUnorderedList">• List</button>
+            <button data-cmd="insertOrderedList">1. List</button>
+            <button data-cmd="formatBlock" data-val="blockquote">❝ Quote</button>
+            <button data-cmd="insertHTML" data-val="<hr>">— Divider</button>
+          </div>
+          <div id="docEditor" contenteditable="true" spellcheck="true"></div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOCUS TAB (locked full-screen session) -->
+  <div id="focusTab">
+    <canvas id="growCanvas"></canvas>
+    <div class="ftInner">
+      <div id="ftSetup">
+        <div class="ftKicker">Focus Session</div>
+        <div class="ftTitle">Grow something while you work</div>
+        <p class="mini">Pick a length and a world. Once you begin, <b>there is no way out</b> until the timer ends.</p>
+        <div class="ftChoices" id="ftDurs">
+          <button class="ftChoice" data-min="15">15 min</button>
+          <button class="ftChoice sel" data-min="25">25 min</button>
+          <button class="ftChoice" data-min="45">45 min</button>
+          <button class="ftChoice" data-min="60">60 min</button>
+          <input id="ftCustom" class="ftDur" type="number" min="1" max="180" placeholder="Custom" />
+        </div>
+        <div class="ftChoices" id="ftScenes">
+          <button class="ftChoice sel" data-scene="forest">🌲 A forest grows</button>
+          <button class="ftChoice" data-scene="galaxy">🌌 A galaxy forms</button>
+        </div>
+        <div class="row" style="justify-content:center; gap:10px">
+          <button class="btnPrimary" id="ftStart" style="padding:12px 28px">Begin</button>
+          <button id="ftCancel">Cancel</button>
+        </div>
+      </div>
+      <div id="ftRun" class="ftHidden">
+        <div class="ftKicker" id="ftRunKicker">The forest is growing</div>
+        <div class="ftTime" id="ftTime">25:00</div>
+        <div class="ftSub" id="ftSub">Stay here. Every minute adds branches.</div>
+      </div>
+      <div id="ftDone" class="ftHidden">
+        <div class="ftKicker">Session complete</div>
+        <div class="ftTitle" id="ftDoneMsg" style="font-size:clamp(30px,6vw,52px)">Your forest stands tall.</div>
+        <button class="btnPrimary" id="ftClose" style="margin-top:18px; padding:12px 28px">Return to workspace</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTRO (what visitors see before signing in) -->
+  <div id="intro">
+    <section class="introPanel introHero">
+      <div>
+        <div class="kicker">Introducing</div>
+        <div class="heroTitle">Memoria <em>NotePro</em></div>
+        <p class="heroSub">Calendar, tasks, notes, files, and chat — one quiet, scrolling
+        workspace that lives in your browser and travels through a galaxy.</p>
+        <button class="btnPrimary" id="gateSignIn" style="margin-top:26px">Sign in / Create account</button>
+        <div id="authLoadWarn" class="mini" style="display:none; color:#f2a7a7; margin-top:14px">
+          Sign-in service couldn't load — check your internet connection and refresh.
+        </div>
+        <div class="scrollcue" style="margin-top:2.6rem">Scroll to explore</div>
+      </div>
+    </section>
+
+    <section class="introPanel">
+      <div class="introCard">
+        <div class="kicker">§ 01 · The Idea</div>
+        <h2>Everything, one page</h2>
+        <p class="introLede">No tabs. No app-switching. One scroll.</p>
+        <p>NotePro gathers a <b>calendar</b>, a <b>to-do list</b>, <b>study notes</b>, a
+        <b>file vault</b>, and a <b>chat room</b> into a single vertical workspace.
+        Scroll from your morning schedule to tonight's homework without ever leaving the page.</p>
+      </div>
+    </section>
+
+    <section class="introPanel">
+      <div class="introCard">
+        <div class="kicker">§ 02 · Home</div>
+        <h2>A clock, not a feed</h2>
+        <p class="introLede">The workspace opens on time itself.</p>
+        <p>Your day begins with a large, quiet clock and today's date — no notifications,
+        no noise, nothing begging for attention. A soft cue simply invites you to scroll.</p>
+      </div>
+    </section>
+
+    <section class="introPanel">
+      <div class="introCard">
+        <div class="kicker">§ 03 · Calendar</div>
+        <h2>Plans with places attached</h2>
+        <p class="introLede">Events that know where and when.</p>
+        <p>Add an event with a time, a <b>web link</b>, and a <b>location</b>. Locations turn
+        into one-tap <b>Google Maps</b> directions; links keep meeting URLs a click away.
+        Days with plans get a quiet dot on the month grid.</p>
+      </div>
+    </section>
+
+    <section class="introPanel">
+      <div class="introCard">
+        <div class="kicker">§ 04 · To-Do</div>
+        <h2>Capture, check, clear</h2>
+        <p class="introLede">Small tasks, satisfying strikethroughs.</p>
+        <p>Type a task, press <b>Enter</b>, and it's captured. Check it off to strike it
+        through, then sweep everything finished away with one <b>Clear Completed</b>.
+        A running count keeps score of open versus done.</p>
+      </div>
+    </section>
+
+    <section class="introPanel">
+      <div class="introCard">
+        <div class="kicker">§ 05 · Study Notes</div>
+        <h2>Key points that stick</h2>
+        <p class="introLede">One bullet per line, sorted by subject.</p>
+        <p>Pick a subject, name the topic, and write your key points — each line becomes a
+        clean bullet on a dated card. Perfect for revision the night before a test.</p>
+      </div>
+    </section>
+
+    <section class="introPanel">
+      <div class="introCard">
+        <div class="kicker">§ 06 · Chat</div>
+        <h2>Real names, tiny rooms</h2>
+        <p class="introLede">A room code shared between friends.</p>
+        <p>Agree on a room code, open the site, and talk. Every message travels under your
+        <b>account name</b> — no impostors, no renaming mid-conversation. A red dot on the
+        navigation rail tells you when something arrived while you were elsewhere.</p>
+      </div>
+    </section>
+
+    <section class="introPanel">
+      <div class="introCard">
+        <div class="kicker">§ 07 · File Vault</div>
+        <h2>Files that never leave</h2>
+        <p class="introLede">Stored in your browser, not on a server.</p>
+        <p>Save PDFs, music, and video into the vault and they stay on <b>your device</b>.
+        Preview PDF, MP3, and MP4 right on the page; download anything back out whenever
+        you need it.</p>
+      </div>
+    </section>
+
+    <section class="introPanel">
+      <div class="introCard">
+        <div class="kicker">§ 08 · Terminal</div>
+        <h2>Drive it with words</h2>
+        <p class="introLede">For keyboard people.</p>
+        <p>Type <b>goto chat</b> to jump across the page, <b>wallpaper neon</b> to retheme
+        the scene, or <b>stats</b> to count your notes, tasks, and files — a tiny command
+        line built into the workspace.</p>
+      </div>
+    </section>
+
+    <section class="introPanel">
+      <div class="introCard">
+        <div class="kicker">§ 09 · Scenes</div>
+        <h2>A background that breathes</h2>
+        <p class="introLede">A dotted forest, or a spiral galaxy.</p>
+        <p>Behind everything runs a living 3D scene — a firefly-lit <b>forest</b> or this
+        <b>galaxy</b> — that glides as you scroll, with matching <b>ambient sound</b> you can
+        switch on from the corner. Six color themes tint it to taste.</p>
+      </div>
+    </section>
+
+    <section class="introPanel">
+      <div class="introCard">
+        <div class="kicker">§ 10 · Your Account</div>
+        <h2>One identity, everywhere</h2>
+        <p class="introLede">Sign up once — with email, Google, or Apple.</p>
+        <p>Your display name follows you into chat, so friends always know it's really you.
+        Rename yourself or sign out any time from the account menu in the corner.</p>
+        <button class="btnPrimary" id="introSignUp" style="margin-top:8px">Create your account</button>
+      </div>
+    </section>
+  </div>
 
   <main>
     <!-- HOME -->
@@ -408,6 +856,15 @@
           <div class="homeKicker">Memoria NotePro · Local-First Workspace</div>
           <div class="time" id="t">--:--</div>
           <div class="sub" id="d">—</div>
+          <div class="homeExtras">
+            <div class="upNext" id="upNext"></div>
+            <div class="focusWrap">
+              <div class="focusTime" id="focusTime">25:00</div>
+              <button class="btnPrimary" id="focusStart">Start</button>
+              <button id="focusReset">Reset</button>
+              <button id="focusMode" title="Switch between focus and break">Focus 25</button>
+            </div>
+          </div>
           <div class="scrollcue">Scroll for calendar, notes &amp; more</div>
         </div>
       </div>
@@ -452,6 +909,28 @@
             <div class="list" id="evList"></div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- TO-DO -->
+    <section class="panel" id="todo">
+      <div class="window">
+        <div class="kicker">To-Do</div>
+        <div class="windowHead">
+          <h2>To-Do List</h2>
+          <div class="mini" id="todoSummary">0 open · 0 done</div>
+        </div>
+
+        <div class="row">
+          <input id="todoInput" style="flex:1" placeholder="Add a task..." />
+          <input id="todoDue" type="date" title="Due date (optional)" />
+          <button class="btnPrimary" id="todoAdd">Add Task</button>
+          <button class="btnDanger btnAway" id="todoClearDone">Clear Completed</button>
+        </div>
+
+        <hr>
+
+        <div class="list" id="todoList"></div>
       </div>
     </section>
 
@@ -500,13 +979,13 @@
         </div>
 
         <div class="row">
-          <input id="chatName" placeholder="Your name (e.g., Umesh)" />
           <input id="chatRoom" placeholder="Room code (e.g., memoria)" />
           <button class="btnPrimary" id="chatConnect">Connect</button>
+          <div class="mini btnAway" id="chatAs">Sign in (top-right) to chat</div>
         </div>
 
         <div class="mini" style="margin-top:8px">
-          Share the same <b>Room code</b> with your friend. Both open this website.
+          Share the same <b>Room code</b> with your friend. Messages are sent under your account name.
         </div>
 
         <hr>
@@ -590,8 +1069,8 @@
           <div style="min-width:180px">
             <div class="mini">Background scene</div>
             <select id="bgScene">
-              <option value="forest">Forest</option>
               <option value="galaxy">Galaxy</option>
+              <option value="forest">Forest</option>
             </select>
           </div>
           <div class="mini" style="flex:1; min-width:220px">
@@ -627,9 +1106,26 @@
         <div class="mini" style="margin-top:10px">
           Theme tints the Forest scene's fog and color. The Galaxy scene keeps its own fixed palette.
         </div>
+
+        <hr>
+
+        <div class="row">
+          <button id="btnExport">Export Data</button>
+          <button id="btnImport">Import Data</button>
+          <input id="importFile" type="file" accept="application/json" style="display:none" />
+          <div class="mini">Back up your notes, tasks &amp; events to a JSON file — or restore from one.</div>
+        </div>
       </div>
     </section>
   </main>
+
+  <!-- COMMAND PALETTE -->
+  <div id="palette">
+    <div class="palCard">
+      <input id="palInput" placeholder="Search notes, tasks, events, files… (Esc to close)" autocomplete="off" />
+      <div class="palList" id="palList"></div>
+    </div>
+  </div>
 
   <!-- MODAL -->
   <div class="modal" id="modal">
@@ -643,17 +1139,44 @@
     </div>
   </div>
 
+  <!-- AUTH MODAL -->
+  <div class="modal" id="authModal">
+    <div class="modalCard" style="width:min(400px, 100%)">
+      <div class="windowHead" style="margin-bottom:12px">
+        <h2 id="authTitle" style="font-size:18px">Sign in</h2>
+        <div class="spacer"></div>
+        <button id="authClose">Close</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <input id="authName" placeholder="Display name" style="display:none" />
+        <input id="authEmail" type="email" placeholder="Email" autocomplete="email" />
+        <input id="authPassword" type="password" placeholder="Password (6+ characters)" autocomplete="current-password" />
+        <div class="mini" id="authError" style="color:#f2a7a7; display:none"></div>
+        <button class="btnPrimary" id="authSubmit">Sign in</button>
+        <button id="authToggle" style="border:none; background:transparent; color:var(--muted); font-size:13px">New here? Create an account</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     /* =========================
        APP GLOBALS
     ========================== */
     const App = window.App = {
-      views: ["home","calendar","studynotes","chat","vault","terminal","settings"],
+      views: ["home","calendar","todo","studynotes","chat","vault","terminal","settings"],
       showView: null,
       setWallpaper: null,
       setChatUnread: null,
       currentSection: "home",
-      stats: { vaultCount: 0, notesCount: 0, chatUnread: 0 }
+      stats: { vaultCount: 0, notesCount: 0, todoCount: 0, chatUnread: 0 }
+    };
+
+    /* Fan-out after any notes/todos/events change: cloud sync + dependent views.
+       (Function declarations are hoisted, so the late-defined renderers are safe.) */
+    App.notifyData = (type)=>{
+      if(App.pushToCloud) App.pushToCloud(type);
+      try{ renderUpNext(); }catch{}
+      if(type === "todos"){ try{ renderCalendar(); }catch{} }
     };
 
     /* ===== CLOCK ===== */
@@ -692,7 +1215,7 @@
 
     /* ===== RIGHT-EDGE SCROLL RAIL (from CURRENT.html) ===== */
     const RAIL_LABELS = {
-      home: "Home", calendar: "Calendar", studynotes: "Study Notes",
+      home: "Home", calendar: "Calendar", todo: "To-Do", studynotes: "Study Notes",
       chat: "Chat", vault: "Vault", terminal: "Terminal", settings: "Settings"
     };
     const rail = document.getElementById("rail");
@@ -739,7 +1262,7 @@
     window.addEventListener("scroll", updateProgress, {passive:true});
     updateProgress();
 
-    const revealTargets = document.querySelectorAll(".window");
+    const revealTargets = document.querySelectorAll(".window, .introCard");
     const revealObserver = new IntersectionObserver((entries)=>{
       entries.forEach(en=>{ if(en.isIntersecting) en.target.classList.add("visible"); });
     }, {threshold:0.15});
@@ -793,6 +1316,7 @@
     }
     function saveEvents(){
       localStorage.setItem(CAL_KEY, JSON.stringify(calEvents));
+      App.notifyData("events");
     }
 
     function renderCalendar(){
@@ -808,10 +1332,12 @@
       for(let d=1; d<=daysInMonth; d++){
         const dateStr = fmtDate(new Date(y,m,d));
         const has = calEvents.some(e=>e.date===dateStr);
+        const hasDue = (todos || []).some(t=>t.due===dateStr && !t.done);
         const cls = ["calCell"];
         if(dateStr===todayStr) cls.push("today");
         if(dateStr===calSelected) cls.push("selected");
-        html += `<div class="${cls.join(" ")}" data-date="${dateStr}">${d}${has?'<div class="calDot"></div>':''}</div>`;
+        const dots = (has?'<div class="calDot"></div>':'') + (hasDue?'<div class="calDot dueDot"></div>':'');
+        html += `<div class="${cls.join(" ")}" data-date="${dateStr}">${d}${dots}</div>`;
       }
       calDaysEl.innerHTML = html;
       renderEventsForSelected();
@@ -839,17 +1365,21 @@
       calSelectedLabel.textContent = d.toLocaleDateString([], {weekday:"long", month:"long", day:"numeric", year:"numeric"});
 
       const items = calEvents.filter(e=>e.date===calSelected).sort((a,b)=> (a.time||"").localeCompare(b.time||""));
-      if(!items.length){
+      const dueItems = (todos || []).filter(t=>t.due===calSelected && !t.done);
+
+      if(!items.length && !dueItems.length){
         evList.innerHTML = `<div class="mini">No events on this day.</div>`;
         return;
       }
-      evList.innerHTML = items.map(e=>{
+
+      const eventHtml = items.map(e=>{
         const links = [];
         if(e.link) links.push(`<a href="${escapeHtml(e.link)}" target="_blank" rel="noopener">🔗 Link</a>`);
         if(e.location) links.push(`<a href="${escapeHtml(mapsLinkFor(e.location))}" target="_blank" rel="noopener">📍 ${escapeHtml(e.location)}</a>`);
         return `
           <div class="card eventCard" data-id="${escapeHtml(e.id)}">
             <div class="cardActions">
+              <button class="smallBtn" data-act="editEvent">Edit</button>
               <button class="smallBtn btnDanger" data-act="delEvent">Delete</button>
             </div>
             <div class="evTitle">${escapeHtml(e.title)}</div>
@@ -858,20 +1388,49 @@
           </div>
         `;
       }).join("");
+
+      const dueHtml = dueItems.map(t=>`
+        <div class="card">
+          <div class="evTitle">${escapeHtml(t.text)}</div>
+          <div class="evMeta" style="color:#f2a7a7">To-do due this day</div>
+        </div>
+      `).join("");
+
+      evList.innerHTML = eventHtml + dueHtml;
     }
 
+    let editingEventId = null;
+    const evAddBtn = document.getElementById("evAdd");
+
     evList.addEventListener("click", (e)=>{
-      const btn = e.target.closest("button[data-act='delEvent']");
+      const btn = e.target.closest("button[data-act]");
       if(!btn) return;
       const card = e.target.closest(".eventCard");
       if(!card) return;
       const id = card.getAttribute("data-id");
-      calEvents = calEvents.filter(ev=>ev.id!==id);
-      saveEvents();
-      renderCalendar();
+      const act = btn.getAttribute("data-act");
+
+      if(act === "delEvent"){
+        calEvents = calEvents.filter(ev=>ev.id!==id);
+        if(editingEventId === id){ editingEventId = null; evAddBtn.textContent = "Add Event"; }
+        saveEvents();
+        renderCalendar();
+      }
+      if(act === "editEvent"){
+        const ev = calEvents.find(x=>x.id===id);
+        if(!ev) return;
+        editingEventId = id;
+        document.getElementById("evTitle").value = ev.title || "";
+        document.getElementById("evDate").value = ev.date || calSelected;
+        document.getElementById("evTime").value = ev.time || "";
+        document.getElementById("evLink").value = ev.link || "";
+        document.getElementById("evLocation").value = ev.location || "";
+        evAddBtn.textContent = "Save Changes";
+        document.getElementById("evTitle").focus();
+      }
     });
 
-    document.getElementById("evAdd").addEventListener("click", ()=>{
+    evAddBtn.addEventListener("click", ()=>{
       const title = document.getElementById("evTitle").value.trim();
       const date = document.getElementById("evDate").value || calSelected;
       const time = document.getElementById("evTime").value;
@@ -879,7 +1438,14 @@
       const location = document.getElementById("evLocation").value.trim();
       if(!title){ alert("Give the event a title."); return; }
 
-      calEvents.push({ id: crypto.randomUUID(), title, date, time, link, location, ts: Date.now() });
+      if(editingEventId){
+        const ev = calEvents.find(x=>x.id===editingEventId);
+        if(ev) Object.assign(ev, { title, date, time, link, location });
+        editingEventId = null;
+        evAddBtn.textContent = "Add Event";
+      }else{
+        calEvents.push({ id: crypto.randomUUID(), title, date, time, link, location, ts: Date.now() });
+      }
       saveEvents();
       calSelected = date;
       renderCalendar();
@@ -892,6 +1458,106 @@
 
     document.getElementById("evDate").value = calSelected;
     loadEvents();
+
+    /* =========================
+       TO-DO LIST (localStorage)
+    ========================== */
+    const TODO_KEY = "memoria_todos_v1";
+    const todoList = document.getElementById("todoList");
+    const todoInput = document.getElementById("todoInput");
+    const todoDue = document.getElementById("todoDue");
+    const todoSummary = document.getElementById("todoSummary");
+    const todoAddBtn = document.getElementById("todoAdd");
+    var todos = [];   /* var: hoisted so renderCalendar can read it before this line runs */
+    let editingTodoId = null;
+
+    function loadTodos(){
+      try{ todos = JSON.parse(localStorage.getItem(TODO_KEY) || "[]"); }
+      catch{ todos = []; }
+      App.stats.todoCount = todos.length;
+      renderTodos();
+    }
+    function saveTodos(){
+      localStorage.setItem(TODO_KEY, JSON.stringify(todos));
+      App.stats.todoCount = todos.length;
+      App.notifyData("todos");
+    }
+    function dueLabel(due){
+      const d = new Date(due+"T00:00:00");
+      return d.toLocaleDateString([], {month:"short", day:"numeric"});
+    }
+    function renderTodos(){
+      const open = todos.filter(t=>!t.done).length;
+      todoSummary.textContent = `${open} open · ${todos.length - open} done`;
+      if(!todos.length){
+        todoList.innerHTML = `<div class="mini">Nothing to do yet. Add your first task above.</div>`;
+        return;
+      }
+      const todayStr = fmtDate(new Date());
+      todoList.innerHTML = todos.map(t=>{
+        const overdue = !t.done && t.due && t.due < todayStr;
+        return `
+        <div class="card todoItem ${t.done ? "done" : ""} ${overdue ? "overdue" : ""}" data-id="${escapeHtml(t.id)}">
+          <input type="checkbox" data-act="toggleTodo" ${t.done ? "checked" : ""} aria-label="Mark done" />
+          <div class="todoText">${escapeHtml(t.text)}</div>
+          ${t.due ? `<span class="dueChip">${overdue ? "overdue · " : "due "}${escapeHtml(dueLabel(t.due))}</span>` : ""}
+          <button class="smallBtn" data-act="editTodo">Edit</button>
+          <button class="smallBtn btnDanger" data-act="delTodo">Delete</button>
+        </div>
+      `;}).join("");
+    }
+    function addTodo(){
+      const text = todoInput.value.trim();
+      if(!text) return;
+      const due = todoDue.value || "";
+      if(editingTodoId){
+        const t = todos.find(x=>x.id === editingTodoId);
+        if(t){ t.text = text; t.due = due; }
+        editingTodoId = null;
+        todoAddBtn.textContent = "Add Task";
+      }else{
+        todos.unshift({ id: crypto.randomUUID(), text, due, done:false, ts: Date.now() });
+      }
+      saveTodos();
+      renderTodos();
+      todoInput.value = "";
+      todoDue.value = "";
+      todoInput.focus();
+    }
+    todoAddBtn.addEventListener("click", addTodo);
+    todoInput.addEventListener("keydown", (e)=>{ if(e.key === "Enter") addTodo(); });
+    document.getElementById("todoClearDone").addEventListener("click", ()=>{
+      if(!todos.some(t=>t.done)) return;
+      if(!confirm("Remove all completed tasks?")) return;
+      todos = todos.filter(t=>!t.done);
+      saveTodos();
+      renderTodos();
+    });
+    todoList.addEventListener("click", (e)=>{
+      const card = e.target.closest(".todoItem");
+      if(!card) return;
+      const id = card.getAttribute("data-id");
+      const act = e.target.getAttribute("data-act");
+      if(act === "toggleTodo"){
+        const t = todos.find(x=>x.id === id);
+        if(t){ t.done = !t.done; saveTodos(); renderTodos(); }
+      }
+      if(act === "editTodo"){
+        const t = todos.find(x=>x.id === id);
+        if(!t) return;
+        editingTodoId = id;
+        todoInput.value = t.text;
+        todoDue.value = t.due || "";
+        todoAddBtn.textContent = "Save Task";
+        todoInput.focus();
+      }
+      if(act === "delTodo"){
+        todos = todos.filter(x=>x.id !== id);
+        if(editingTodoId === id){ editingTodoId = null; todoAddBtn.textContent = "Add Task"; }
+        saveTodos();
+        renderTodos();
+      }
+    });
 
     /* =========================
        STUDY NOTES (localStorage)
@@ -909,7 +1575,9 @@
     function saveSN(){
       localStorage.setItem(SN_KEY, JSON.stringify(studyNotes));
       App.stats.notesCount = studyNotes.length;
+      App.notifyData("notes");
     }
+    let editingNoteId = null;
     function renderSN(){
       if(!studyNotes.length){
         snList.innerHTML = `<div class="mini">No study notes yet.</div>`;
@@ -921,6 +1589,8 @@
         return `
           <div class="card" data-id="${escapeHtml(n.id)}">
             <div class="cardActions">
+              <button class="smallBtn btnPrimary" data-act="study">Study</button>
+              <button class="smallBtn" data-act="edit">Edit</button>
               <button class="smallBtn btnDanger" data-act="del">Delete</button>
             </div>
             <div class="cardTitle">${escapeHtml(n.subject)} • ${escapeHtml(n.title || "Untitled")}</div>
@@ -937,16 +1607,49 @@
       if(!raw){ alert("Write at least 1 key point (one per line)."); return; }
       const points = raw.split("\n").map(s=>s.trim()).filter(Boolean).slice(0, 30);
 
-      studyNotes.unshift({
-        id: crypto.randomUUID(),
-        subject, title,
-        points,
-        ts: Date.now()
-      });
+      if(editingNoteId){
+        const n = studyNotes.find(x=>x.id === editingNoteId);
+        if(n) Object.assign(n, { subject, title, points, ts: Date.now() });
+        editingNoteId = null;
+        document.getElementById("snSave").textContent = "Save Key Points";
+      }else{
+        studyNotes.unshift({
+          id: crypto.randomUUID(),
+          subject, title,
+          points,
+          ts: Date.now()
+        });
+      }
       saveSN();
       renderSN();
       document.getElementById("snTitle").value = "";
       document.getElementById("snPoints").value = "";
+    }
+
+    /* Flashcards: flip through a note's key points one at a time */
+    function openFlashcards(n){
+      let idx = 0, revealed = false;
+      const total = n.points.length;
+      function draw(){
+        modalBody.innerHTML = `
+          <div class="flashMeta">${escapeHtml(n.subject)} • ${escapeHtml(n.title || "Untitled")} — card ${idx+1} of ${total}</div>
+          <div class="flashCard" id="flashCard">${
+            revealed ? escapeHtml(n.points[idx])
+                     : `<span class="flashFront">Point ${idx+1} — tap to reveal</span>`
+          }</div>
+          <div class="row" style="margin-top:14px">
+            <button id="flashPrev">‹ Prev</button>
+            <button class="btnPrimary" id="flashFlip" style="flex:1">${revealed ? "Hide" : "Reveal"}</button>
+            <button id="flashNext">Next ›</button>
+          </div>`;
+        modalBody.querySelector("#flashCard").onclick = flip;
+        modalBody.querySelector("#flashFlip").onclick = flip;
+        modalBody.querySelector("#flashPrev").onclick = ()=>{ idx = (idx-1+total)%total; revealed = false; draw(); };
+        modalBody.querySelector("#flashNext").onclick = ()=>{ idx = (idx+1)%total; revealed = false; draw(); };
+      }
+      function flip(){ revealed = !revealed; draw(); }
+      showModal("Flashcards", "");
+      draw();
     }
     function delSN(id){
       studyNotes = studyNotes.filter(n=>n.id !== id);
@@ -966,7 +1669,672 @@
       const card = e.target.closest(".card");
       if(!card) return;
       const id = card.getAttribute("data-id");
-      if(btn.getAttribute("data-act")==="del") delSN(id);
+      const act = btn.getAttribute("data-act");
+      const n = studyNotes.find(x=>x.id === id);
+
+      if(act === "del"){
+        if(editingNoteId === id){ editingNoteId = null; document.getElementById("snSave").textContent = "Save Key Points"; }
+        delSN(id);
+      }
+      if(act === "edit" && n){
+        editingNoteId = id;
+        document.getElementById("snSubject").value = n.subject;
+        document.getElementById("snTitle").value = n.title || "";
+        document.getElementById("snPoints").value = (n.points || []).join("\n");
+        document.getElementById("snSave").textContent = "Save Changes";
+        document.getElementById("snTitle").focus();
+      }
+      if(act === "study" && n && n.points && n.points.length){
+        openFlashcards(n);
+      }
+    });
+
+    /* =========================
+       DATA PROVIDERS (cloud sync reads/writes through these)
+    ========================== */
+    App.dataProviders = {
+      events: {
+        get: ()=>calEvents,
+        apply: (arr)=>{ calEvents = Array.isArray(arr)?arr:[]; localStorage.setItem(CAL_KEY, JSON.stringify(calEvents)); renderCalendar(); renderUpNext(); }
+      },
+      todos: {
+        get: ()=>todos,
+        apply: (arr)=>{ todos = Array.isArray(arr)?arr:[]; localStorage.setItem(TODO_KEY, JSON.stringify(todos)); App.stats.todoCount = todos.length; renderTodos(); renderCalendar(); renderUpNext(); }
+      },
+      notes: {
+        get: ()=>studyNotes,
+        apply: (arr)=>{ studyNotes = Array.isArray(arr)?arr:[]; localStorage.setItem(SN_KEY, JSON.stringify(studyNotes)); App.stats.notesCount = studyNotes.length; renderSN(); }
+      }
+    };
+
+    /* =========================
+       UP NEXT (today's events + due tasks, on Home)
+    ========================== */
+    function renderUpNext(){
+      const el = document.getElementById("upNext");
+      if(!el) return;
+      const todayStr = fmtDate(new Date());
+      const evs = calEvents.filter(e=>e.date===todayStr)
+        .sort((a,b)=>(a.time||"").localeCompare(b.time||"")).slice(0,3);
+      const dues = (todos || []).filter(t=>!t.done && t.due && t.due<=todayStr)
+        .sort((a,b)=>a.due.localeCompare(b.due)).slice(0,3);
+
+      let html = "";
+      evs.forEach(e=>{
+        html += `<div class="upNextRow"><span class="unTime">${e.time?escapeHtml(e.time):"today"}</span><span>${escapeHtml(e.title)}</span></div>`;
+      });
+      dues.forEach(t=>{
+        const od = t.due < todayStr;
+        html += `<div class="upNextRow${od?" overdue":""}"><span class="unTime">${od?"overdue":"due"}</span><span>${escapeHtml(t.text)}</span></div>`;
+      });
+      el.innerHTML = html || `<div class="upNextEmpty">Nothing scheduled for today — enjoy the quiet.</div>`;
+    }
+    setInterval(renderUpNext, 60000);
+
+    /* =========================
+       FOCUS TIMER (Pomodoro)
+    ========================== */
+    const focusTimeEl = document.getElementById("focusTime");
+    const focusStartBtn = document.getElementById("focusStart");
+    const focusResetBtn = document.getElementById("focusReset");
+    const focusModeBtn = document.getElementById("focusMode");
+    let focusIsBreak = false, focusTotal = 25*60, focusLeft = focusTotal, focusTick = null;
+
+    function focusFmt(s){ return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`; }
+    function focusRender(){
+      focusTimeEl.textContent = focusFmt(focusLeft);
+      document.title = focusTick ? `${focusFmt(focusLeft)} · Memoria NotePro` : "Memoria NotePro — Workspace";
+    }
+    function focusStop(){
+      clearInterval(focusTick); focusTick = null;
+      focusStartBtn.textContent = "Start";
+      focusRender();
+    }
+    function focusChime(){
+      try{
+        const c = new (window.AudioContext||window.webkitAudioContext)();
+        const g = c.createGain(); g.gain.value = 0.12; g.connect(c.destination);
+        [880, 1108.7, 1318.5].forEach((f,i)=>{
+          const o = c.createOscillator(); o.frequency.value = f; o.connect(g);
+          o.start(c.currentTime + i*0.18); o.stop(c.currentTime + i*0.18 + 0.16);
+        });
+        setTimeout(()=>{ try{ c.close(); }catch{} }, 1000);
+      }catch{}
+    }
+    function focusStartPause(){
+      if(focusTick){ focusStop(); return; }
+      focusStartBtn.textContent = "Pause";
+      focusTick = setInterval(()=>{
+        focusLeft--;
+        if(focusLeft <= 0){
+          focusLeft = 0; focusRender();
+          focusStop(); focusChime();
+          focusLeft = focusTotal;
+          setTimeout(focusRender, 1500);
+          return;
+        }
+        focusRender();
+      }, 1000);
+      focusRender();
+    }
+    function focusSet(mins, isBreak){
+      focusIsBreak = !!isBreak;
+      focusTotal = Math.max(1, Math.round(mins))*60;
+      focusLeft = focusTotal;
+      focusModeBtn.textContent = focusIsBreak ? "Break 5" : "Focus 25";
+      focusStop();
+    }
+    focusStartBtn.addEventListener("click", focusStartPause);
+    focusResetBtn.addEventListener("click", ()=>{ focusLeft = focusTotal; focusStop(); });
+    focusModeBtn.addEventListener("click", ()=> focusSet(focusIsBreak ? 25 : 5, !focusIsBreak));
+    focusRender();
+    App.focusStartMinutes = (m)=>{ focusSet(m, false); focusStartPause(); };
+    App.focusStop = focusStop;
+
+    /* =========================
+       COMMAND PALETTE (Cmd/Ctrl+K)
+    ========================== */
+    const paletteEl = document.getElementById("palette");
+    const palInput = document.getElementById("palInput");
+    const palList = document.getElementById("palList");
+    let palItems = [], palSel = 0;
+
+    function palOpen(){
+      if(document.body.classList.contains("gated")) return;
+      if(document.getElementById("focusTab").classList.contains("open")) return;
+      paletteEl.classList.add("show");
+      palInput.value = "";
+      palBuild("");
+      palInput.focus();
+    }
+    function palClose(){ paletteEl.classList.remove("show"); }
+
+    function palBuild(qRaw){
+      const q = qRaw.trim().toLowerCase();
+      const items = [];
+      App.views.forEach(v=>{
+        const label = RAIL_LABELS[v] || v;
+        if(!q || label.toLowerCase().includes(q))
+          items.push({ kind:"Section", label:`Go to ${label}`, run:()=>showView(v, true) });
+      });
+      if(q){
+        studyNotes.forEach(n=>{
+          const hay = (n.subject+" "+(n.title||"")+" "+(n.points||[]).join(" ")).toLowerCase();
+          if(hay.includes(q)) items.push({ kind:"Note", label:`${n.subject} • ${n.title||"Untitled"}`, run:()=>showView("studynotes", true) });
+        });
+        todos.forEach(t=>{
+          if(t.text.toLowerCase().includes(q))
+            items.push({ kind:"To-do", label:t.text, run:()=>showView("todo", true) });
+        });
+        calEvents.forEach(e=>{
+          if((e.title+" "+(e.location||"")).toLowerCase().includes(q))
+            items.push({ kind:"Event", label:`${e.title} — ${e.date}`, run:()=>{
+              calSelected = e.date;
+              calViewDate = new Date(e.date+"T00:00:00"); calViewDate.setDate(1);
+              renderCalendar();
+              showView("calendar", true);
+            }});
+        });
+        (docsPages || []).forEach(p=>{
+          if((p.title || "untitled").toLowerCase().includes(q))
+            items.push({ kind:"Doc", label:p.title||"Untitled", run:()=>App.openDocs(p.id) });
+        });
+        vaultFiles.forEach(f=>{
+          const nm = ((f.title||"")+" "+(f.name||"")).toLowerCase();
+          if(nm.includes(q)) items.push({ kind:"File", label:f.title||f.name, run:()=>showView("vault", true) });
+        });
+      }
+      palItems = items.slice(0, 12);
+      palSel = 0;
+      palRender();
+    }
+    function palRender(){
+      if(!palItems.length){ palList.innerHTML = `<div class="palEmpty">No matches.</div>`; return; }
+      palList.innerHTML = palItems.map((it,i)=>
+        `<div class="palItem${i===palSel?" sel":""}" data-i="${i}"><b>${escapeHtml(it.label)}</b><span class="palKind">${it.kind}</span></div>`
+      ).join("");
+    }
+    function palRun(i){ const it = palItems[i]; if(!it) return; palClose(); it.run(); }
+
+    palInput.addEventListener("input", ()=>palBuild(palInput.value));
+    palInput.addEventListener("keydown", (e)=>{
+      if(e.key === "ArrowDown"){ e.preventDefault(); palSel = Math.min(palSel+1, palItems.length-1); palRender(); }
+      else if(e.key === "ArrowUp"){ e.preventDefault(); palSel = Math.max(palSel-1, 0); palRender(); }
+      else if(e.key === "Enter"){ palRun(palSel); }
+      else if(e.key === "Escape"){ palClose(); }
+    });
+    palList.addEventListener("click", (e)=>{
+      const it = e.target.closest(".palItem");
+      if(it) palRun(+it.dataset.i);
+    });
+    paletteEl.addEventListener("click", (e)=>{ if(e.target === paletteEl) palClose(); });
+    window.addEventListener("keydown", (e)=>{
+      if((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k"){
+        e.preventDefault();
+        paletteEl.classList.contains("show") ? palClose() : palOpen();
+      }
+    });
+
+    /* =========================
+       EXPORT / IMPORT BACKUP
+    ========================== */
+    document.getElementById("btnExport").addEventListener("click", ()=>{
+      const data = {
+        app:"MemoriaNotePro", version:1, exportedAt:new Date().toISOString(),
+        notes: studyNotes, todos: todos, events: calEvents, docs: docsPages || []
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `memoria-backup-${fmtDate(new Date())}.json`;
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 1200);
+    });
+    const importFile = document.getElementById("importFile");
+    document.getElementById("btnImport").addEventListener("click", ()=> importFile.click());
+    importFile.addEventListener("change", ()=>{
+      const f = importFile.files?.[0];
+      if(!f) return;
+      const rd = new FileReader();
+      rd.onload = ()=>{
+        try{
+          const d = JSON.parse(rd.result);
+          const n = Array.isArray(d.notes)?d.notes:[], t = Array.isArray(d.todos)?d.todos:[], ev = Array.isArray(d.events)?d.events:[], dc = Array.isArray(d.docs)?d.docs:[];
+          if(!confirm(`Import backup? This replaces current data with ${n.length} notes, ${t.length} tasks, ${ev.length} events, ${dc.length} documents.`)){ importFile.value=""; return; }
+          App.dataProviders.notes.apply(n);
+          App.dataProviders.todos.apply(t);
+          App.dataProviders.events.apply(ev);
+          if(App.dataProviders.docs) App.dataProviders.docs.apply(dc);
+          ["notes","todos","events","docs"].forEach(x=>{ if(App.pushToCloud) App.pushToCloud(x); });
+          alert("Backup imported ✅");
+        }catch{
+          alert("That file isn't a valid NotePro backup.");
+        }
+        importFile.value = "";
+      };
+      rd.readAsText(f);
+    });
+
+    /* =========================
+       PWA (only registers when hosted — https or localhost)
+    ========================== */
+    if("serviceWorker" in navigator && (location.protocol === "https:" || ["localhost","127.0.0.1"].includes(location.hostname))){
+      window.addEventListener("load", ()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); });
+    }
+
+    /* =========================
+       MUSIC DOCK — audio files saved in the Vault appear as CDs
+    ========================== */
+    const mdShelf = document.getElementById("mdShelf");
+    const mdTitle = document.getElementById("mdTitle");
+    const musicDockEl = document.getElementById("musicDock");
+    const musicAudio = new Audio();
+    let musicUrl = null, musicPlayingId = null;
+
+    function isAudioFile(f){
+      return (f.type || "").startsWith("audio") || /\.(mp3|m4a|wav|ogg)$/i.test(f.name || "");
+    }
+    function renderMusicDock(){
+      const tracks = (vaultFiles || []).filter(isAudioFile);
+      if(!tracks.length){
+        mdShelf.innerHTML = `<div class="mdEmpty">Save MP3s to the Vault and they'll appear here as CDs.</div>`;
+        mdTitle.textContent = "—";
+        return;
+      }
+      mdShelf.innerHTML = tracks.map(t=>
+        `<div class="cd ${t.id===musicPlayingId?"playing":""}" data-id="${escapeHtml(t.id)}" title="${escapeHtml(t.title||t.name)}"></div>`
+      ).join("");
+      if(!musicPlayingId) mdTitle.textContent = `${tracks.length} track${tracks.length===1?"":"s"} on the shelf`;
+    }
+    function stopMusic(){
+      musicAudio.pause();
+      musicPlayingId = null;
+      if(musicUrl){ try{ URL.revokeObjectURL(musicUrl); }catch{} musicUrl = null; }
+      renderMusicDock();
+    }
+    mdShelf.addEventListener("click", async (e)=>{
+      const cd = e.target.closest(".cd");
+      if(!cd) return;
+      const id = cd.getAttribute("data-id");
+      if(id === musicPlayingId){ stopMusic(); return; }
+      const rec = await IDB.get(id);
+      if(!rec?.blob){ mdTitle.textContent = "Track not found"; return; }
+      if(musicUrl){ try{ URL.revokeObjectURL(musicUrl); }catch{} }
+      musicUrl = URL.createObjectURL(rec.blob);
+      musicAudio.src = musicUrl;
+      try{
+        await musicAudio.play();
+        musicPlayingId = id;
+        mdTitle.textContent = `▶ ${rec.title || rec.name}`;
+      }catch{
+        mdTitle.textContent = "Couldn't play that file";
+      }
+      renderMusicDock();
+    });
+    musicAudio.addEventListener("ended", stopMusic);
+    document.getElementById("mdToggle").addEventListener("click", ()=>{
+      musicDockEl.classList.toggle("closed");
+      document.getElementById("mdToggle").textContent = musicDockEl.classList.contains("closed") ? "+" : "—";
+    });
+
+    /* =========================
+       DOCUMENTS — Notion-style pages (autosaved, cloud-synced)
+    ========================== */
+    const DOCS_KEY = "memoria_docs_v1";
+    var docsPages = [];
+    let currentDocId = null, docSaveTimer = null;
+    const docsEl = document.getElementById("docs");
+    const docListEl = document.getElementById("docList");
+    const docTitleEl = document.getElementById("docTitle");
+    const docEditorEl = document.getElementById("docEditor");
+
+    function loadDocs(){
+      try{ docsPages = JSON.parse(localStorage.getItem(DOCS_KEY) || "[]"); }
+      catch{ docsPages = []; }
+      renderDocList();
+    }
+    function saveDocs(){
+      localStorage.setItem(DOCS_KEY, JSON.stringify(docsPages));
+      if(App.pushToCloud) App.pushToCloud("docs");
+    }
+    function renderDocList(){
+      docListEl.innerHTML = docsPages.map(p=>`
+        <div class="docItem ${p.id===currentDocId?"sel":""}" data-id="${escapeHtml(p.id)}">
+          <span>${escapeHtml(p.title || "Untitled")}</span>
+          <button class="docDel" data-del="${escapeHtml(p.id)}" title="Delete page">✕</button>
+        </div>
+      `).join("") || `<div class="mini" style="padding:6px">No pages yet.</div>`;
+    }
+    function openDocPage(id){
+      const p = docsPages.find(x=>x.id===id);
+      if(!p) return;
+      currentDocId = id;
+      docTitleEl.value = p.title || "";
+      docEditorEl.innerHTML = p.html || "";
+      renderDocList();
+    }
+    function newDoc(){
+      const p = { id: crypto.randomUUID(), title: "Untitled", html: "", ts: Date.now() };
+      docsPages.unshift(p);
+      saveDocs();
+      openDocPage(p.id);
+      docTitleEl.focus();
+      docTitleEl.select();
+    }
+    function scheduleDocSave(){
+      clearTimeout(docSaveTimer);
+      docSaveTimer = setTimeout(()=>{
+        const p = docsPages.find(x=>x.id===currentDocId);
+        if(!p) return;
+        p.title = docTitleEl.value.trim() || "Untitled";
+        p.html = docEditorEl.innerHTML;
+        p.ts = Date.now();
+        saveDocs();
+        renderDocList();
+      }, 600);
+    }
+    function openDocsOverlay(pageId){
+      docsEl.classList.add("open");
+      if(!docsPages.length){ newDoc(); return; }
+      openDocPage(pageId || currentDocId || docsPages[0].id);
+    }
+    App.openDocs = openDocsOverlay;
+
+    document.getElementById("docsBtn").addEventListener("click", ()=> openDocsOverlay());
+    document.getElementById("docsClose").addEventListener("click", ()=> docsEl.classList.remove("open"));
+    document.getElementById("docNew").addEventListener("click", newDoc);
+    docTitleEl.addEventListener("input", scheduleDocSave);
+    docEditorEl.addEventListener("input", scheduleDocSave);
+    docListEl.addEventListener("click", (e)=>{
+      const del = e.target.closest(".docDel");
+      if(del){
+        const id = del.getAttribute("data-del");
+        if(!confirm("Delete this page?")) return;
+        docsPages = docsPages.filter(p=>p.id!==id);
+        if(currentDocId === id){
+          currentDocId = null;
+          docTitleEl.value = ""; docEditorEl.innerHTML = "";
+          if(docsPages.length) openDocPage(docsPages[0].id);
+        }
+        saveDocs();
+        renderDocList();
+        return;
+      }
+      const item = e.target.closest(".docItem");
+      if(item) openDocPage(item.getAttribute("data-id"));
+    });
+    document.querySelector(".docTools").addEventListener("click", (e)=>{
+      const btn = e.target.closest("button[data-cmd]");
+      if(!btn) return;
+      e.preventDefault();
+      docEditorEl.focus();
+      document.execCommand(btn.dataset.cmd, false, btn.dataset.val || null);
+      scheduleDocSave();
+    });
+    window.addEventListener("keydown", (e)=>{
+      if(e.key === "Escape" && docsEl.classList.contains("open") && !paletteEl.classList.contains("show")){
+        docsEl.classList.remove("open");
+      }
+    });
+
+    App.dataProviders.docs = {
+      get: ()=>docsPages,
+      apply: (arr)=>{
+        docsPages = Array.isArray(arr) ? arr : [];
+        localStorage.setItem(DOCS_KEY, JSON.stringify(docsPages));
+        renderDocList();
+        const cur = docsPages.find(x=>x.id===currentDocId);
+        const typing = document.activeElement === docEditorEl || document.activeElement === docTitleEl;
+        if(cur && docsEl.classList.contains("open") && !typing){
+          docTitleEl.value = cur.title || "";
+          docEditorEl.innerHTML = cur.html || "";
+        }
+      }
+    };
+
+    /* =========================
+       FOCUS TAB — locked full-screen session; a world grows as time passes
+    ========================== */
+    const focusTabEl = document.getElementById("focusTab");
+    const growCanvas = document.getElementById("growCanvas");
+    const gctx = growCanvas.getContext("2d");
+    const ftSetup = document.getElementById("ftSetup");
+    const ftRunPanel = document.getElementById("ftRun");
+    const ftDonePanel = document.getElementById("ftDone");
+    const ftTimeEl = document.getElementById("ftTime");
+    let ftState = "idle", ftSceneKind = "forest", ftTotalMs = 0, ftEndAt = 0, ftRaf = null;
+    let ftWorld = null;
+
+    function mulberry32(a){
+      return function(){
+        a |= 0; a = a + 0x6D2B79F5 | 0;
+        let t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+    function ftEase(t){ return t*t*(3-2*t); }
+
+    function ftResize(){
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      growCanvas.width = Math.floor(innerWidth * dpr);
+      growCanvas.height = Math.floor(innerHeight * dpr);
+      gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ftBuildWorld();
+    }
+    window.addEventListener("resize", ()=>{ if(focusTabEl.classList.contains("open")) ftResize(); });
+
+    function ftBuildWorld(){
+      const W = innerWidth, H = innerHeight;
+      if(ftSceneKind === "forest"){
+        const rnd = mulberry32(1337);
+        const trees = [];
+        const N = Math.max(9, Math.floor(W/110));
+        for(let i=0;i<N;i++){
+          trees.push({
+            x: (i+0.5)/N*W + (rnd()-0.5)*40,
+            scale: 0.75 + rnd()*0.7,
+            seed: Math.floor(rnd()*1e9),
+            delay: rnd()*0.45
+          });
+        }
+        const stars = [];
+        for(let s=0;s<90;s++) stars.push({ x:rnd()*W, y:rnd()*H*0.6, a:0.15+rnd()*0.4, r:rnd()<0.12?1.5:0.8 });
+        ftWorld = { trees, stars };
+      }else{
+        const rnd = mulberry32(4242);
+        const P = 2200, parts = [];
+        const cx = W/2, cy = H/2, maxR = Math.min(W,H)*0.42;
+        for(let i=0;i<P;i++){
+          const r = Math.pow(rnd(),1.4)*maxR;
+          const branch = (i%4)/4*Math.PI*2;
+          const spin = r/maxR*2.6;
+          const jit = ()=> Math.pow(rnd(),2.5)*(rnd()<0.5?-1:1)*r*0.35;
+          const fx = cx + Math.cos(branch+spin)*r + jit();
+          const fy = cy + Math.sin(branch+spin)*r*0.62 + jit()*0.6;
+          const rr = r/maxR;
+          parts.push({
+            sx: rnd()*W, sy: rnd()*H,
+            fx, fy, rr,
+            delay: rr*0.5 + rnd()*0.18,
+            size: rnd()<0.08 ? 2.2 : 1.3
+          });
+        }
+        ftWorld = { parts, cx, cy };
+      }
+    }
+
+    function ftGalaxyColor(rr, a){
+      if(rr < 0.25) return `rgba(255,240,205,${a})`;
+      if(rr < 0.5)  return `rgba(255,177,92,${a})`;
+      if(rr < 0.75) return `rgba(255,106,69,${a})`;
+      return `rgba(147,112,235,${a})`;
+    }
+
+    function ftDrawForest(p, t){
+      const W = innerWidth, H = innerHeight;
+      const sky = gctx.createLinearGradient(0,0,0,H);
+      sky.addColorStop(0,"#05060f"); sky.addColorStop(1,"#0a0c18");
+      gctx.fillStyle = sky; gctx.fillRect(0,0,W,H);
+      ftWorld.stars.forEach(s=>{ gctx.fillStyle=`rgba(255,255,255,${s.a})`; gctx.fillRect(s.x, s.y, s.r, s.r); });
+      const gy = H*0.85;
+      gctx.fillStyle = "#07070f";
+      gctx.fillRect(0, gy, W, H-gy);
+
+      const maxDepth = 8;
+      ftWorld.trees.forEach(tr=>{
+        const local = (p - tr.delay*0.6) / (1 - tr.delay*0.6);
+        const tp = ftEase(Math.min(1, Math.max(0, local)));
+        if(tp <= 0) return;
+        const rnd = mulberry32(tr.seed);
+        const grown = tp*maxDepth;
+        const baseLen = 40*tr.scale*(0.45+0.55*tp);
+        (function branch(x, y, len, ang, depth){
+          const a1 = ang - (0.24 + rnd()*0.3);
+          const a2 = ang + (0.24 + rnd()*0.3);
+          const lf = 0.7 + rnd()*0.07;
+          const x2 = x + Math.cos(ang)*len, y2 = y + Math.sin(ang)*len;
+          if(depth <= grown){
+            const fr = Math.min(1, grown - depth + 1);
+            gctx.strokeStyle = `rgba(158,148,196,${0.10 + depth*0.028})`;
+            gctx.lineWidth = Math.max(0.5, (maxDepth-depth)*0.55*tr.scale);
+            gctx.beginPath();
+            gctx.moveTo(x, y);
+            gctx.lineTo(x + Math.cos(ang)*len*fr, y + Math.sin(ang)*len*fr);
+            gctx.stroke();
+            if(depth >= grown-1 && depth > 3){
+              gctx.fillStyle = `rgba(167,139,250,${0.35*tp})`;
+              gctx.beginPath(); gctx.arc(x2, y2, 1.6, 0, 7); gctx.fill();
+            }
+          }
+          if(depth < maxDepth){
+            branch(x2, y2, len*lf, a1, depth+1);
+            branch(x2, y2, len*lf, a2, depth+1);
+          }
+        })(tr.x, gy, baseLen, -Math.PI/2, 0);
+      });
+
+      if(p > 0.5){
+        gctx.fillStyle = `rgba(255,210,122,${0.45 + 0.3*Math.sin(t*2)})`;
+        for(let f=0; f<10; f++){
+          const fx = (Math.sin(t*0.22 + f*2.4)*0.5 + 0.5)*W;
+          const fy = gy - 24 - (Math.sin(t*0.35 + f*1.7)*0.5 + 0.5)*130;
+          gctx.beginPath(); gctx.arc(fx, fy, 1.4, 0, 7); gctx.fill();
+        }
+      }
+    }
+
+    function ftDrawGalaxy(p, t){
+      const W = innerWidth, H = innerHeight;
+      gctx.fillStyle = "#03040b"; gctx.fillRect(0,0,W,H);
+      const { parts, cx, cy } = ftWorld;
+      const rot = p*0.6 + t*0.015;
+      const core = gctx.createRadialGradient(cx,cy,0, cx,cy, 90+120*p);
+      core.addColorStop(0, `rgba(255,240,205,${0.5*p})`);
+      core.addColorStop(0.4, `rgba(255,177,92,${0.22*p})`);
+      core.addColorStop(1, "rgba(0,0,0,0)");
+      gctx.fillStyle = core;
+      gctx.fillRect(cx-260, cy-260, 520, 520);
+      gctx.globalCompositeOperation = "lighter";
+      const cs = Math.cos(rot), sn = Math.sin(rot);
+      parts.forEach(pt=>{
+        const k = ftEase(Math.min(1, Math.max(0, (p - pt.delay)/0.3)));
+        if(k <= 0) return;
+        const dx = pt.fx-cx, dy = pt.fy-cy;
+        const fx = cx + dx*cs - dy*sn, fy = cy + dx*sn + dy*cs;
+        const x = pt.sx + (fx-pt.sx)*k, y = pt.sy + (fy-pt.sy)*k;
+        gctx.fillStyle = ftGalaxyColor(pt.rr, 0.25 + 0.65*k);
+        gctx.fillRect(x, y, pt.size, pt.size);
+      });
+      gctx.globalCompositeOperation = "source-over";
+    }
+
+    function ftLoop(){
+      if(!focusTabEl.classList.contains("open")) return;
+      const now = Date.now(), t = now/1000;
+      let p = 0.12;   // gentle preview while choosing
+      if(ftState === "running"){
+        p = Math.min(1, 1 - (ftEndAt - now)/ftTotalMs);
+        const remain = Math.max(0, ftEndAt - now);
+        const s = Math.ceil(remain/1000);
+        ftTimeEl.textContent = `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+        if(remain <= 0){ ftFinish(); p = 1; }
+      }else if(ftState === "done"){
+        p = 1;
+      }
+      if(ftSceneKind === "forest") ftDrawForest(p, t); else ftDrawGalaxy(p, t);
+      ftRaf = requestAnimationFrame(ftLoop);
+    }
+
+    function ftBlockUnload(e){ e.preventDefault(); e.returnValue = ""; }
+
+    function ftOpen(){
+      focusTabEl.classList.add("open");
+      ftState = "idle";
+      ftSetup.classList.remove("ftHidden");
+      ftRunPanel.classList.add("ftHidden");
+      ftDonePanel.classList.add("ftHidden");
+      ftResize();
+      cancelAnimationFrame(ftRaf);
+      ftLoop();
+    }
+    function ftCloseTab(){
+      focusTabEl.classList.remove("open");
+      cancelAnimationFrame(ftRaf);
+      ftState = "idle";
+    }
+    function ftSelectedMinutes(){
+      const c = parseFloat(document.getElementById("ftCustom").value);
+      if(isFinite(c) && c >= 1) return Math.min(180, Math.round(c));
+      const sel = document.querySelector("#ftDurs .ftChoice.sel");
+      return sel ? parseInt(sel.dataset.min, 10) : 25;
+    }
+    function ftFinish(){
+      if(ftState !== "running") return;
+      ftState = "done";
+      window.removeEventListener("beforeunload", ftBlockUnload);
+      ftRunPanel.classList.add("ftHidden");
+      ftDonePanel.classList.remove("ftHidden");
+      document.getElementById("ftDoneMsg").textContent =
+        ftSceneKind === "forest" ? "Your forest stands tall." : "Your galaxy shines.";
+      focusChime();
+    }
+
+    document.getElementById("ftLaunch").addEventListener("click", ftOpen);
+    document.getElementById("ftCancel").addEventListener("click", ()=>{ if(ftState !== "running") ftCloseTab(); });
+    document.getElementById("ftClose").addEventListener("click", ftCloseTab);
+    document.getElementById("ftStart").addEventListener("click", ()=>{
+      const mins = ftSelectedMinutes();
+      ftTotalMs = mins*60000;
+      ftEndAt = Date.now() + ftTotalMs;
+      ftState = "running";
+      ftBuildWorld();
+      ftSetup.classList.add("ftHidden");
+      ftDonePanel.classList.add("ftHidden");
+      ftRunPanel.classList.remove("ftHidden");
+      document.getElementById("ftRunKicker").textContent =
+        ftSceneKind === "forest" ? "The forest is growing" : "The galaxy is forming";
+      document.getElementById("ftSub").textContent =
+        ftSceneKind === "forest" ? "Stay here. Every minute adds branches." : "Stay here. Every minute pulls more stars into orbit.";
+      window.addEventListener("beforeunload", ftBlockUnload);
+    });
+    document.getElementById("ftDurs").addEventListener("click", (e)=>{
+      const b = e.target.closest(".ftChoice");
+      if(!b) return;
+      document.querySelectorAll("#ftDurs .ftChoice").forEach(x=>x.classList.remove("sel"));
+      b.classList.add("sel");
+      document.getElementById("ftCustom").value = "";
+    });
+    document.getElementById("ftCustom").addEventListener("input", ()=>{
+      document.querySelectorAll("#ftDurs .ftChoice").forEach(x=>x.classList.remove("sel"));
+    });
+    document.getElementById("ftScenes").addEventListener("click", (e)=>{
+      const b = e.target.closest(".ftChoice");
+      if(!b) return;
+      document.querySelectorAll("#ftScenes .ftChoice").forEach(x=>x.classList.remove("sel"));
+      b.classList.add("sel");
+      ftSceneKind = b.dataset.scene;
+      ftBuildWorld();
     });
 
     /* =========================
@@ -1066,6 +2434,7 @@
       vaultFiles.sort((a,b)=> (b.savedAt||0) - (a.savedAt||0));
       App.stats.vaultCount = vaultFiles.length;
       renderVault();
+      renderMusicDock();
     }
 
     function renderVault(){
@@ -1204,6 +2573,99 @@
     modal.addEventListener("click", (e)=>{ if(e.target === modal) closeModal(); });
 
     /* =========================
+       AMBIENT SOUND (WebAudio — generated live, no audio files)
+    ========================== */
+    const Ambient = (()=>{
+      let ctx = null, master = null, forest = null, galaxy = null;
+      let enabled = false, scene = "galaxy";
+
+      function noiseBuffer(){
+        const len = ctx.sampleRate * 2;
+        const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        let last = 0;
+        for(let i=0;i<len;i++){
+          const white = Math.random()*2-1;
+          last = (last + 0.02*white) / 1.02;
+          d[i] = last * 3.5;
+        }
+        return buf;
+      }
+
+      function build(){
+        master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+        const nbuf = noiseBuffer();
+
+        /* FOREST — wind (slow-breathing lowpassed noise) + soft leaf hiss */
+        forest = { gain: ctx.createGain() };
+        forest.gain.gain.value = 0; forest.gain.connect(master);
+        const wind = ctx.createBufferSource(); wind.buffer = nbuf; wind.loop = true;
+        const windLP = ctx.createBiquadFilter(); windLP.type = "lowpass"; windLP.frequency.value = 280; windLP.Q.value = 0.7;
+        const windG = ctx.createGain(); windG.gain.value = 0.5;
+        const lfo = ctx.createOscillator(); lfo.frequency.value = 0.06;
+        const lfoG = ctx.createGain(); lfoG.gain.value = 120;
+        lfo.connect(lfoG); lfoG.connect(windLP.frequency);
+        wind.connect(windLP); windLP.connect(windG); windG.connect(forest.gain);
+        const leaves = ctx.createBufferSource(); leaves.buffer = nbuf; leaves.loop = true; leaves.playbackRate.value = 1.7;
+        const leafBP = ctx.createBiquadFilter(); leafBP.type = "bandpass"; leafBP.frequency.value = 2400; leafBP.Q.value = 0.8;
+        const leafG = ctx.createGain(); leafG.gain.value = 0.05;
+        leaves.connect(leafBP); leafBP.connect(leafG); leafG.connect(forest.gain);
+        wind.start(); leaves.start(); lfo.start();
+
+        /* GALAXY — deep detuned drone + slow high shimmer */
+        galaxy = { gain: ctx.createGain() };
+        galaxy.gain.gain.value = 0; galaxy.gain.connect(master);
+        const o1 = ctx.createOscillator(); o1.type = "sine"; o1.frequency.value = 55;
+        const o2 = ctx.createOscillator(); o2.type = "sine"; o2.frequency.value = 55*1.006;
+        const o3 = ctx.createOscillator(); o3.type = "triangle"; o3.frequency.value = 110.4;
+        const droneG = ctx.createGain(); droneG.gain.value = 0.16;
+        const droneLP = ctx.createBiquadFilter(); droneLP.type = "lowpass"; droneLP.frequency.value = 240;
+        o1.connect(droneG); o2.connect(droneG); o3.connect(droneG);
+        droneG.connect(droneLP); droneLP.connect(galaxy.gain);
+        const shimmer = ctx.createBufferSource(); shimmer.buffer = nbuf; shimmer.loop = true; shimmer.playbackRate.value = 2.5;
+        const shimHP = ctx.createBiquadFilter(); shimHP.type = "highpass"; shimHP.frequency.value = 5200;
+        const shimG = ctx.createGain(); shimG.gain.value = 0.012;
+        const shimLFO = ctx.createOscillator(); shimLFO.frequency.value = 0.05;
+        const shimLFOG = ctx.createGain(); shimLFOG.gain.value = 0.008;
+        shimLFO.connect(shimLFOG); shimLFOG.connect(shimG.gain);
+        shimmer.connect(shimHP); shimHP.connect(shimG); shimG.connect(galaxy.gain);
+        o1.start(); o2.start(); o3.start(); shimmer.start(); shimLFO.start();
+      }
+
+      function fadeTo(g, v){ g.gain.setTargetAtTime(v, ctx.currentTime, 1.2); }
+      function applyMix(){
+        if(!ctx) return;
+        fadeTo(forest.gain, scene === "forest" ? 0.5 : 0);
+        fadeTo(galaxy.gain, scene === "galaxy" ? 0.5 : 0);
+      }
+
+      return {
+        setScene(s){ scene = s; if(enabled) applyMix(); },
+        isOn(){ return enabled; },
+        async setEnabled(on){
+          enabled = !!on;
+          if(enabled){
+            if(!ctx){ ctx = new (window.AudioContext || window.webkitAudioContext)(); build(); }
+            try{ await ctx.resume(); }catch{}
+            master.gain.setTargetAtTime(0.9, ctx.currentTime, 0.5);
+            applyMix();
+          }else if(ctx){
+            master.gain.setTargetAtTime(0, ctx.currentTime, 0.4);
+          }
+          return enabled;
+        }
+      };
+    })();
+
+    const soundBtn = document.getElementById("soundBtn");
+    async function setSound(on){
+      const isOn = await Ambient.setEnabled(on);
+      soundBtn.textContent = isOn ? "🔊" : "🔇";
+      savePrefs();
+    }
+    soundBtn.addEventListener("click", ()=> setSound(!Ambient.isOn()));
+
+    /* =========================
        BACKGROUND THEME (tints the 3D forest instead of a CSS gradient)
     ========================== */
     const WALLPAPER_THEMES = {
@@ -1241,14 +2703,18 @@
     const wpReset = document.getElementById("wpReset");
     const bgScene = document.getElementById("bgScene");
 
-    function setBackgroundScene(name){
-      const forestCanvas = document.getElementById("forest");
-      const galaxyCanvas = document.getElementById("galaxy");
+    function applyScene(name){
       const isGalaxy = name === "galaxy";
-      forestCanvas.style.display = isGalaxy ? "none" : "block";
-      galaxyCanvas.style.display = isGalaxy ? "block" : "none";
+      document.getElementById("forest").style.display = isGalaxy ? "none" : "block";
+      document.getElementById("galaxy").style.display = isGalaxy ? "block" : "none";
       if(isGalaxy && window.App.startGalaxy) window.App.startGalaxy();
       if(!isGalaxy && window.App.startForest) window.App.startForest();
+      Ambient.setScene(isGalaxy ? "galaxy" : "forest");
+    }
+    App.applyScene = applyScene;
+
+    function setBackgroundScene(name){
+      applyScene(name);
       savePrefs();
     }
     App.setBackgroundScene = setBackgroundScene;
@@ -1257,9 +2723,11 @@
       const prefs = {
         wallpaperPreset: wpPreset.value || "default",
         wallpaperUrl: wpUrl.value || "",
-        bgScene: bgScene.value || "forest"
+        bgScene: bgScene.value || "galaxy",
+        ambientOn: Ambient.isOn()
       };
       localStorage.setItem("memoria_prefs_v1", JSON.stringify(prefs));
+      if(App.pushToCloud) App.pushToCloud("prefs");
     }
 
     function loadPrefs(){
@@ -1268,15 +2736,22 @@
 
         wpPreset.value = p.wallpaperPreset || "default";
         wpUrl.value = p.wallpaperUrl || "";
-        bgScene.value = p.bgScene || "forest";
+        bgScene.value = p.bgScene || "galaxy";
         setWallpaper(wpPreset.value, wpUrl.value);
         setBackgroundScene(bgScene.value);
+
+        /* Browsers only allow audio after a user gesture — if sound was on
+           last time, re-enable it at the first click/tap. */
+        if(p.ambientOn){
+          const once = ()=>{ setSound(true); document.removeEventListener("pointerdown", once); };
+          document.addEventListener("pointerdown", once);
+        }
       }catch{
         wpPreset.value = "default";
         wpUrl.value = "";
-        bgScene.value = "forest";
+        bgScene.value = "galaxy";
         setWallpaper("default", "");
-        setBackgroundScene("forest");
+        setBackgroundScene("galaxy");
       }
     }
 
@@ -1292,6 +2767,44 @@
     bgScene.addEventListener("change", ()=> setBackgroundScene(bgScene.value));
 
     loadPrefs();
+
+    /* Browsers restore old <select>/<input> values after load, which can
+       silently override the saved prefs — re-assert them once that's done. */
+    window.addEventListener("pageshow", ()=>{
+      try{
+        const p = JSON.parse(localStorage.getItem("memoria_prefs_v1") || "{}");
+        wpPreset.value = p.wallpaperPreset || "default";
+        wpUrl.value = p.wallpaperUrl || "";
+        bgScene.value = p.bgScene || "galaxy";
+        if(!document.body.classList.contains("gated")) applyScene(bgScene.value);
+      }catch{}
+    });
+
+    /* Preferences sync to the cloud like everything else */
+    App.dataProviders.prefs = {
+      get: ()=>{
+        try{ return JSON.parse(localStorage.getItem("memoria_prefs_v1") || "{}"); }
+        catch{ return {}; }
+      },
+      apply: (p)=>{
+        if(!p || typeof p !== "object" || Array.isArray(p)) return;
+        localStorage.setItem("memoria_prefs_v1", JSON.stringify(p));
+        wpPreset.value = p.wallpaperPreset || "default";
+        wpUrl.value = p.wallpaperUrl || "";
+        bgScene.value = p.bgScene || "galaxy";
+        setWallpaper(wpPreset.value, wpUrl.value);
+        if(!document.body.classList.contains("gated")) applyScene(bgScene.value);
+      }
+    };
+
+    /* If the Firebase module fails to load (offline, blocked CDN), surface it
+       instead of leaving the sign-in buttons silently dead. */
+    setTimeout(()=>{
+      if(!window.__authReady){
+        const warn = document.getElementById("authLoadWarn");
+        if(warn) warn.style.display = "block";
+      }
+    }, 3500);
 
     /* =========================
        TERMINAL (Commands)
@@ -1312,9 +2825,10 @@
       termPrint("Commands:", true);
       termPrint("help");
       termPrint("time");
-      termPrint("goto home | calendar | studynotes | chat | vault | terminal | settings");
+      termPrint("goto home | calendar | todo | studynotes | chat | vault | terminal | settings");
       termPrint("clear");
       termPrint("stats");
+      termPrint("focus <minutes> | focus stop");
       termPrint("wallpaper default|neon|midnight|sunset|ocean|mono");
       termPrint("wallpaper url <https://...image>");
     }
@@ -1340,7 +2854,7 @@
           App.showView(v, true);
           termPrint("Opened: " + v);
         } else {
-          termPrint("Unknown view. Try: home, calendar, studynotes, chat, vault, terminal, settings");
+          termPrint("Unknown view. Try: home, calendar, todo, studynotes, chat, vault, terminal, settings");
         }
         return;
       }
@@ -1348,7 +2862,18 @@
       if(main === "stats"){
         termPrint(`Vault files: ${App.stats.vaultCount}`);
         termPrint(`Study notes: ${App.stats.notesCount}`);
+        termPrint(`To-dos: ${App.stats.todoCount}`);
         termPrint(`Chat unread: ${App.stats.chatUnread}`);
+        return;
+      }
+      if(main === "focus"){
+        const sub = (parts[1] || "").toLowerCase();
+        if(sub === "stop"){ App.focusStop(); termPrint("Focus timer stopped."); return; }
+        const n = parseFloat(parts[1]);
+        if(!isFinite(n) || n <= 0){ termPrint("Usage: focus 25  |  focus stop"); return; }
+        App.focusStartMinutes(n);
+        termPrint(`Focus timer running: ${n} minute${n===1?"":"s"}. Go.`);
+        App.showView("home", true);
         return;
       }
       if(main === "wallpaper"){
@@ -1388,6 +2913,9 @@
     termClear();
     loadVault();
     loadSN();
+    loadTodos();
+    loadDocs();
+    renderUpNext();
   </script>
 
   <!-- =========================
@@ -1413,6 +2941,23 @@
     scene.fog = new THREE.FogExp2(FOG, 0.030);
 
     var camera = new THREE.PerspectiveCamera(62, window.innerWidth/window.innerHeight, 0.1, 340);
+
+    /* Soft round sprite, brightness-only falloff (alpha 1) — no square dots,
+       no GPU-dependent alpha artifacts */
+    function makeDotTexture(){
+      var s = 64;
+      var c = document.createElement('canvas');
+      c.width = c.height = s;
+      var x = c.getContext('2d');
+      var g = x.createRadialGradient(s/2,s/2,0, s/2,s/2,s/2);
+      g.addColorStop(0, 'rgb(255,255,255)');
+      g.addColorStop(0.4, 'rgb(204,204,204)');
+      g.addColorStop(1, 'rgb(0,0,0)');
+      x.fillStyle = g;
+      x.fillRect(0,0,s,s);
+      return new THREE.CanvasTexture(c);
+    }
+    var dotTex = makeDotTexture();
 
     /* ---------- Camera path : winds through the whole app ---------- */
     var Z_START = 10, Z_END = -390, SPAN = Z_START - Z_END;
@@ -1444,7 +2989,7 @@
       var ux = (Math.random()*2-1)*60;
       dot(ux, groundY(ux,uz) + Math.random()*Math.random()*1.7, uz, 0.22 + Math.random()*0.28);
     }
-    var TREES = Math.round(SPAN*0.95), made = 0, guard = 0;
+    var TREES = Math.round(SPAN*1.5), made = 0, guard = 0;
     while(made < TREES && guard++ < TREES*30){
       var tz = Z_START + 30 - Math.random()*(SPAN+80);
       var tx = (Math.random()*2-1)*75;
@@ -1479,7 +3024,8 @@
     cloudGeo.setAttribute('color',    new THREE.Float32BufferAttribute(cols, 3));
     verts = null; cols = null;
     var cloud = new THREE.Points(cloudGeo, new THREE.PointsMaterial({
-      size:0.078, vertexColors:true, sizeAttenuation:true, transparent:true, opacity:0.75, depthWrite:false
+      map: dotTex, size:0.12, vertexColors:true, sizeAttenuation:true, transparent:true, opacity:0.8,
+      blending:THREE.AdditiveBlending, depthWrite:false
     }));
     scene.add(cloud);
 
@@ -1487,14 +3033,14 @@
     var P=1100, pGeo=new THREE.BufferGeometry(), pPos=new Float32Array(P*3), pSeed=new Float32Array(P);
     for(var p=0;p<P;p++){ pPos[p*3]=(Math.random()*2-1)*40; pPos[p*3+1]=Math.random()*18; pPos[p*3+2]=-Math.random()*90; pSeed[p]=Math.random()*Math.PI*2; }
     pGeo.setAttribute('position', new THREE.BufferAttribute(pPos,3));
-    var particles=new THREE.Points(pGeo, new THREE.PointsMaterial({color:0xb9a6ff, size:0.18, transparent:true, opacity:0.26, sizeAttenuation:true, depthWrite:false}));
+    var particles=new THREE.Points(pGeo, new THREE.PointsMaterial({map:dotTex, color:0xb9a6ff, size:0.26, transparent:true, opacity:0.26, sizeAttenuation:true, blending:THREE.AdditiveBlending, depthWrite:false}));
     scene.add(particles);
 
     /* ---------- Fireflies / sparks ---------- */
     var F=36, fGeo=new THREE.BufferGeometry(), fPos=new Float32Array(F*3);
     for(var f=0;f<F;f++){ fPos[f*3]=(Math.random()*2-1)*30; fPos[f*3+1]=1+Math.random()*6; fPos[f*3+2]=-Math.random()*80; }
     fGeo.setAttribute('position', new THREE.BufferAttribute(fPos,3));
-    var fireflies=new THREE.Points(fGeo, new THREE.PointsMaterial({color:0xffd27a, size:0.4, transparent:true, opacity:0.5, sizeAttenuation:true, blending:THREE.AdditiveBlending, depthWrite:false}));
+    var fireflies=new THREE.Points(fGeo, new THREE.PointsMaterial({map:dotTex, color:0xffd27a, size:0.55, transparent:true, opacity:0.5, sizeAttenuation:true, blending:THREE.AdditiveBlending, depthWrite:false}));
     scene.add(fireflies);
 
     /* ---------- Scroll → camera ---------- */
@@ -1593,22 +3139,43 @@
       var c = document.createElement('canvas');
       c.width = c.height = size;
       var gctx = c.getContext('2d');
+      /* Falloff lives in RGB (fade to black), alpha stays 1 everywhere.
+         With additive blending, black adds nothing — and with no alpha
+         gradient there is no premultiply math for GPUs to disagree on
+         (the source of green speckles on some machines). */
       var g = gctx.createRadialGradient(size/2,size/2,0, size/2,size/2,size/2);
-      g.addColorStop(0, 'rgba(255,248,222,1)');
-      g.addColorStop(0.28, 'rgba(255,193,110,.78)');
-      g.addColorStop(0.55, 'rgba(255,120,70,.42)');
-      g.addColorStop(0.8, 'rgba(230,70,60,.16)');
-      g.addColorStop(1, 'rgba(230,70,60,0)');
+      g.addColorStop(0, 'rgb(255,248,222)');
+      g.addColorStop(0.28, 'rgb(199,151,86)');
+      g.addColorStop(0.55, 'rgb(107,50,29)');
+      g.addColorStop(0.8, 'rgb(37,11,10)');
+      g.addColorStop(1, 'rgb(0,0,0)');
       gctx.fillStyle = g;
       gctx.fillRect(0,0,size,size);
       return new THREE.CanvasTexture(c);
     }
     var coreGlow = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: makeGlowTexture(), color:0xffffff, transparent:true, opacity:0.85,
+      map: makeGlowTexture(), color:0xffffff, transparent:true, opacity:0.6,
       depthWrite:false, blending:THREE.AdditiveBlending
     }));
-    coreGlow.scale.set(9,9,1);
+    coreGlow.scale.set(6.5,6.5,1);
     scene.add(coreGlow);
+
+    /* Soft round sprite for every particle — kills the hard square/blotch artifacts */
+    function makeDotTexture(){
+      var s = 64;
+      var c = document.createElement('canvas');
+      c.width = c.height = s;
+      var x = c.getContext('2d');
+      /* Brightness-only falloff, alpha 1 — GPU-proof under additive blending */
+      var g = x.createRadialGradient(s/2,s/2,0, s/2,s/2,s/2);
+      g.addColorStop(0, 'rgb(255,255,255)');
+      g.addColorStop(0.4, 'rgb(204,204,204)');
+      g.addColorStop(1, 'rgb(0,0,0)');
+      x.fillStyle = g;
+      x.fillRect(0,0,s,s);
+      return new THREE.CanvasTexture(c);
+    }
+    var dotTex = makeDotTexture();
 
     /* ---------- Spiral galaxy ---------- */
     var COUNT = 16000, RADIUS = 10, BRANCHES = 4, SPIN = 1.35, RAND = 0.55, RAND_POW = 3;
@@ -1653,7 +3220,7 @@
     gGeo.setAttribute('position', new THREE.BufferAttribute(gPos,3));
     gGeo.setAttribute('color', new THREE.BufferAttribute(gCol,3));
     var galaxy = new THREE.Points(gGeo, new THREE.PointsMaterial({
-      size:0.065, sizeAttenuation:true, vertexColors:true, transparent:true, opacity:0.9,
+      map: dotTex, size:0.11, sizeAttenuation:true, vertexColors:true, transparent:true, opacity:0.9,
       blending:THREE.AdditiveBlending, depthWrite:false
     }));
     scene.add(galaxy);
@@ -1668,7 +3235,8 @@
     }
     sGeo.setAttribute('position', new THREE.BufferAttribute(sPos,3));
     var stars = new THREE.Points(sGeo, new THREE.PointsMaterial({
-      color:0xffffff, size:0.075, sizeAttenuation:true, transparent:true, opacity:0.4, depthWrite:false
+      map: dotTex, color:0xffffff, size:0.12, sizeAttenuation:true, transparent:true, opacity:0.4,
+      blending:THREE.AdditiveBlending, depthWrite:false
     }));
     scene.add(stars);
 
@@ -1690,11 +3258,16 @@
 
       galaxy.rotation.y = t * 0.025;
       stars.rotation.y = -t * 0.004;
-      coreGlow.material.opacity = 0.75 + Math.sin(t*0.6)*0.08;
 
-      var depth = current * 34;
-      camera.position.set(Math.sin(current*Math.PI*2)*1.6, 11 - current*9, 24 - depth);
-      camera.lookAt(0, -1, 0 - depth*0.35);
+      /* Skim past the core instead of flying through it */
+      var depth = current * 30;
+      camera.position.set(Math.sin(current*Math.PI*2)*1.6 + current*2.4, 11 - current*7.5, 24 - depth);
+      camera.lookAt(0, -1, -depth*0.3);
+
+      /* Fade the core glow as the camera approaches, so it never washes the screen */
+      var coreDist = camera.position.length();
+      var glowFade = Math.min(Math.max((coreDist - 5) / 9, 0), 1);
+      coreGlow.material.opacity = (0.6 + Math.sin(t*0.6)*0.07) * glowFade;
 
       renderer.render(scene, camera);
     }
@@ -1718,8 +3291,12 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-app.js";
     import {
       getFirestore, collection, addDoc, serverTimestamp,
-      query, orderBy, limit, onSnapshot
+      query, orderBy, limit, onSnapshot, doc, setDoc, deleteDoc
     } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore.js";
+    import {
+      getAuth, onAuthStateChanged, createUserWithEmailAndPassword,
+      signInWithEmailAndPassword, signOut, updateProfile
+    } from "https://www.gstatic.com/firebasejs/10.12.4/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyB7AhWd_9tt33c2mvGBMMaFFzBFjxk8svc",
@@ -1732,18 +3309,20 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
     const chatStatus  = document.getElementById("chatStatus");
     const chatLog     = document.getElementById("chatLog");
-    const chatName    = document.getElementById("chatName");
     const chatRoom    = document.getElementById("chatRoom");
     const chatConnect = document.getElementById("chatConnect");
     const chatMsg     = document.getElementById("chatMsg");
     const chatSend    = document.getElementById("chatSend");
+    const chatAs      = document.getElementById("chatAs");
 
     let unsub = null;
     let connectedRoom = null;
     let lastSeenCount = 0;
+    let currentUser = null;
 
     function safeText(s){ return (s ?? "").toString().slice(0, 800); }
     function showStatus(t){ chatStatus.textContent = t; }
@@ -1751,27 +3330,27 @@
     function esc(s){
       return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
     }
-    function addLine(html){
+    function addMsg(id, time, who, text, mine){
       const div = document.createElement("div");
-      div.innerHTML = html;
+      div.className = "chatMsg";
+      div.innerHTML =
+        `<span style="color:rgba(255,255,255,.55)">[${esc(time)}]</span> <b>${esc(who)}:</b> ` +
+        `<span class="msgTxt">${esc(text)}</span>` +
+        (mine ? `<button class="msgDel" data-id="${esc(id)}" title="Delete message">✕</button>` : "");
       chatLog.appendChild(div);
       chatLog.scrollTop = chatLog.scrollHeight;
     }
 
     try{
-      const n = localStorage.getItem("cd_chat_name");
       const r = localStorage.getItem("cd_chat_room");
-      if(n) chatName.value = n;
       if(r) chatRoom.value = r;
     }catch{}
 
     chatConnect.addEventListener("click", ()=>{
-      const name = safeText(chatName.value.trim()) || "Anonymous";
       const room = safeText(chatRoom.value.trim()).replace(/\s+/g,"-").toLowerCase();
       if(!room){ showStatus("Enter a room code first."); return; }
 
       try{
-        localStorage.setItem("cd_chat_name", name);
         localStorage.setItem("cd_chat_room", room);
       }catch{}
 
@@ -1779,6 +3358,7 @@
       connectedRoom = room;
       clearChat();
       showStatus(`Connected: ${room}`);
+      startPresence(room);
 
       const msgsRef = collection(db, "rooms", room, "messages");
       const q = query(msgsRef, orderBy("createdAt","asc"), limit(250));
@@ -1788,15 +3368,16 @@
 
         clearChat();
         let count = 0;
-        snap.forEach(doc=>{
+        snap.forEach(ds=>{
           count++;
-          const m = doc.data() || {};
+          const m = ds.data() || {};
           const who  = safeText(m.name || "Anon");
           const text = safeText(m.text || "");
           const time = m.createdAt?.toDate
             ? m.createdAt.toDate().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
             : "--:--";
-          addLine(`<span style="color:rgba(255,255,255,.65)">[${esc(time)}]</span> <b>${esc(who)}:</b> ${esc(text)}`);
+          const mine = !!(currentUser && m.uid && m.uid === currentUser.uid);
+          addMsg(ds.id, time, who, text, mine);
         });
 
         if(!isChatOpen && count > lastSeenCount){
@@ -1815,7 +3396,8 @@
     });
 
     async function send(){
-      const name = safeText(chatName.value.trim()) || "Anonymous";
+      if(!currentUser){ showStatus("Sign in (top-right) to send messages."); return; }
+      const name = safeText(currentUser.displayName || currentUser.email || "User");
       const text = safeText(chatMsg.value.trim());
       if(!connectedRoom){ showStatus("Connect to a room first."); return; }
       if(!text) return;
@@ -1823,7 +3405,7 @@
       chatMsg.value = "";
       try{
         const msgsRef = collection(db, "rooms", connectedRoom, "messages");
-        await addDoc(msgsRef, { name, text, createdAt: serverTimestamp() });
+        await addDoc(msgsRef, { name, uid: currentUser.uid, text, createdAt: serverTimestamp() });
       }catch(e){
         showStatus("Send failed: " + e.message);
       }
@@ -1831,6 +3413,281 @@
 
     chatSend.addEventListener("click", send);
     chatMsg.addEventListener("keydown", (e)=>{ if(e.key==="Enter") send(); });
+
+    /* Delete your own messages */
+    chatLog.addEventListener("click", async (e)=>{
+      const b = e.target.closest(".msgDel");
+      if(!b || !connectedRoom) return;
+      try{
+        await deleteDoc(doc(db, "rooms", connectedRoom, "messages", b.dataset.id));
+      }catch(err){
+        showStatus("Delete failed: " + err.message);
+      }
+    });
+
+    /* ===== PRESENCE (who's in the room) — heartbeat doc per user ===== */
+    let presenceTimer = null, presenceUnsub = null;
+    function stopPresence(){
+      if(presenceTimer){ clearInterval(presenceTimer); presenceTimer = null; }
+      if(presenceUnsub){ presenceUnsub(); presenceUnsub = null; }
+    }
+    function startPresence(room){
+      stopPresence();
+      const beat = ()=>{
+        if(!currentUser) return;
+        setDoc(doc(db, "rooms", room, "presence", currentUser.uid),
+          { name: currentUser.displayName || "User", lastActive: serverTimestamp() },
+          { merge:true }).catch(()=>{});
+      };
+      beat();
+      presenceTimer = setInterval(beat, 30000);
+      presenceUnsub = onSnapshot(collection(db, "rooms", room, "presence"), (snap)=>{
+        const now = Date.now();
+        let n = 0;
+        snap.forEach(d=>{
+          const la = d.data().lastActive;
+          if(la && la.toMillis && now - la.toMillis() < 75000) n++;
+        });
+        showStatus(`Connected: ${room}${n ? ` · ${n} here` : ""}`);
+      }, ()=>{});
+    }
+
+    /* =========================
+       CLOUD SYNC — notes / todos / events live under users/{uid}/data/{type}
+       in the same Firestore database. Local-first: localStorage stays the
+       working copy; Firestore mirrors it and pushes changes to other devices.
+    ========================== */
+    const SYNC_TYPES = ["notes","todos","events","docs","prefs"];
+    let syncUnsubs = [];
+    const syncTimers = {};
+
+    function stopSync(){ syncUnsubs.forEach(u=>u()); syncUnsubs = []; }
+    function startSync(user){
+      stopSync();
+      SYNC_TYPES.forEach(type=>{
+        const ref = doc(db, "users", user.uid, "data", type);
+        syncUnsubs.push(onSnapshot(ref, (snap)=>{
+          if(snap.metadata.hasPendingWrites) return;   // ignore echo of our own write
+          const prov = window.App.dataProviders?.[type];
+          if(!prov) return;
+          if(!snap.exists()){
+            const local = prov.get();
+            const hasLocal = Array.isArray(local) ? local.length > 0
+                           : !!local && Object.keys(local).length > 0;
+            if(hasLocal) pushNow(type);                // first sign-in: migrate local data up
+            return;
+          }
+          const remote = snap.data().items ?? [];
+          if(JSON.stringify(remote) !== JSON.stringify(prov.get())) prov.apply(remote);
+        }, (err)=>console.warn("Sync listen failed:", err)));
+      });
+    }
+    async function pushNow(type){
+      if(!currentUser) return;
+      const prov = window.App.dataProviders?.[type];
+      if(!prov) return;
+      try{
+        await setDoc(doc(db, "users", currentUser.uid, "data", type),
+          { items: prov.get(), updatedAt: serverTimestamp() });
+      }catch(e){ console.warn("Sync push failed:", e); }
+    }
+    window.App.pushToCloud = (type)=>{
+      if(!currentUser) return;
+      clearTimeout(syncTimers[type]);
+      syncTimers[type] = setTimeout(()=>pushNow(type), 700);
+    };
+
+    /* =========================
+       ACCOUNT + AUTH (same Firebase project/database as chat)
+    ========================== */
+    const acctBtn       = document.getElementById("acctBtn");
+    const acctMenu      = document.getElementById("acctMenu");
+    const acctSignedOut = document.getElementById("acctSignedOut");
+    const acctSignedIn  = document.getElementById("acctSignedIn");
+    const acctName      = document.getElementById("acctName");
+    const acctEmail     = document.getElementById("acctEmail");
+    const acctNewName   = document.getElementById("acctNewName");
+    const acctRename    = document.getElementById("acctRename");
+    const acctSignOut   = document.getElementById("acctSignOut");
+    const acctOpenAuth  = document.getElementById("acctOpenAuth");
+
+    const authModal    = document.getElementById("authModal");
+    const authTitle    = document.getElementById("authTitle");
+    const authNameIn   = document.getElementById("authName");
+    const authEmailIn  = document.getElementById("authEmail");
+    const authPassIn   = document.getElementById("authPassword");
+    const authError    = document.getElementById("authError");
+    const authSubmit   = document.getElementById("authSubmit");
+    const authToggle   = document.getElementById("authToggle");
+    const authClose    = document.getElementById("authClose");
+
+    let authMode = "signin"; // or "signup"
+
+    function friendlyAuthError(e){
+      const code = e?.code || "";
+      if(code.includes("email-already-in-use")) return "That email already has an account. Try signing in.";
+      if(code.includes("invalid-email")) return "That email address doesn't look valid.";
+      if(code.includes("weak-password")) return "Password is too weak — use at least 6 characters.";
+      if(code.includes("invalid-credential") || code.includes("wrong-password") || code.includes("user-not-found"))
+        return "Email or password is incorrect.";
+      if(code.includes("configuration-not-found"))
+        return "Authentication isn't set up for this app's Firebase project yet. In the Firebase console open Build → Authentication, click Get started, then enable Email/Password.";
+      if(code.includes("operation-not-allowed"))
+        return "This sign-in method is not enabled for the app yet (Firebase console → Authentication → Sign-in method).";
+      if(code.includes("unauthorized-domain"))
+        return "Google/Apple sign-in only works when the app is opened from an authorized website address, not a local file. Host the app (e.g., Firebase Hosting) and add the domain in Firebase console → Authentication → Settings → Authorized domains.";
+      if(code.includes("popup-closed-by-user") || code.includes("cancelled-popup-request"))
+        return "The sign-in window was closed before finishing.";
+      if(code.includes("popup-blocked"))
+        return "Your browser blocked the sign-in popup — allow popups for this site and try again.";
+      if(code.includes("account-exists-with-different-credential"))
+        return "This email is already linked to a different sign-in method. Try that method instead.";
+      if(code.includes("network-request-failed")) return "Network error — check your connection.";
+      return e?.message || "Something went wrong.";
+    }
+
+    function showAuthError(msg){
+      authError.textContent = msg;
+      authError.style.display = msg ? "block" : "none";
+    }
+
+    function setAuthMode(mode){
+      authMode = mode;
+      const signup = mode === "signup";
+      authTitle.textContent = signup ? "Create account" : "Sign in";
+      authSubmit.textContent = signup ? "Create account" : "Sign in";
+      authToggle.textContent = signup ? "Have an account? Sign in" : "New here? Create an account";
+      authNameIn.style.display = signup ? "block" : "none";
+      authPassIn.setAttribute("autocomplete", signup ? "new-password" : "current-password");
+      showAuthError("");
+    }
+
+    function openAuthModal(){
+      setAuthMode("signin");
+      authModal.classList.add("show");
+      acctMenu.classList.remove("open");
+      authEmailIn.focus();
+    }
+    function closeAuthModal(){
+      authModal.classList.remove("show");
+      authNameIn.value = ""; authEmailIn.value = ""; authPassIn.value = "";
+      showAuthError("");
+    }
+
+    async function submitAuth(){
+      const email = authEmailIn.value.trim();
+      const pass = authPassIn.value;
+      if(!email || !pass){ showAuthError("Enter your email and password."); return; }
+
+      authSubmit.disabled = true;
+      try{
+        if(authMode === "signup"){
+          const name = safeText(authNameIn.value.trim()).slice(0,40);
+          if(!name){ showAuthError("Pick a display name."); authSubmit.disabled = false; return; }
+          const cred = await createUserWithEmailAndPassword(auth, email, pass);
+          await updateProfile(cred.user, { displayName: name });
+          // Profile record in the same Firestore database the chat uses.
+          // Non-fatal: a Firestore rules block must never break sign-up itself.
+          try{
+            await setDoc(doc(db, "users", cred.user.uid), {
+              name, email, createdAt: serverTimestamp()
+            }, { merge:true });
+          }catch(fe){ console.warn("Profile write skipped:", fe); }
+          currentUser = cred.user;
+        }else{
+          await signInWithEmailAndPassword(auth, email, pass);
+        }
+        closeAuthModal();
+        renderAccount();
+      }catch(e){
+        console.error("Auth error:", e);
+        showAuthError(friendlyAuthError(e));
+      }
+      authSubmit.disabled = false;
+    }
+
+    function renderAccount(){
+      const u = currentUser;
+      if(u){
+        const label = u.displayName || u.email || "User";
+        acctBtn.textContent = label.trim()[0].toUpperCase();
+        acctBtn.classList.add("signedIn");
+        acctSignedOut.style.display = "none";
+        acctSignedIn.style.display = "block";
+        acctName.textContent = u.displayName || "Unnamed";
+        acctEmail.textContent = u.email || "";
+      }else{
+        acctBtn.textContent = "👤";
+        acctBtn.classList.remove("signedIn");
+        acctSignedOut.style.display = "block";
+        acctSignedIn.style.display = "none";
+      }
+      chatAs.innerHTML = u
+        ? `Chatting as <b>${esc(u.displayName || u.email || "User")}</b>`
+        : "Sign in (top-right) to chat";
+    }
+
+    const gateSignIn = document.getElementById("gateSignIn");
+    const introSignUp = document.getElementById("introSignUp");
+
+    onAuthStateChanged(auth, (user)=>{
+      currentUser = user;
+      renderAccount();
+      document.body.classList.toggle("gated", !user);
+      if(!user){
+        acctMenu.classList.remove("open");
+        stopSync();
+        stopPresence();
+        if(window.App.applyScene) window.App.applyScene("galaxy");
+        window.scrollTo(0, 0);
+      }else{
+        startSync(user);
+        const scene = document.getElementById("bgScene")?.value || "galaxy";
+        if(window.App.applyScene) window.App.applyScene(scene);
+      }
+    });
+
+    gateSignIn.addEventListener("click", openAuthModal);
+    introSignUp.addEventListener("click", ()=>{ openAuthModal(); setAuthMode("signup"); });
+    window.__authReady = true;
+
+    acctBtn.addEventListener("click", (e)=>{
+      e.stopPropagation();
+      acctMenu.classList.toggle("open");
+    });
+    document.addEventListener("click", (e)=>{
+      if(!e.target.closest("#account")) acctMenu.classList.remove("open");
+    });
+
+    acctOpenAuth.addEventListener("click", openAuthModal);
+    authClose.addEventListener("click", closeAuthModal);
+    authModal.addEventListener("click", (e)=>{ if(e.target === authModal) closeAuthModal(); });
+    authToggle.addEventListener("click", ()=> setAuthMode(authMode === "signin" ? "signup" : "signin"));
+    authSubmit.addEventListener("click", submitAuth);
+    authPassIn.addEventListener("keydown", (e)=>{ if(e.key === "Enter") submitAuth(); });
+
+    acctRename.addEventListener("click", async ()=>{
+      if(!currentUser) return;
+      const name = safeText(acctNewName.value.trim()).slice(0,40);
+      if(!name) return;
+      try{
+        await updateProfile(currentUser, { displayName: name });
+        try{
+          await setDoc(doc(db, "users", currentUser.uid), { name }, { merge:true });
+        }catch(fe){ console.warn("Profile write skipped:", fe); }
+        acctNewName.value = "";
+        renderAccount();
+      }catch(e){
+        alert("Rename failed: " + friendlyAuthError(e));
+      }
+    });
+
+    acctSignOut.addEventListener("click", async ()=>{
+      try{ await signOut(auth); }catch{}
+      acctMenu.classList.remove("open");
+    });
+
+    renderAccount();
   </script>
 </body>
 </html>
