@@ -121,10 +121,8 @@
       width:40px; height:40px; border-radius:50%;
       display:flex; align-items:center; justify-content:center;
       font-weight:600; font-size:15px; padding:0;
-      background: rgba(16,17,26,.75);
+      background: rgba(16,17,26,.92);
       border:1px solid var(--line);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
       color: var(--text);
     }
     .acctBtn.signedIn{background: var(--accent); color:#161225; border-color: var(--accent)}
@@ -146,8 +144,7 @@
     #topTools button{
       height:40px; border-radius:99px; padding:0 16px;
       display:flex; align-items:center; gap:7px; font-size:13px; font-weight:500;
-      background:rgba(16,17,26,.75); border:1px solid var(--line);
-      backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+      background:rgba(16,17,26,.92); border:1px solid var(--line);
       color:var(--text);
     }
     body.gated #topTools{display:none}
@@ -181,9 +178,8 @@
     }
     body.gated #leftDocks{display:none}
     #musicDock, #friendsDock{
-      background:rgba(15,16,24,.9); border:1px solid var(--line);
+      background:rgba(15,16,24,.95); border:1px solid var(--line);
       border-radius:14px; box-shadow:var(--shadow);
-      backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
       padding:12px; user-select:none;
     }
     #musicDock.closed, #friendsDock.closed{width:auto; align-self:flex-start}
@@ -204,6 +200,60 @@
     .fdItem b{color:var(--ink); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
     .fdBtns{margin-left:auto; display:flex; gap:4px; flex-shrink:0; align-items:center}
     .fdBtns button{padding:3px 8px; font-size:11px; border-radius:6px}
+    .fdItem.fdFriend{cursor:pointer}
+    .fdItem.fdFriend:hover{background:rgba(167,139,250,.12); border-color:var(--accent)}
+
+    /* DM POPUP — Instagram-style side chat */
+    #dmPanel{
+      position:fixed; right:1.2rem; bottom:4.6rem; z-index:80;
+      width:min(320px, calc(100vw - 2rem)); height:min(420px, 70vh);
+      display:none; flex-direction:column;
+      background:rgba(13,14,22,.97); border:1px solid var(--line);
+      border-radius:16px; box-shadow:0 18px 60px rgba(0,0,0,.6);
+      overflow:hidden;
+    }
+    #dmPanel.open{display:flex}
+    .dmHead{
+      display:flex; align-items:center; gap:8px; padding:11px 14px;
+      border-bottom:1px solid var(--line); flex-shrink:0;
+    }
+    .dmHead b{font-size:14px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .dmHead button{margin-left:auto; border:none; background:transparent; color:var(--ink-faint); font-size:14px; padding:2px 6px}
+    .dmHead button:hover{color:var(--ink); border:none}
+    .dmLog{flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:6px}
+    .dmMsg{
+      max-width:78%; padding:8px 12px; border-radius:16px;
+      font-size:13.5px; line-height:1.45; overflow-wrap:anywhere; width:fit-content;
+    }
+    .dmMsg.mine{align-self:flex-end; background:var(--accent); color:#161225; border-bottom-right-radius:5px}
+    .dmMsg.theirs{align-self:flex-start; background:rgba(255,255,255,.09); color:var(--ink); border-bottom-left-radius:5px}
+    .dmMsg.docCard{
+      cursor:pointer; display:flex; align-items:center; gap:8px;
+      border:1px solid var(--line); background:rgba(167,139,250,.14); color:var(--ink);
+    }
+    .dmMsg.docCard:hover{background:rgba(167,139,250,.24)}
+    .dmMsg.docCard.mine{background:rgba(167,139,250,.3)}
+    .dmTime{font-size:10px; color:var(--ink-faint); align-self:center; margin:4px 0}
+    .dmRow{display:flex; gap:8px; padding:10px; border-top:1px solid var(--line); flex-shrink:0}
+    .dmRow input{flex:1; min-width:0; border-radius:99px; padding:9px 14px; font-size:13.5px}
+    .dmRow button{border-radius:99px; padding:9px 14px}
+    .dmEmpty{font-size:12px; color:var(--ink-faint); text-align:center; margin:auto}
+
+    /* Share-to-friend dropdown in Documents */
+    .docsBar{position:relative}
+    #shareMenu{
+      position:absolute; top:50px; right:210px; z-index:5;
+      min-width:200px; display:none;
+      background:rgba(15,16,24,.98); border:1px solid var(--line);
+      border-radius:12px; box-shadow:var(--shadow); padding:6px;
+    }
+    #shareMenu.open{display:block}
+    .shareItem{
+      padding:9px 12px; border-radius:8px; cursor:pointer;
+      font-size:13.5px; color:var(--ink-dim);
+    }
+    .shareItem:hover{background:rgba(167,139,250,.14); color:var(--ink)}
+    .shareEmpty{padding:10px 12px; font-size:12.5px; color:var(--ink-faint)}
     .mdHead{
       display:flex; align-items:center; gap:8px;
       font-size:.66rem; letter-spacing:.14em; text-transform:uppercase;
@@ -276,12 +326,10 @@
 
     .introCard{
       max-width:560px; width:100%;
-      background: var(--paper);
+      background: rgba(15,16,24,.93);
       border:1px solid var(--line);
       border-radius:14px;
       box-shadow: var(--shadow);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
       padding:2.6rem 2.4rem;
       opacity:0; transform:translateY(16px);
       transition: opacity .6s cubic-bezier(.2,.6,.2,1), transform .6s cubic-bezier(.2,.6,.2,1);
@@ -385,12 +433,10 @@
       max-width: 1040px;
       width:100%;
       margin: 0 auto;
-      background: var(--paper);
+      background: rgba(15,16,24,.93);
       border: 1px solid var(--line);
       border-radius: 14px;
       box-shadow: var(--shadow);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
       padding: 26px;
       opacity:0;
       transform:translateY(14px);
@@ -548,8 +594,8 @@
     .upNext{display:flex; flex-direction:column; gap:6px; width:min(430px, 86vw)}
     .upNextRow{
       display:flex; align-items:center; gap:10px; font-size:13px; color:var(--ink-dim);
-      background:rgba(14,15,26,.45); border:1px solid var(--line); border-radius:10px;
-      padding:8px 12px; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+      background:rgba(14,15,26,.72); border:1px solid var(--line); border-radius:10px;
+      padding:8px 12px;
       text-align:left;
     }
     .upNextRow .unTime{color:var(--accent); font-weight:600; font-size:11.5px; min-width:56px; text-transform:uppercase; letter-spacing:.04em}
@@ -698,12 +744,11 @@
       <button id="docImport">Import</button>
       <input id="docImportFile" type="file" accept=".html,.htm,.txt,.md" style="display:none" />
       <button id="docsClose">Close</button>
+      <div id="shareMenu"></div>
     </div>
     <div class="docsBody">
       <aside class="docsSide">
         <button class="btnPrimary" id="docNew">+ New page</button>
-        <div class="fdSection" id="docSharedHead" style="display:none; margin-top:4px">Shared with you</div>
-        <div id="docShared"></div>
         <div id="docList"></div>
       </aside>
       <div class="docsScroll">
@@ -724,6 +769,19 @@
           <div id="docEditor" contenteditable="true" spellcheck="true"></div>
         </main>
       </div>
+    </div>
+  </div>
+
+  <!-- DM POPUP (Instagram-style side chat) -->
+  <div id="dmPanel">
+    <div class="dmHead">
+      <b id="dmName">Friend</b>
+      <button id="dmClose" aria-label="Close chat">✕</button>
+    </div>
+    <div class="dmLog" id="dmLog"></div>
+    <div class="dmRow">
+      <input id="dmInput" placeholder="Message…" autocomplete="off" />
+      <button class="btnPrimary" id="dmSend">➤</button>
     </div>
   </div>
 
@@ -2143,6 +2201,19 @@
       openDocPage(p.id);
     };
 
+    /* Open a doc that arrived in chat. Idempotent: the first tap imports it
+       as a page keyed to the message id; later taps just reopen that page. */
+    App.importSharedDoc = (msgId, title, html)=>{
+      const id = "shared-" + msgId;
+      if(!docsPages.some(p=>p.id === id)){
+        const clean = String(html || "").replace(/<script[\s\S]*?<\/script>/gi, "");
+        docsPages.unshift({ id, title: String(title || "Untitled").slice(0,120), html: clean, ts: Date.now() });
+        saveDocs();
+      }
+      docsEl.classList.add("open");
+      openDocPage(id);
+    };
+
     /* Export the open page as a standalone .html file */
     document.getElementById("docExport").addEventListener("click", ()=>{
       const d = App.getCurrentDoc();
@@ -3182,20 +3253,21 @@
     var fireflies=new THREE.Points(fGeo, new THREE.PointsMaterial({map:dotTex, color:0xffd27a, size:0.55, transparent:true, opacity:0.5, sizeAttenuation:true, blending:THREE.AdditiveBlending, depthWrite:false}));
     scene.add(fireflies);
 
-    /* ---------- Scroll → camera ---------- */
+    /* ---------- Scroll → camera (no per-event layout reads) ---------- */
     var target=0, current=0, lastCurrent=0, mouseX=0, mouseY=0, smx=0, smy=0;
-    function readScroll(){
-      var max = document.documentElement.scrollHeight - window.innerHeight;
-      target = max > 0 ? window.scrollY / max : 0;
-    }
-    window.addEventListener('scroll', readScroll, {passive:true});
-    window.addEventListener('mousemove', function(ev){ mouseX=(ev.clientX/window.innerWidth-0.5); mouseY=(ev.clientY/window.innerHeight-0.5); }, {passive:true});
+    var docMax = 1, maxTick = 0;
+    function refreshMax(){ docMax = Math.max(1, document.documentElement.scrollHeight - window.innerHeight); }
+    function readScroll(){ refreshMax(); target = Math.min(1, window.scrollY / docMax); }
     readScroll();
+    window.addEventListener('resize', refreshMax);
+    window.addEventListener('mousemove', function(ev){ mouseX=(ev.clientX/window.innerWidth-0.5); mouseY=(ev.clientY/window.innerHeight-0.5); }, {passive:true});
 
     var clock = new THREE.Clock();
     function animate(){
       requestAnimationFrame(animate);
       if(canvas.style.display === "none") return;
+      if(((maxTick++) & 127) === 0) refreshMax();
+      target = Math.min(1, window.scrollY / docMax);
       var t = clock.getElapsedTime();
       var d = target - current;
       current += d * (prefersReduced ? 1 : Math.min(0.16, 0.026 + Math.abs(d)*0.22));
@@ -3379,19 +3451,20 @@
     }));
     scene.add(stars);
 
-    /* ---------- Scroll → camera dolly through the spiral ---------- */
+    /* ---------- Scroll → camera dolly (no per-event layout reads) ---------- */
     var target=0, current=0;
-    function readScroll(){
-      var max = document.documentElement.scrollHeight - window.innerHeight;
-      target = max > 0 ? window.scrollY / max : 0;
-    }
-    window.addEventListener('scroll', readScroll, {passive:true});
+    var docMax = 1, maxTick = 0;
+    function refreshMax(){ docMax = Math.max(1, document.documentElement.scrollHeight - window.innerHeight); }
+    function readScroll(){ refreshMax(); target = Math.min(1, window.scrollY / docMax); }
     readScroll();
+    window.addEventListener('resize', refreshMax);
 
     var clock = new THREE.Clock();
     function animate(){
       requestAnimationFrame(animate);
       if(canvas.style.display === "none") return;
+      if(((maxTick++) & 127) === 0) refreshMax();
+      target = Math.min(1, window.scrollY / docMax);
       var t = clock.getElapsedTime();
       current += (target - current) * (prefersReduced ? 1 : 0.06);
 
@@ -3652,7 +3725,8 @@
     const fdRequests = document.getElementById("fdRequests");
     const fdFriends = document.getElementById("fdFriends");
     let friendships = [];
-    let friendsUnsub = null, sharedUnsub = null;
+    let reqIn = [], reqOut = [];
+    let friendsUnsub = null, reqInUnsub = null, reqOutUnsub = null;
 
     function fdSet(msg){ fdStatusEl.textContent = msg || ""; }
     function pairId(a,b){ return a < b ? `${a}_${b}` : `${b}_${a}`; }
@@ -3670,64 +3744,59 @@
 
     function renderFriends(){
       if(!currentUser){ fdRequests.innerHTML = ""; fdFriends.innerHTML = ""; return; }
-      const incoming = friendships.filter(f=>f.data.status === "pending" && f.data.requestedBy !== currentUser.uid);
-      const outgoing = friendships.filter(f=>f.data.status === "pending" && f.data.requestedBy === currentUser.uid);
       const friends = myFriends();
 
       let rq = "";
-      if(incoming.length){
+      if(reqIn.length){
         rq += `<div class="fdSection">Requests</div>`;
-        incoming.forEach(f=>{
-          const other = f.data.uids.find(u=>u !== currentUser.uid);
-          rq += `<div class="fdItem"><b>${esc(f.data.names?.[other] || "Someone")}</b>
+        reqIn.forEach(r=>{
+          rq += `<div class="fdItem"><b>${esc(r.data.fromName || r.data.fromEmail || "Someone")}</b>
             <span class="fdBtns">
-              <button class="btnPrimary" data-accept="${esc(f.id)}" title="Accept">✓</button>
-              <button class="btnDanger" data-decline="${esc(f.id)}" title="Decline">✕</button>
+              <button class="btnPrimary" data-accept="${esc(r.id)}" title="Accept">✓</button>
+              <button class="btnDanger" data-decline="${esc(r.id)}" title="Decline">✕</button>
             </span></div>`;
         });
       }
       fdRequests.innerHTML = rq;
 
       let fh = "";
-      if(friends.length || outgoing.length) fh += `<div class="fdSection">Friends</div>`;
+      if(friends.length || reqOut.length) fh += `<div class="fdSection">Friends</div>`;
       friends.forEach(fr=>{
-        fh += `<div class="fdItem" title="${esc(fr.email)}"><b>${esc(fr.name)}</b>
+        fh += `<div class="fdItem fdFriend" data-uid="${esc(fr.uid)}" data-name="${esc(fr.name)}" title="Chat with ${esc(fr.name)}">
+          <b>${esc(fr.name)}</b>
           <span class="fdBtns"><button class="btnDanger" data-remove="${esc(fr.fid)}" title="Remove friend">✕</button></span></div>`;
       });
-      outgoing.forEach(f=>{
-        const other = f.data.uids.find(u=>u !== currentUser.uid);
-        fh += `<div class="fdItem" style="opacity:.55"><b>${esc(f.data.names?.[other] || f.data.emails?.[other] || "Pending")}</b>
+      reqOut.forEach(r=>{
+        fh += `<div class="fdItem" style="opacity:.55"><b>${esc(r.data.toEmail || "Pending")}</b>
           <span class="fdBtns" style="font-size:10.5px; color:var(--ink-faint)">sent</span></div>`;
       });
-      fdFriends.innerHTML = fh || `<div class="fdStatus" style="margin-top:6px">No friends yet — search an email above.</div>`;
+      fdFriends.innerHTML = fh || `<div class="fdStatus" style="margin-top:6px">No friends yet — enter an email above.</div>`;
     }
 
+    /* Send an invite addressed to an EMAIL. No lookup of the other account is
+       needed, so this works even if they have never opened the new build. */
     async function addFriendByEmail(){
       if(!currentUser){ fdSet("Sign in first."); return; }
       const email = fdEmail.value.trim().toLowerCase();
+      const myEmail = (currentUser.email || "").toLowerCase();
       if(!email || !email.includes("@")){ fdSet("Enter a valid email."); return; }
-      if(email === (currentUser.email || "").toLowerCase()){ fdSet("That's you."); return; }
-      fdSet("Searching…");
+      if(email === myEmail){ fdSet("That's your own email."); return; }
+      if(myFriends().some(f=>(f.email||"").toLowerCase() === email)){ fdSet("Already friends."); return; }
+      if(reqOut.some(r=>r.data.toEmail === email)){ fdSet("Invite already sent."); return; }
+      fdSet("Sending…");
       try{
-        const qs = await getDocs(query(collection(db, "users"), where("email", "==", email)));
-        if(qs.empty){ fdSet("No NotePro account with that email."); return; }
-        const target = qs.docs[0];
-        const tUid = target.id, tData = target.data();
-        const fid = pairId(currentUser.uid, tUid);
-        if(friendships.some(f=>f.id === fid)){ fdSet("Already added or pending."); return; }
-        await setDoc(doc(db, "friendships", fid), {
-          uids: [currentUser.uid, tUid],
-          names: { [currentUser.uid]: currentUser.displayName || "User", [tUid]: tData.name || "Friend" },
-          emails: { [currentUser.uid]: currentUser.email || "", [tUid]: email },
-          status: "pending",
-          requestedBy: currentUser.uid,
+        await addDoc(collection(db, "friendRequests"), {
+          fromUid: currentUser.uid,
+          fromName: currentUser.displayName || "User",
+          fromEmail: myEmail,
+          toEmail: email,
           ts: serverTimestamp()
         });
         fdEmail.value = "";
-        fdSet("Request sent ✓");
+        fdSet("Invite sent ✓ — they'll see it when they sign in.");
       }catch(e){
-        console.error("Friend add failed:", e);
-        fdSet("Search failed — check Firestore rules.");
+        console.error("Friend invite failed:", e);
+        fdSet("Failed: " + (e.code || e.message));
       }
     }
     fdAdd.addEventListener("click", addFriendByEmail);
@@ -3736,94 +3805,189 @@
     fdRequests.addEventListener("click", async (e)=>{
       const acc = e.target.closest("[data-accept]");
       const dec = e.target.closest("[data-decline]");
+      const id = acc?.dataset.accept || dec?.dataset.decline;
+      if(!id) return;
+      const r = reqIn.find(x=>x.id === id);
+      if(!r) return;
       try{
-        if(acc) await setDoc(doc(db, "friendships", acc.dataset.accept), { status:"accepted" }, { merge:true });
-        if(dec) await deleteDoc(doc(db, "friendships", dec.dataset.decline));
-      }catch(err){ fdSet("Action failed: " + err.message); }
+        if(acc){
+          const them = r.data.fromUid;
+          const fid = pairId(currentUser.uid, them);
+          await setDoc(doc(db, "friendships", fid), {
+            uids: [currentUser.uid, them],
+            names: {
+              [currentUser.uid]: currentUser.displayName || "User",
+              [them]: r.data.fromName || "Friend"
+            },
+            emails: {
+              [currentUser.uid]: (currentUser.email || "").toLowerCase(),
+              [them]: r.data.fromEmail || ""
+            },
+            status: "accepted",
+            ts: serverTimestamp()
+          }, { merge:true });
+        }
+        await deleteDoc(doc(db, "friendRequests", id));
+      }catch(err){
+        console.error("Friend action failed:", err);
+        fdSet("Failed: " + (err.code || err.message));
+      }
     });
     fdFriends.addEventListener("click", async (e)=>{
       const rem = e.target.closest("[data-remove]");
-      if(!rem) return;
-      if(!confirm("Remove this friend?")) return;
-      try{ await deleteDoc(doc(db, "friendships", rem.dataset.remove)); }
-      catch(err){ fdSet("Remove failed: " + err.message); }
+      if(rem){
+        e.stopPropagation();
+        if(!confirm("Remove this friend?")) return;
+        try{ await deleteDoc(doc(db, "friendships", rem.dataset.remove)); }
+        catch(err){ fdSet("Remove failed: " + err.message); }
+        return;
+      }
+      const row = e.target.closest(".fdFriend");
+      if(row) openDM(row.dataset.uid, row.dataset.name);
     });
 
     function startFriends(user){
       stopFriends();
+      const myEmail = (user.email || "").toLowerCase();
+
       friendsUnsub = onSnapshot(
         query(collection(db, "friendships"), where("uids", "array-contains", user.uid)),
         (snap)=>{ friendships = snap.docs.map(d=>({ id:d.id, data:d.data() })); renderFriends(); },
-        (err)=>console.warn("Friends listen failed:", err)
+        (err)=>{ console.warn("Friends listen failed:", err); fdSet("Friends error: " + (err.code||err.message)); }
+      );
+
+      /* Invites addressed to my email — these arrive even if the sender
+         had no way to look my account up. */
+      reqInUnsub = onSnapshot(
+        query(collection(db, "friendRequests"), where("toEmail", "==", myEmail)),
+        (snap)=>{ reqIn = snap.docs.map(d=>({ id:d.id, data:d.data() })); renderFriends(); },
+        (err)=>{ console.warn("Incoming invites listen failed:", err); fdSet("Invites error: " + (err.code||err.message)); }
+      );
+
+      /* My own outgoing invites, so the panel can show "sent". */
+      reqOutUnsub = onSnapshot(
+        query(collection(db, "friendRequests"), where("fromUid", "==", user.uid)),
+        (snap)=>{ reqOut = snap.docs.map(d=>({ id:d.id, data:d.data() })); renderFriends(); },
+        (err)=>console.warn("Outgoing invites listen failed:", err)
       );
     }
     function stopFriends(){
       if(friendsUnsub){ friendsUnsub(); friendsUnsub = null; }
-      friendships = [];
+      if(reqInUnsub){ reqInUnsub(); reqInUnsub = null; }
+      if(reqOutUnsub){ reqOutUnsub(); reqOutUnsub = null; }
+      friendships = []; reqIn = []; reqOut = [];
       renderFriends();
     }
 
     /* =========================
-       DOC SHARING — send a page to a friend; they get an inbox in Documents
+       DIRECT MESSAGES — Instagram-style popup, one thread per friend pair.
+       Messages live in dms/{pairId}/messages; docs are shared AS chat cards.
     ========================== */
-    const docSharedHead = document.getElementById("docSharedHead");
-    const docSharedList = document.getElementById("docShared");
-    let sharedDocsIn = [];
+    const dmPanel = document.getElementById("dmPanel");
+    const dmLog = document.getElementById("dmLog");
+    const dmInput = document.getElementById("dmInput");
+    const dmNameEl = document.getElementById("dmName");
+    let dmPeerUid = null, dmPeerName = "", dmUnsub = null;
 
-    function renderShared(){
-      docSharedHead.style.display = sharedDocsIn.length ? "block" : "none";
-      docSharedList.innerHTML = sharedDocsIn.map(s=>`
-        <div class="docItem" title="from ${esc(s.data.fromName || "a friend")}">
-          <span>📩 ${esc(s.data.title || "Untitled")}</span>
-          <button class="docDel" data-take="${esc(s.id)}" title="Add to my pages">＋</button>
-          <button class="docDel" data-toss="${esc(s.id)}" title="Dismiss">✕</button>
-        </div>`).join("");
+    function esc2(s){ return String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+
+    function openDM(uid, name){
+      if(!currentUser || !uid) return;
+      dmPeerUid = uid; dmPeerName = name || "Friend";
+      dmNameEl.textContent = dmPeerName;
+      dmLog.innerHTML = `<div class="dmEmpty">Loading…</div>`;
+      dmPanel.classList.add("open");
+      dmInput.focus();
+
+      if(dmUnsub){ dmUnsub(); dmUnsub = null; }
+      const pid = pairId(currentUser.uid, uid);
+      const q = query(collection(db, "dms", pid, "messages"), orderBy("ts","asc"), limit(500));
+      dmUnsub = onSnapshot(q, (snap)=>{
+        if(snap.empty){ dmLog.innerHTML = `<div class="dmEmpty">Say hi to ${esc2(dmPeerName)} 👋</div>`; return; }
+        let html = "";
+        snap.forEach(ds=>{
+          const m = ds.data();
+          const mine = m.from === currentUser.uid;
+          const time = m.ts?.toDate ? m.ts.toDate().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}) : "";
+          if(m.kind === "doc"){
+            html += `<div class="dmMsg docCard ${mine?"mine":"theirs"}" data-openmsg="${esc2(ds.id)}" data-title="${esc2(m.docTitle||"Untitled")}" title="Open page">
+              📄 <span>${esc2(m.docTitle || "Untitled")}</span></div>`;
+          }else{
+            html += `<div class="dmMsg ${mine?"mine":"theirs"}">${esc2(m.text)}</div>`;
+          }
+          if(time) html += `<div class="dmTime">${esc2(time)}</div>`;
+        });
+        const atBottom = dmLog.scrollHeight - dmLog.scrollTop - dmLog.clientHeight < 60;
+        dmLog.innerHTML = html;
+        if(atBottom || snap.docChanges().some(c=>c.type==="added")) dmLog.scrollTop = dmLog.scrollHeight;
+      }, (err)=>{ dmLog.innerHTML = `<div class="dmEmpty">Chat unavailable — check Firestore rules.</div>`; console.warn("DM listen failed:", err); });
     }
-    docSharedList.addEventListener("click", async (e)=>{
-      const take = e.target.closest("[data-take]");
-      const toss = e.target.closest("[data-toss]");
-      const id = take?.dataset.take || toss?.dataset.toss;
-      if(!id) return;
-      const s = sharedDocsIn.find(x=>x.id === id);
+    function closeDM(){
+      dmPanel.classList.remove("open");
+      if(dmUnsub){ dmUnsub(); dmUnsub = null; }
+      dmPeerUid = null;
+    }
+    async function sendDM(){
+      const text = dmInput.value.trim().slice(0, 2000);
+      if(!text || !dmPeerUid || !currentUser) return;
+      dmInput.value = "";
       try{
-        if(take && s) window.App.importDocPage(s.data.title || "Untitled", s.data.html || "");
-        await deleteDoc(doc(db, "sharedDocs", id));
-      }catch(err){ alert("Failed: " + err.message); }
-    });
-    function startShared(user){
-      stopShared();
-      sharedUnsub = onSnapshot(
-        query(collection(db, "sharedDocs"), where("to", "==", user.uid)),
-        (snap)=>{ sharedDocsIn = snap.docs.map(d=>({ id:d.id, data:d.data() })); renderShared(); },
-        (err)=>console.warn("Shared docs listen failed:", err)
-      );
+        const pid = pairId(currentUser.uid, dmPeerUid);
+        await addDoc(collection(db, "dms", pid, "messages"), {
+          from: currentUser.uid, to: dmPeerUid, kind:"text", text, ts: serverTimestamp()
+        });
+      }catch(err){ dmInput.value = text; console.warn("DM send failed:", err); }
     }
-    function stopShared(){
-      if(sharedUnsub){ sharedUnsub(); sharedUnsub = null; }
-      sharedDocsIn = [];
-      renderShared();
+    async function sendDocToFriend(uid, name, docData){
+      if(!currentUser || !uid) return;
+      try{
+        const pid = pairId(currentUser.uid, uid);
+        await addDoc(collection(db, "dms", pid, "messages"), {
+          from: currentUser.uid, to: uid, kind:"doc",
+          docTitle: docData.title, docHtml: docData.html, ts: serverTimestamp()
+        });
+        openDM(uid, name);
+      }catch(err){ alert("Share failed: " + err.message); }
     }
 
-    document.getElementById("docShare").addEventListener("click", async ()=>{
+    document.getElementById("dmClose").addEventListener("click", closeDM);
+    document.getElementById("dmSend").addEventListener("click", sendDM);
+    dmInput.addEventListener("keydown", (e)=>{ if(e.key === "Enter") sendDM(); });
+    dmLog.addEventListener("click", (e)=>{
+      const card = e.target.closest("[data-openmsg]");
+      if(!card || !dmPeerUid) return;
+      const pid = pairId(currentUser.uid, dmPeerUid);
+      /* Fetch the doc body from the message and open it as a page */
+      getDocs(query(collection(db, "dms", pid, "messages"))).then(snap=>{
+        const ds = snap.docs.find(d=>d.id === card.dataset.openmsg);
+        if(ds){ const m = ds.data(); window.App.importSharedDoc(ds.id, m.docTitle || "Untitled", m.docHtml || ""); }
+      }).catch(err=>alert("Couldn't open: " + err.message));
+    });
+
+    /* =========================
+       DOC SHARE MENU — pick a friend, page is delivered into your DM thread
+    ========================== */
+    const shareMenu = document.getElementById("shareMenu");
+    function closeShareMenu(){ shareMenu.classList.remove("open"); }
+    document.getElementById("docShare").addEventListener("click", (e)=>{
+      e.stopPropagation();
       if(!currentUser){ alert("Sign in first."); return; }
       const d = window.App.getCurrentDoc();
       if(!d){ alert("Open a page first."); return; }
       const friends = myFriends();
-      if(!friends.length){ alert("Add a friend first — Friends panel, bottom-left."); return; }
-      const list = friends.map((f,i)=>`${i+1}. ${f.name}`).join("\n");
-      const pick = prompt(`Share "${d.title}" with which friend?\n\n${list}\n\nEnter a number:`);
-      const idx = parseInt(pick, 10) - 1;
-      if(!isFinite(idx) || !friends[idx]) return;
-      try{
-        await addDoc(collection(db, "sharedDocs"), {
-          to: friends[idx].uid,
-          from: currentUser.uid,
-          fromName: currentUser.displayName || "A friend",
-          title: d.title, html: d.html,
-          ts: serverTimestamp()
-        });
-        alert(`Shared with ${friends[idx].name} ✓`);
-      }catch(err){ alert("Share failed: " + err.message); }
+      shareMenu.innerHTML = friends.length
+        ? friends.map(f=>`<div class="shareItem" data-uid="${esc2(f.uid)}" data-name="${esc2(f.name)}">Send to ${esc2(f.name)}</div>`).join("")
+        : `<div class="shareEmpty">No friends yet — add one from the Friends panel.</div>`;
+      shareMenu.classList.toggle("open");
+    });
+    shareMenu.addEventListener("click", (e)=>{
+      const item = e.target.closest(".shareItem");
+      if(!item) return;
+      closeShareMenu();
+      sendDocToFriend(item.dataset.uid, item.dataset.name, window.App.getCurrentDoc());
+    });
+    document.addEventListener("click", (e)=>{
+      if(!e.target.closest("#shareMenu") && !e.target.closest("#docShare")) closeShareMenu();
     });
 
     /* =========================
@@ -3968,7 +4132,7 @@
         stopSync();
         stopPresence();
         stopFriends();
-        stopShared();
+        closeDM();
         if(window.App.deactivateUser) window.App.deactivateUser();
         if(window.App.applyScene) window.App.applyScene("galaxy");
         window.scrollTo(0, 0);
@@ -3976,7 +4140,6 @@
         if(window.App.activateUser) window.App.activateUser(user.uid);
         startSync(user);
         startFriends(user);
-        startShared(user);
         /* Upsert the searchable profile on EVERY sign-in (lowercased email) so
            accounts created before this existed become findable by friends. */
         setDoc(doc(db, "users", user.uid), {
